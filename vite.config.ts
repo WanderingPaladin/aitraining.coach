@@ -1,3 +1,4 @@
+import { networkInterfaces } from 'node:os';
 import { sites } from '@openai/sites-vite-plugin';
 import tailwindcss from '@tailwindcss/postcss';
 import vinext from 'vinext';
@@ -11,6 +12,22 @@ const { d1, r2 } = hostingConfig;
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === 'seatbelt';
+
+function bookingApiOrigin(): string {
+  if (process.env.BOOKING_API_ORIGIN) {
+    return process.env.BOOKING_API_ORIGIN;
+  }
+  const publicIpv4 = Object.values(networkInterfaces())
+    .flat()
+    .filter((iface): iface is NonNullable<typeof iface> =>
+      Boolean(iface && !iface.internal && iface.family === 'IPv4'),
+    )
+    .map((iface) => iface.address);
+  if (publicIpv4[0]) {
+    return `http://${publicIpv4[0]}:5000`;
+  }
+  return 'http://[::1]:5000';
+}
 
 const localBindingConfig = {
   main: 'vinext/server/app-router-entry',
@@ -46,9 +63,17 @@ export default defineConfig(async () => {
 
   return {
     css: { postcss: { plugins: [tailwindcss()] } },
-    server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
-      : undefined,
+    server: {
+      host: '0.0.0.0',
+      port: 3000,
+      proxy: {
+        '/v1': { target: bookingApiOrigin(), changeOrigin: true, xfwd: true },
+        '/health': { target: bookingApiOrigin(), changeOrigin: true, xfwd: true },
+      },
+      ...(isCodexSeatbeltSandbox
+        ? { watch: { useFsEvents: false, usePolling: true } }
+        : {}),
+    },
     plugins: [
       vinext(),
       sites(),

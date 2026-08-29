@@ -25,7 +25,9 @@ import {
   TrendingUp,
   UsersRound,
 } from 'lucide-react';
+import ApplyBooking from './components/ApplyBooking';
 import FeatureIcon, { Linkedin, type FeatureIconVariant } from './components/FeatureIcon';
+import HeroCarousel from './components/HeroCarousel';
 
 const processSteps: Array<{
   number: string;
@@ -86,6 +88,27 @@ function PayrollPreview() {
       <div className="orbit orbit-one" />
       <div className="orbit orbit-two" />
       <div className="payroll-visual-group">
+        <div className="newcomer-note">
+          <h2 className="newcomer-note-title">
+            No Experience?
+            <br />
+            <span className="hero-hl">You’re Still in the Right Place.</span>
+          </h2>
+          <p className="newcomer-note-body">
+            If you can create accounts on supported AI-training platforms, prior AI-training experience is not required. Our coaches work closely with you through onboarding, hands-on practice, project strategy, and your first real opportunities — so you’re never left to figure it out alone.
+          </p>
+          <div className="earnings-callout">
+            <span className="earnings-icon" aria-hidden="true">
+              <TrendingUp size={20} color="#38BDF8" strokeWidth={2.2} />
+            </span>
+            <div className="earnings-copy">
+              <p className="earnings-label">Earning potential</p>
+              <p className="earnings-figure">Up to $10K+/month</p>
+              <p className="earnings-micro">As skills, project access, workload, and consistency grow.</p>
+            </div>
+          </div>
+          <p className="payroll-intro">See what AI-training work can grow into ↓</p>
+        </div>
         <div className="payroll-stage">
           <div className="dashboard">
             <img src="/brands/payroll-overview.png" alt="Snorkel payroll overview dashboard" />
@@ -134,10 +157,7 @@ export default function Home() {
 
         <div className="hero-grid shell">
           <div className="hero-copy">
-            <p className="eyebrow">A clearer path into AI</p>
-            <h1>Become an<br /><span>AI Training Expert</span></h1>
-            <h2>With the Right Coaching and Guidance</h2>
-            <p className="intro">Turn your knowledge and professional experience into a meaningful career as an AI trainer. Whether you’re just getting started or looking to level up, we provide the coaching, structure, and real opportunities to help you become a confident, well-paid AI training expert.</p>
+            <HeroCarousel />
             <div className="benefit-chips">
               <span>
                 <FeatureIcon icon={ShieldCheck} variant="dark" size={22} tileSize={36} iconClassName="text-[#14C7E5]" />
@@ -186,7 +206,6 @@ export default function Home() {
 
       <section className="section process-section shell" id="how">
         <div className="section-heading">
-          <span>YOUR NEXT CHAPTER</span>
           <h2>How It Works</h2>
           <p>A simple, supportive process to help you get started.</p>
         </div>
@@ -207,7 +226,6 @@ export default function Home() {
 
       <section className="section audience-section shell">
         <div className="section-heading compact">
-          <span>MADE FOR YOUR EXPERIENCE</span>
           <h2>Who Can Join AI Trainers?</h2>
           <p>Whether you are new to AI training or already working in the field, our coaching helps you turn your professional strengths into more stable income opportunities.</p>
         </div>
@@ -219,7 +237,6 @@ export default function Home() {
                 <FeatureIcon icon={GraduationCap} variant="purple" size={30} />
                 <BriefcaseBusiness size={16} strokeWidth={2} className="audience-secondary" aria-hidden="true" />
               </div>
-              <small>START WITH YOUR STRENGTHS</small>
               <h3>Professionals New<br />to AI Training</h3>
               <p>You do <strong>not</strong> need prior AI or AI training experience. If you have a professional background, domain knowledge in a field, or want to work on flexible projects, we’ll become your expert guide.</p>
             </div>
@@ -242,7 +259,6 @@ export default function Home() {
                 <FeatureIcon icon={TrendingUp} variant="blue" size={30} />
                 <Headphones size={16} strokeWidth={2} className="audience-secondary" aria-hidden="true" />
               </div>
-              <small>GROW WITH A PLAN</small>
               <h3>Current AI Trainers<br />Who Need Support</h3>
               <p>You already work as an AI trainer but are struggling with progression, or don’t have enough time or structure to mentor? We’ll help you simplify your systems, improve your strategies, and earn more stable income without burnout.</p>
             </div>
@@ -257,7 +273,6 @@ export default function Home() {
 
       <section className="section stories-section shell" id="stories">
         <div className="section-heading">
-          <span>REAL PEOPLE, REAL MOMENTUM</span>
           <h2>What Candidates Say</h2>
           <p>Stories from people who are building their future with AI Trainers.</p>
         </div>
@@ -274,7 +289,7 @@ export default function Home() {
       </section>
 
       <section className="section faq-section shell" id="faq">
-        <div className="section-heading compact"><span>QUESTIONS, ANSWERED</span><h2>Frequently Asked Questions</h2></div>
+        <div className="section-heading compact"><h2>Frequently Asked Questions</h2></div>
         <div className="faq-grid">
           {faqs.map(([question, answer]) => (
             <details key={question}>
@@ -294,13 +309,15 @@ export default function Home() {
       </section>
 
       <section className="apply-section shell" id="apply">
-        <FeatureIcon icon={BriefcaseBusiness} variant="cta" size={28} tileSize={60} className="cta-icon" />
-        <div><h2>Ready to Start Your Journey?</h2><p>Take the first step today. We’re here to guide you every step of the way.</p></div>
-        <div className="apply-actions">
-          <a href="mailto:hello@aitrainers.com?subject=AI%20Trainer%20Application">Apply Now <ArrowRight className="btn-icon" size={16} strokeWidth={2} /></a>
-          <a href="mailto:hello@aitrainers.com?subject=Free%20Intro%20Call">Book a Free Intro Call <Phone className="btn-icon" size={16} strokeWidth={2} /></a>
+        <div className="apply-section-head">
+          <FeatureIcon icon={BriefcaseBusiness} variant="cta" size={28} tileSize={60} className="cta-icon" />
+          <div>
+            <h2>Ready to Start Your Journey?</h2>
+            <p>Apply in a few minutes, then pick a free intro call. We’ll send a Google Meet invite to your inbox.</p>
+          </div>
+          <FeatureIcon icon={CircleCheckBig} variant="cta" size={28} tileSize={60} className="cta-icon" />
         </div>
-        <FeatureIcon icon={CircleCheckBig} variant="cta" size={28} tileSize={60} className="cta-icon" />
+        <ApplyBooking />
       </section>
 
       <footer className="site-footer">
