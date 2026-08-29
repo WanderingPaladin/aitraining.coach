@@ -11,21 +11,27 @@ type HeroSlide = {
   id: number;
   headlineLines: HeadlinePart[][];
   body: string;
-  accent: string;
 };
 
 const heroSlides: HeroSlide[] = [
   {
     id: 1,
     headlineLines: [
+      [{ text: 'No Experience?' }],
+      [{ text: 'You’re Still in the Right Place.', highlight: true }],
+    ],
+    body: 'If you can create accounts on supported AI-training platforms, prior AI-training experience is not required. Our coaches work closely with you through onboarding, hands-on practice, project strategy, and your first real opportunities — so you’re never left to figure it out alone.',
+  },
+  {
+    id: 2,
+    headlineLines: [
       [{ text: 'Your Expertise Could Be' }],
       [{ text: 'Your Edge in AI Training.', highlight: true }],
     ],
     body: 'Software, finance, law, writing, science, research and more — the knowledge you already have can be valuable in AI training. We help you understand where your experience fits and how to turn it into a real path forward.',
-    accent: 'Don’t start from zero. Start with what you know.',
   },
   {
-    id: 2,
+    id: 3,
     headlineLines: [
       [{ text: 'New to AI Training?' }],
       [
@@ -35,34 +41,30 @@ const heroSlides: HeroSlide[] = [
       ],
     ],
     body: 'With focused coaching, hands-on practice, and a clear roadmap, newcomers can build the judgment, workflow, and confidence needed to approach AI-training work much more effectively.',
-    accent: 'Skip months of trial and error. Learn with direction.',
   },
   {
-    id: 3,
+    id: 4,
     headlineLines: [
       [{ text: 'Start Your Journey.' }],
       [{ text: 'Pay After You Start Earning.', highlight: true }],
     ],
     body: 'Get the coaching and support you need without paying us upfront. Focus on building your skills and finding your path first — our fee begins only after you start earning from AI-training work.',
-    accent: 'Your progress comes first.',
   },
   {
-    id: 4,
+    id: 5,
     headlineLines: [
       [{ text: 'Turn What You Know Into' }],
       [{ text: 'A Clear AI Training Path.', highlight: true }],
     ],
     body: 'We combine structured coaching, practical guidance, and hands-on support to help you understand the work, strengthen the right skills, and move forward without having to figure everything out alone.',
-    accent: 'Clear direction. Focused practice. Real support.',
   },
   {
-    id: 5,
+    id: 6,
     headlineLines: [
       [{ text: 'Turn Inconsistent Progress Into' }],
       [{ text: 'Stronger Momentum.', highlight: true }],
     ],
     body: 'If unclear direction, inconsistent opportunities, or limited time are slowing you down, we help you sharpen your approach, work more effectively, and build a clearer way forward.',
-    accent: 'Less guessing. More momentum.',
   },
 ];
 
@@ -88,7 +90,6 @@ function SlideCopy({ slide, heading }: { slide: HeroSlide; heading: boolean }) {
         ))}
       </TitleTag>
       <p className="hero-slide-body">{slide.body}</p>
-      <p className="hero-slide-accent">{slide.accent}</p>
     </>
   );
 }
@@ -215,34 +216,40 @@ export default function HeroCarousel() {
         </div>
       </div>
 
-      <div
-        className="hero-progress"
-        role="tablist"
-        aria-label="Hero messages"
-        onFocus={() => setNavFocused(true)}
-        onBlur={onNavBlur}
-        onKeyDown={onKeyDown}
-      >
-        {heroSlides.map((slide, slideIndex) => {
-          const selected = slideIndex === index;
-          return (
-            <button
-              key={slide.id}
-              type="button"
-              role="tab"
-              aria-label={`Go to hero message ${slide.id}`}
-              aria-selected={selected}
-              className={selected ? (paused ? 'is-active is-paused' : 'is-active') : undefined}
-              onClick={() => goTo(slideIndex)}
-            >
-              <span className="hero-progress-track">
-                {selected && (
-                  <span key={progressKey} className="hero-progress-fill" />
-                )}
-              </span>
-            </button>
-          );
-        })}
+      <div className="hero-progress">
+        <p className="hero-progress-index" aria-live="polite">
+          <span>{String(index + 1).padStart(2, '0')}</span>
+          <span className="hero-progress-total"> / {String(slideCount).padStart(2, '0')}</span>
+        </p>
+        <div
+          className="hero-progress-tabs"
+          role="tablist"
+          aria-label="Hero messages"
+          onFocus={() => setNavFocused(true)}
+          onBlur={onNavBlur}
+          onKeyDown={onKeyDown}
+        >
+          {heroSlides.map((slide, slideIndex) => {
+            const selected = slideIndex === index;
+            return (
+              <button
+                key={slide.id}
+                type="button"
+                role="tab"
+                aria-label={`Go to hero message ${slide.id}`}
+                aria-selected={selected}
+                className={selected ? (paused ? 'is-active is-paused' : 'is-active') : undefined}
+                onClick={() => goTo(slideIndex)}
+              >
+                <span className="hero-progress-track">
+                  {selected && (
+                    <span key={progressKey} className="hero-progress-fill" />
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

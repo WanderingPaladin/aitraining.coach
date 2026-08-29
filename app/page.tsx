@@ -26,8 +26,10 @@ import {
   UsersRound,
 } from 'lucide-react';
 import ApplyBooking from './components/ApplyBooking';
-import FeatureIcon, { Linkedin, type FeatureIconVariant } from './components/FeatureIcon';
+import FeatureIcon, { type FeatureIconVariant } from './components/FeatureIcon';
 import HeroCarousel from './components/HeroCarousel';
+import SiteFooter from './components/SiteFooter';
+import SiteHeader from './components/SiteHeader';
 
 const processSteps: Array<{
   number: string;
@@ -73,42 +75,12 @@ const trainingPlatforms: Array<{ name: string; src: string; href: string }> = [
   { name: 'DataAnnotation', src: '/brands/dataannotation.png', href: 'https://www.dataannotation.tech/' },
 ];
 
-function Brand() {
-  return (
-    <a className="brand" href="#top" aria-label="AI Trainers home">
-      <span className="brand-mark" aria-hidden="true"><i /><b /></span>
-      <span>AI Trainers</span>
-    </a>
-  );
-}
-
 function PayrollPreview() {
   return (
     <div className="product-stage" aria-label="Example AI trainer earnings dashboard">
       <div className="orbit orbit-one" />
       <div className="orbit orbit-two" />
       <div className="payroll-visual-group">
-        <div className="newcomer-note">
-          <h2 className="newcomer-note-title">
-            No Experience?
-            <br />
-            <span className="hero-hl">You’re Still in the Right Place.</span>
-          </h2>
-          <p className="newcomer-note-body">
-            If you can create accounts on supported AI-training platforms, prior AI-training experience is not required. Our coaches work closely with you through onboarding, hands-on practice, project strategy, and your first real opportunities — so you’re never left to figure it out alone.
-          </p>
-          <div className="earnings-callout">
-            <span className="earnings-icon" aria-hidden="true">
-              <TrendingUp size={20} color="#38BDF8" strokeWidth={2.2} />
-            </span>
-            <div className="earnings-copy">
-              <p className="earnings-label">Earning potential</p>
-              <p className="earnings-figure">Up to $10K+/month</p>
-              <p className="earnings-micro">As skills, project access, workload, and consistency grow.</p>
-            </div>
-          </div>
-          <p className="payroll-intro">See what AI-training work can grow into ↓</p>
-        </div>
         <div className="payroll-stage">
           <div className="dashboard">
             <img src="/brands/payroll-overview.png" alt="Snorkel payroll overview dashboard" />
@@ -143,17 +115,7 @@ export default function Home() {
     <main id="top">
       <section className="hero">
         <div className="hero-glow" />
-        <header className="site-header shell">
-          <Brand />
-          <nav aria-label="Main navigation">
-            <a className="current" href="#top">Home</a>
-            <a href="#how">How It Works</a>
-            <a href="#stories">Testimonials</a>
-            <a href="#faq">FAQ</a>
-            <a href="#apply">Apply</a>
-          </nav>
-          <a className="mini-cta" href="#apply">Book a Free Intro Call</a>
-        </header>
+        <SiteHeader current="home" home />
 
         <div className="hero-grid shell">
           <div className="hero-copy">
@@ -285,7 +247,7 @@ export default function Home() {
             </article>
           ))}
         </div>
-        <p className="representative-note">Candidate names and portraits are representative placeholders for this website concept.</p>
+        <p className="stories-more"><a href="/stories">Read coaching journeys <span aria-hidden="true">→</span></a></p>
       </section>
 
       <section className="section faq-section shell" id="faq">
@@ -320,23 +282,7 @@ export default function Home() {
         <ApplyBooking />
       </section>
 
-      <footer className="site-footer">
-        <div className="shell footer-grid">
-          <div><Brand /><p>Turning professionals into paid<br />AI training experts.</p></div>
-          <div><h3>Quick Links</h3><a href="#top">Home</a><a href="#how">How It Works</a><a href="#stories">Testimonials</a><a href="#apply">Apply</a></div>
-          <div><h3>Resources</h3><a href="#faq">FAQ</a><a href="#stories">Success Stories</a><a href="#faq">Candidate Guidelines</a></div>
-          <div><h3>Blog</h3><a href="#how">AI Trainer Tips</a><a href="#how">Career Growth</a><a href="#stories">Industry Insights</a></div>
-          <div>
-            <h3>Connect With Us</h3>
-            <div className="social-links">
-              <a href="https://www.linkedin.com" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer">
-                <Linkedin size={14} strokeWidth={2} />
-              </a>
-            </div>
-          </div>
-        </div>
-        <div className="shell footer-bottom"><span>© 2026 AI Trainers. All rights reserved.</span><span>Privacy Policy &nbsp;&nbsp; Terms of Service &nbsp;&nbsp; Contact Us</span></div>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }
