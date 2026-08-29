@@ -1,3 +1,5 @@
+import type { ApplicantStage } from './apply-fields';
+
 function apiBaseUrl(): string {
   // Same origin as the site (:3000). Vite/vinext proxies /v1 to the API on :5000.
   return '';
@@ -45,6 +47,7 @@ export type CreateApplicationInput = {
   timezone: string;
   ipAddress?: string;
   ipLocation?: string;
+  applicant_stage: ApplicantStage;
 };
 
 export class ApiError extends Error {

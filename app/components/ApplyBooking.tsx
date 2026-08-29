@@ -19,8 +19,11 @@ import {
   toE164,
   usStates,
   validateApplyFields,
+  isValidApplicantStage,
+  type ApplicantStage,
   type ApplyFieldErrors,
 } from '../../lib/apply-fields';
+import ApplicantStageSelector from './ApplicantStageSelector';
 
 const yearOptions = Array.from({ length: 21 }, (_, years) => years);
 
@@ -149,6 +152,7 @@ type FormState = {
   profession: string;
   yearsOfExperience: string;
   timezone: string;
+  applicant_stage: ApplicantStage | '';
 };
 
 const initialForm = (timezone: string): FormState => ({
@@ -162,6 +166,7 @@ const initialForm = (timezone: string): FormState => ({
   profession: '',
   yearsOfExperience: '',
   timezone,
+  applicant_stage: '',
 });
 
 export default function ApplyBooking() {
@@ -202,7 +207,7 @@ export default function ApplyBooking() {
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
-    if (key === 'phoneCountry' || key in fieldErrors || ['firstName', 'lastName', 'email', 'phone', 'city', 'state', 'profession', 'yearsOfExperience'].includes(key)) {
+    if (key === 'phoneCountry' || key in fieldErrors || ['firstName', 'lastName', 'email', 'phone', 'city', 'state', 'profession', 'yearsOfExperience', 'applicant_stage'].includes(key)) {
       const field = key === 'phoneCountry' ? 'phone' : (key as keyof ApplyFieldErrors);
       setFieldErrors((current) => {
         if (!current[field]) {
@@ -244,16 +249,27 @@ export default function ApplyBooking() {
       state: form.state,
       profession: form.profession,
       yearsOfExperience: form.yearsOfExperience,
+      applicant_stage: form.applicant_stage,
     });
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
-      setError('Please fix the highlighted fields.');
+      if (!nextFieldErrors.applicant_stage || Object.keys(nextFieldErrors).length > 1) {
+        setError('Please fix the highlighted fields.');
+      } else {
+        setError(null);
+      }
       return;
     }
 
     const phone = toE164(form.phoneCountry, form.phone);
     if (!phone) {
       setFieldErrors({ phone: 'Enter a valid phone number.' });
+      return;
+    }
+    if (!isValidApplicantStage(form.applicant_stage)) {
+      setFieldErrors({
+        applicant_stage: 'Please select the option that best describes your current situation.',
+      });
       return;
     }
 
@@ -275,6 +291,7 @@ export default function ApplyBooking() {
         profession: form.profession,
         yearsOfExperience: Number(form.yearsOfExperience),
         timezone: form.timezone,
+        applicant_stage: form.applicant_stage,
         ipAddress: geo?.ip,
         ipLocation: geo?.label,
       });
@@ -338,6 +355,12 @@ export default function ApplyBooking() {
           <input type="hidden" name="timezone" value={form.timezone} />
           <input type="hidden" name="ipAddress" value={ipGeo?.ip ?? ''} />
           <input type="hidden" name="ipLocation" value={ipGeo?.label ?? ''} />
+
+          <ApplicantStageSelector
+            value={form.applicant_stage}
+            error={fieldErrors.applicant_stage}
+            onChange={(stage) => update('applicant_stage', stage)}
+          />
 
           <div className="apply-grid">
             <label>

@@ -13,6 +13,18 @@ export const professions = [
 
 export type Profession = (typeof professions)[number];
 
+export const applicantStages = [
+  'new_no_account',
+  'has_accounts_no_time',
+  'working_no_progress',
+] as const;
+
+export type ApplicantStage = (typeof applicantStages)[number];
+
+export function isValidApplicantStage(value: string): value is ApplicantStage {
+  return (applicantStages as readonly string[]).includes(value);
+}
+
 export const usStates = [
   { code: 'AL', name: 'Alabama' },
   { code: 'AK', name: 'Alaska' },
@@ -217,6 +229,7 @@ export type ApplyFieldErrors = Partial<{
   state: string;
   profession: string;
   yearsOfExperience: string;
+  applicant_stage: string;
 }>;
 
 export function validateApplyFields(input: {
@@ -229,8 +242,13 @@ export function validateApplyFields(input: {
   state: string;
   profession: string;
   yearsOfExperience: string;
+  applicant_stage: string;
 }): ApplyFieldErrors {
   const errors: ApplyFieldErrors = {};
+
+  if (!isValidApplicantStage(input.applicant_stage)) {
+    errors.applicant_stage = 'Please select the option that best describes your current situation.';
+  }
 
   if (input.firstName.trim().length < 1) {
     errors.firstName = 'Enter your first name.';
