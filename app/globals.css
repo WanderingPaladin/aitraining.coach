@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import 'tailwindcss/index.css';
 
 @theme {
   --font-sans: var(--font-manrope), sans-serif;

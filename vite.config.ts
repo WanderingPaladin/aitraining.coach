@@ -61,18 +61,21 @@ export default defineConfig(async () => {
   process.env.WRANGLER_LOG_PATH ??= '.wrangler/logs';
   process.env.MINIFLARE_REGISTRY_PATH ??= '.wrangler/registry';
 
-  // Wrangler snapshots its log path while the Cloudflare plugin is imported.
-  const { cloudflare } = await import('@cloudflare/vite-plugin');
-  const plugins = [
-    vinext(),
-    sites(),
-    cloudflare({
-      viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
-      config: localBindingConfig,
-    }),
-  ];
+  const plugins = [vinext()];
   if (isNetlify) {
+    // Cloudflare's worker `{ fetch }` export makes Nitro SSR call rsc.default as a
+    // function and 500. Use Nitro alone on Netlify.
     plugins.push(nitro());
+  } else {
+    // Wrangler snapshots its log path while the Cloudflare plugin is imported.
+    const { cloudflare } = await import('@cloudflare/vite-plugin');
+    plugins.push(
+      sites(),
+      cloudflare({
+        viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
+        config: localBindingConfig,
+      }),
+    );
   }
 
   return {
