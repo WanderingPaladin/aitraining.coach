@@ -11,27 +11,12 @@ type HeroSlide = {
   id: number;
   headlineLines: HeadlinePart[][];
   body: string;
+  accent?: string;
 };
 
 const heroSlides: HeroSlide[] = [
   {
     id: 1,
-    headlineLines: [
-      [{ text: 'No Experience?' }],
-      [{ text: 'You’re Still in the Right Place.', highlight: true }],
-    ],
-    body: 'If you can create accounts on supported AI-training platforms, prior AI-training experience is not required. Our coaches work closely with you through onboarding, hands-on practice, project strategy, and your first real opportunities — so you’re never left to figure it out alone.',
-  },
-  {
-    id: 2,
-    headlineLines: [
-      [{ text: 'Your Expertise Could Be' }],
-      [{ text: 'Your Edge in AI Training.', highlight: true }],
-    ],
-    body: 'Software, finance, law, writing, science, research and more — the knowledge you already have can be valuable in AI training. We help you understand where your experience fits and how to turn it into a real path forward.',
-  },
-  {
-    id: 3,
     headlineLines: [
       [{ text: 'New to AI Training?' }],
       [
@@ -43,28 +28,32 @@ const heroSlides: HeroSlide[] = [
     body: 'With focused coaching, hands-on practice, and a clear roadmap, newcomers can build the judgment, workflow, and confidence needed to approach AI-training work much more effectively.',
   },
   {
+    id: 2,
+    headlineLines: [
+      [{ text: 'Have the Accounts,' }],
+      [
+        { text: 'But Still ' },
+        { text: 'Not Getting Results?', highlight: true },
+      ],
+    ],
+    body: 'Creating the accounts is only the first step. If projects are inconsistent, qualifications feel difficult, or your earnings aren’t where you expected, our coaches help you understand what to improve and what to focus on next.',
+    accent: 'Stop guessing. Start improving with a clear plan.',
+  },
+  {
+    id: 3,
+    headlineLines: [
+      [{ text: 'No Experience?' }],
+      [{ text: 'You’re Still in the Right Place.', highlight: true }],
+    ],
+    body: 'If you can create accounts on supported AI-training platforms, prior AI-training experience is not required. Our coaches work closely with you through onboarding, hands-on practice, project strategy, and your first real opportunities — so you’re never left to figure it out alone.',
+  },
+  {
     id: 4,
     headlineLines: [
       [{ text: 'Start Your Journey.' }],
       [{ text: 'Pay After You Start Earning.', highlight: true }],
     ],
     body: 'Get the coaching and support you need without paying us upfront. Focus on building your skills and finding your path first — our fee begins only after you start earning from AI-training work.',
-  },
-  {
-    id: 5,
-    headlineLines: [
-      [{ text: 'Turn What You Know Into' }],
-      [{ text: 'A Clear AI Training Path.', highlight: true }],
-    ],
-    body: 'We combine structured coaching, practical guidance, and hands-on support to help you understand the work, strengthen the right skills, and move forward without having to figure everything out alone.',
-  },
-  {
-    id: 6,
-    headlineLines: [
-      [{ text: 'Turn Inconsistent Progress Into' }],
-      [{ text: 'Stronger Momentum.', highlight: true }],
-    ],
-    body: 'If unclear direction, inconsistent opportunities, or limited time are slowing you down, we help you sharpen your approach, work more effectively, and build a clearer way forward.',
   },
 ];
 
@@ -90,6 +79,7 @@ function SlideCopy({ slide, heading }: { slide: HeroSlide; heading: boolean }) {
         ))}
       </TitleTag>
       <p className="hero-slide-body">{slide.body}</p>
+      {slide.accent ? <p className="hero-slide-accent">{slide.accent}</p> : null}
     </>
   );
 }
@@ -217,10 +207,6 @@ export default function HeroCarousel() {
       </div>
 
       <div className="hero-progress">
-        <p className="hero-progress-index" aria-live="polite">
-          <span>{String(index + 1).padStart(2, '0')}</span>
-          <span className="hero-progress-total"> / {String(slideCount).padStart(2, '0')}</span>
-        </p>
         <div
           className="hero-progress-tabs"
           role="tablist"

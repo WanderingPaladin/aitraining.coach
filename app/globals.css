@@ -89,6 +89,14 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   font-weight: 400;
   line-height: 1.6;
 }
+.hero-slide-accent {
+  margin: 12px 0 0;
+  max-width: 560px;
+  color: rgba(241, 245, 249, 0.9);
+  font-size: 15.5px;
+  font-weight: 500;
+  line-height: 1.5;
+}
 .hero-slide-exit {
   position: absolute;
   inset: 0 auto auto 0;
@@ -98,27 +106,13 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   animation: hero-slide-out 700ms var(--ease-elegant) both;
 }
 .hero-carousel .hero-slide-enter .hero-slide-title { animation: hero-slide-in 700ms var(--ease-elegant) both; }
-.hero-carousel .hero-slide-enter .hero-slide-body { animation: hero-slide-in 700ms var(--ease-elegant) 80ms both; }
+.hero-carousel .hero-slide-enter .hero-slide-body,
+.hero-carousel .hero-slide-enter .hero-slide-accent { animation: hero-slide-in 700ms var(--ease-elegant) 80ms both; }
 .hero-progress {
   display: flex;
   align-items: center;
-  gap: 16px;
   margin: 14px 0 0;
 }
-.hero-progress-index {
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  white-space: nowrap;
-}
-.hero-progress-total { color: rgba(255, 255, 255, 0.38); font-weight: 600; }
 .hero-progress-tabs { display: flex; align-items: center; gap: 8px; }
 .hero-progress-tabs button {
   appearance: none;
@@ -1000,7 +994,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 @media (max-width: 768px) {
   .hero h1, .hero-carousel h1, .hero-carousel .hero-slide-title { font-size: 44px; }
   .hero-copy h2 { font-size: 21px; }
-  .hero-slide-body { font-size: 14.5px; }
+  .hero-slide-body,
+  .hero-slide-accent { font-size: 14.5px; }
   .hero-progress-tabs { gap: 6px; }
   .section-heading h2 { font-size: 30px; }
   .audience-copy h3 { font-size: 25px; }
@@ -1010,7 +1005,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   .hero h1, .hero-carousel h1, .hero-carousel .hero-slide-title { font-size: 42px; }
   .hero-copy h2 { font-size: 19px; }
   body { font-size: 15px; }
-  .intro, .hero-slide-body { font-size: 14.5px; }
+  .intro, .hero-slide-body, .hero-slide-accent { font-size: 14.5px; }
   .section-heading h2 { font-size: 28px; }
 }
 
@@ -1062,7 +1057,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
     transform: none !important;
   }
   .hero-slide-enter .hero-slide-title,
-  .hero-slide-enter .hero-slide-body {
+  .hero-slide-enter .hero-slide-body,
+  .hero-slide-enter .hero-slide-accent {
     animation: hero-fade-in 400ms ease both !important;
     filter: none !important;
     transform: none !important;
