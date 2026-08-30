@@ -44,9 +44,9 @@ const processSteps: Array<{
 ];
 
 const testimonials = [
-  ['Priya S.', 'Bengaluru, India', '“AI Trainers gave me the clarity and confidence I needed to pursue AI training online. The feedback was incredibly helpful and supportive.”', 'PS'],
-  ['Daniel R.', 'Vancouver, Canada', '“The intro call was informative and encouraging. The guidance helped me refine my profile and land my first project within weeks.”', 'DR'],
-  ['Maria K.', 'Munich, Germany', '“I love the personalized approach. The coaches care about your growth and prepare you for real opportunities.”', 'MK'],
+  ['Priya S.', 'Austin, TX', '“AI Trainers gave me the clarity and confidence I needed to pursue AI training online. The feedback was incredibly helpful and supportive.”', 'PS'],
+  ['Daniel R.', 'Seattle, WA', '“The intro call was informative and encouraging. The guidance helped me refine my profile and land my first project within weeks.”', 'DR'],
+  ['Maria K.', 'Boston, MA', '“I love the personalized approach. The coaches care about your growth and prepare you for real opportunities.”', 'MK'],
 ];
 
 const faqs = [
