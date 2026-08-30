@@ -42,7 +42,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 .brand-mark i { left: 5px; background: linear-gradient(#10d9ef, #0c70ff); }
 .brand-mark b { right: 3px; background: linear-gradient(#095fff, #b52cff); transform: skew(20deg); }
 .site-header nav { display: flex; height: 100%; align-items: center; gap: 43px; font-size: 14px; font-weight: 500; line-height: 1; }
-.site-header nav a { display: inline-flex; align-items: center; position: relative; color: rgba(255,255,255,0.68); transition: color 400ms var(--ease-elegant), transform 400ms var(--ease-elegant), text-shadow 400ms var(--ease-elegant); }
+.site-header nav a { display: inline-flex; align-items: center; gap: 4px; position: relative; color: rgba(255,255,255,0.68); transition: color 400ms var(--ease-elegant), transform 400ms var(--ease-elegant), text-shadow 400ms var(--ease-elegant); }
+.site-header nav .nav-offpage-icon { flex: none; opacity: 0.72; }
 .site-header nav a::after { content: ''; position: absolute; left: 0; right: 0; bottom: -9px; height: 2px; border-radius: 999px; background: linear-gradient(90deg, #14C7E5 0%, #1687FF 45%, #7C3AED 100%); transform: scaleX(0); transform-origin: right; opacity: 0; pointer-events: none; transition: transform 420ms var(--ease-elegant), opacity 250ms ease; }
 .site-header nav a:hover, .site-header nav a:focus-visible { color: #FFFFFF; transform: translateY(-2px); text-shadow: 0 0 14px rgba(80,180,255,0.25); }
 .site-header nav a:hover::after, .site-header nav a:focus-visible::after { transform: scaleX(1); transform-origin: left; opacity: 1; }

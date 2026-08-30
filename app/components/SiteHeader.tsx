@@ -1,13 +1,14 @@
+import { ArrowUpRight } from 'lucide-react';
 import Brand from './Brand';
 
 export type NavCurrent = 'home' | 'how' | 'stories' | 'blog' | 'faq' | 'apply';
 
-const links: Array<{ id: NavCurrent; label: string; homeHref: string; href: string }> = [
+const links: Array<{ id: NavCurrent; label: string; homeHref: string; href: string; offPage?: boolean }> = [
   { id: 'home', label: 'Home', homeHref: '#top', href: '/' },
   { id: 'how', label: 'How It Works', homeHref: '#how', href: '/#how' },
-  { id: 'stories', label: 'Stories', homeHref: '/stories', href: '/stories' },
   { id: 'faq', label: 'FAQ', homeHref: '#faq', href: '/#faq' },
   { id: 'apply', label: 'Apply', homeHref: '#apply', href: '/#apply' },
+  { id: 'stories', label: 'Stories', homeHref: '/stories', href: '/stories', offPage: true },
 ];
 
 export default function SiteHeader({
@@ -28,6 +29,9 @@ export default function SiteHeader({
             href={home ? link.homeHref : link.href}
           >
             {link.label}
+            {link.offPage ? (
+              <ArrowUpRight className="nav-offpage-icon" size={13} strokeWidth={2.25} aria-hidden="true" />
+            ) : null}
           </a>
         ))}
       </nav>
