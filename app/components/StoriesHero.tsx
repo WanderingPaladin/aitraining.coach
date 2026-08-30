@@ -1,4 +1,5 @@
-import { ArrowRight, Phone } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import BookIntroCallButton from './BookIntroCallButton';
 
 const floatCards = [
   { quote: 'I had the account. I just didn’t know what to do next.', className: 'float-a' },
@@ -24,9 +25,7 @@ export default function StoriesHero() {
           </p>
           <p className="journal-reassure">You don’t need to have everything figured out before you talk to us.</p>
           <div className="hero-actions">
-            <a className="primary-button" href="/#apply">
-              Book a Free Intro Call <Phone className="btn-icon" size={16} strokeWidth={2} />
-            </a>
+            <BookIntroCallButton href="/#apply" />
             <a className="secondary-button" href="#stories">
               Explore the Stories <ArrowRight className="btn-icon" size={16} strokeWidth={2} />
             </a>

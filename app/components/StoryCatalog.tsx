@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { filterStories, hasUnverifiedStories, storyFilters, type StoryFilter } from '../../lib/stories';
+import BookIntroCallButton from './BookIntroCallButton';
 import StoryCard from './StoryCard';
 
 export default function StoryCatalog() {
@@ -48,7 +49,7 @@ export default function StoryCatalog() {
               <p>
                 Some people come to us with experience. Others come with nothing more than an eligible account and the willingness to learn. Both are valid starting points.
               </p>
-              <a className="primary-button" href="/#apply">Book a Free Intro Call</a>
+              <BookIntroCallButton href="/#apply" />
             </aside>
           )}
           {second.length > 0 && (

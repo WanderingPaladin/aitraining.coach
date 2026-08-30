@@ -14,7 +14,7 @@ export default function SiteFooter() {
           <a href="/">Home</a>
           <a href="/#how">How It Works</a>
           <a href="/#stories">Testimonials</a>
-          <a href="/#apply">Apply</a>
+          <a href="/#apply">Book a Free Intro Call</a>
         </div>
         <div>
           <h3>Resources</h3>

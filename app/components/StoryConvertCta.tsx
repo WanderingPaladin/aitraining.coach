@@ -1,4 +1,4 @@
-import { ArrowRight, Phone } from 'lucide-react';
+import BookIntroCallButton from './BookIntroCallButton';
 
 export default function StoryConvertCta() {
   return (
@@ -9,13 +9,9 @@ export default function StoryConvertCta() {
           You don’t need to solve everything before talking to us. Whether you’re starting from zero, waiting for projects, or struggling to gain momentum, we can help you understand what to work on next.
         </p>
         <div className="hero-actions">
-          <a className="primary-button" href="/#apply">
-            Book a Free Intro Call <Phone className="btn-icon" size={16} strokeWidth={2} />
-          </a>
-          <a className="secondary-button" href="/#apply">
-            Apply Now <ArrowRight className="btn-icon" size={16} strokeWidth={2} />
-          </a>
+          <BookIntroCallButton href="/#apply" />
         </div>
+        <p className="story-convert-note">Not sure where to start? That’s exactly what the intro call is for.</p>
         <p className="story-convert-note">Currently available to eligible U.S.-based participants.</p>
       </div>
     </section>

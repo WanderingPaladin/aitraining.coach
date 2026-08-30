@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Phone } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import BookIntroCallButton from '../../components/BookIntroCallButton';
 import SiteFooter from '../../components/SiteFooter';
 import SiteHeader from '../../components/SiteHeader';
 import StoryConvertCta from '../../components/StoryConvertCta';
@@ -119,9 +120,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
         <a className="secondary-button on-light" href="/stories">
           Explore more stories <ArrowRight className="btn-icon" size={16} strokeWidth={2} />
         </a>
-        <a className="primary-button" href="/#apply">
-          Book a Free Intro Call <Phone className="btn-icon" size={16} strokeWidth={2} />
-        </a>
+        <BookIntroCallButton href="/#apply" />
       </nav>
 
       <SiteFooter />

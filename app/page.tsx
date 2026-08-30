@@ -1,6 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  ArrowRight,
   BriefcaseBusiness,
   CalendarDays,
   ChevronRight,
@@ -16,7 +15,6 @@ import {
   Laptop,
   Minus,
   PenLine,
-  Phone,
   Plus,
   Rocket,
   Scale,
@@ -26,6 +24,7 @@ import {
   UsersRound,
 } from 'lucide-react';
 import ApplyBooking from './components/ApplyBooking';
+import BookIntroCallButton from './components/BookIntroCallButton';
 import FeatureIcon, { type FeatureIconVariant } from './components/FeatureIcon';
 import HeroCarousel from './components/HeroCarousel';
 import SiteFooter from './components/SiteFooter';
@@ -135,8 +134,8 @@ export default function Home() {
               </span>
             </div>
             <div className="hero-actions">
-              <a className="primary-button" href="#apply">Apply Now <ArrowRight className="btn-icon" size={18} strokeWidth={2} /></a>
-              <a className="secondary-button" href="#apply">Book a Free Intro Call <Phone className="btn-icon" size={16} strokeWidth={2} /></a>
+              <BookIntroCallButton className="primary-button hero-primary-cta" href="#apply" />
+              <p className="hero-cta-note">No experience required to start the conversation.</p>
             </div>
             <div className="social-proof">
               <div className="avatar-stack" aria-hidden="true"><img src="/people/priya.jpg" alt="" /><img src="/people/daniel.jpg" alt="" /><img src="/people/maria.jpg" alt="" /><img src="/people/noah.jpg" alt="" /></div>
@@ -275,7 +274,7 @@ export default function Home() {
           <FeatureIcon icon={BriefcaseBusiness} variant="cta" size={28} tileSize={60} className="cta-icon" />
           <div>
             <h2>Ready to Start Your Journey?</h2>
-            <p>Apply in a few minutes, then pick a free intro call. We’ll send a Google Meet invite to your inbox.</p>
+            <p>Not sure where to start? That’s exactly what the intro call is for. Share a few details, then pick a time — we’ll send a Google Meet invite to your inbox.</p>
           </div>
           <FeatureIcon icon={CircleCheckBig} variant="cta" size={28} tileSize={60} className="cta-icon" />
         </div>
