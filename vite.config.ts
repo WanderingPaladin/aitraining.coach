@@ -27,9 +27,9 @@ function bookingApiOrigin(): string {
     )
     .map((iface) => iface.address);
   if (publicIpv4[0]) {
-    return `http://${publicIpv4[0]}:5000`;
+    return `http://${publicIpv4[0]}:4000`;
   }
-  return 'http://[::1]:5000';
+  return 'http://[::1]:4000';
 }
 
 const localBindingConfig = {

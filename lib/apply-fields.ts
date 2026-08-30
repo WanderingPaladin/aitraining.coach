@@ -13,6 +13,50 @@ export const professions = [
 
 export type Profession = (typeof professions)[number];
 
+export const experienceYearOptions = [
+  { value: '0', label: 'New to AI training' },
+  { value: '1', label: '1' },
+  { value: '2', label: '2' },
+  { value: '3', label: '3' },
+  { value: '4', label: '3+' },
+] as const;
+
+export function isValidExperienceYears(value: string): boolean {
+  return experienceYearOptions.some((option) => option.value === value);
+}
+
+export const referralSources = [
+  { value: 'google', label: 'Google' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'reddit', label: 'Reddit' },
+  { value: 'friend', label: 'Friend or colleague' },
+  { value: 'ai_platform', label: 'AI training platform' },
+  { value: 'other', label: 'Other' },
+] as const;
+
+export function isValidReferralSource(value: string): boolean {
+  if (!value.trim()) {
+    return true;
+  }
+  return referralSources.some((source) => source.value === value);
+}
+
+export function resolveReferralSource(source: string, detail = ''): string | undefined {
+  const selected = source.trim();
+  if (!selected) {
+    return undefined;
+  }
+  if (selected === 'other') {
+    const extra = detail.trim().replace(/\s+/g, ' ').slice(0, 120);
+    return extra || 'Other';
+  }
+  return referralSources.find((option) => option.value === selected)?.label;
+}
+
 export const applicantStages = [
   'new_no_account',
   'has_accounts_no_time',
@@ -144,19 +188,110 @@ export const phoneCountries: PhoneCountry[] = [
   { iso: 'UA', name: 'Ukraine', dial: '380', lengths: [9] },
 ];
 
-const EMAIL_RE = /^[a-z0-9](?:[a-z0-9._%+-]*[a-z0-9])?@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+$/i;
 const CITY_RE = /^[A-Za-z][A-Za-z .'-]{1,78}[A-Za-z.]$|^[A-Za-z]{2,80}$/;
+
+const RESERVED_EMAIL_TLDS = new Set([
+  'example',
+  'invalid',
+  'local',
+  'localhost',
+  'test',
+  'internal',
+  'lan',
+]);
+
+const RESERVED_EMAIL_DOMAINS = new Set([
+  'example.com',
+  'example.net',
+  'example.org',
+  'test.com',
+  'invalid.com',
+]);
 
 export function digitsOnly(value: string): string {
   return value.replace(/\D/g, '');
 }
 
+export function sanitizePhoneInput(value: string): string {
+  return value.replace(/[^\d+\-()\s]/g, '').slice(0, 22);
+}
+
 export function isValidEmail(value: string): boolean {
   const email = value.trim().toLowerCase();
-  if (email.length < 6 || email.length > 254 || email.includes('..')) {
+  if (email.length < 6 || email.length > 254 || email.includes('..') || email.includes(' ')) {
     return false;
   }
-  return EMAIL_RE.test(email);
+  const at = email.indexOf('@');
+  if (at < 1 || at !== email.lastIndexOf('@')) {
+    return false;
+  }
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  if (local.length < 1 || local.length > 64 || domain.length < 4 || domain.length > 253) {
+    return false;
+  }
+  if (!/^[a-z0-9](?:[a-z0-9._%+-]{0,62}[a-z0-9])?$/.test(local) && !/^[a-z0-9]$/.test(local)) {
+    return false;
+  }
+  const labels = domain.split('.');
+  if (labels.length < 2) {
+    return false;
+  }
+  const tld = labels[labels.length - 1];
+  if (!tld || !/^[a-z]{2,63}$/.test(tld) || RESERVED_EMAIL_TLDS.has(tld)) {
+    return false;
+  }
+  if (
+    RESERVED_EMAIL_DOMAINS.has(domain) ||
+    [...RESERVED_EMAIL_DOMAINS].some((reserved) => domain.endsWith(`.${reserved}`))
+  ) {
+    return false;
+  }
+  return labels.slice(0, -1).every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label));
+}
+
+function isValidNanpNational(national: string): boolean {
+  if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(national)) {
+    return false;
+  }
+  const area = national.slice(0, 3);
+  const exchange = national.slice(3, 6);
+  const subscriber = national.slice(6);
+  if (area === '555' || (area[1] === '1' && area[2] === '1')) {
+    return false;
+  }
+  if (exchange[1] === '1' && exchange[2] === '1') {
+    return false;
+  }
+  if (exchange === '555' && subscriber.startsWith('01')) {
+    return false;
+  }
+  return new Set(national).size >= 3;
+}
+
+function isPlausibleNational(dial: string, national: string): boolean {
+  if (national.length < 6 || /^(\d)\1+$/.test(national)) {
+    return false;
+  }
+  if (national.length >= 8 && new Set(national).size < 3) {
+    return false;
+  }
+  if (dial === '1') {
+    return isValidNanpNational(national);
+  }
+  if (dial === '91') {
+    return /^[6-9]\d{9}$/.test(national);
+  }
+  if (dial === '44') {
+    return /^[1-9]\d{9}$/.test(national);
+  }
+  if (dial === '61') {
+    return /^[2-478]\d{8}$/.test(national);
+  }
+  if (dial === '33' || dial === '34' || dial === '39' || dial === '49') {
+    return /^[1-9]\d+$/.test(national);
+  }
+  return true;
 }
 
 export function isValidCity(value: string): boolean {
@@ -197,7 +332,10 @@ export function normalizeNationalNumber(iso: string, national: string): string {
     return digits;
   }
   if (digits.startsWith(country.dial) && country.lengths.includes(digits.length - country.dial.length)) {
-    return digits.slice(country.dial.length);
+    digits = digits.slice(country.dial.length);
+  }
+  if (digits.startsWith('0') && country.lengths.includes(digits.length - 1)) {
+    digits = digits.slice(1);
   }
   return digits;
 }
@@ -206,15 +344,15 @@ export function isValidNationalNumber(iso: string, national: string): boolean {
   const country = findPhoneCountry(iso);
   const digits = normalizeNationalNumber(iso, national);
   if (!country) {
-    return digits.length >= 6 && digits.length <= 15;
+    return false;
   }
-  return country.lengths.includes(digits.length);
+  return country.lengths.includes(digits.length) && isPlausibleNational(country.dial, digits);
 }
 
 export function toE164(iso: string, national: string): string | null {
   const country = findPhoneCountry(iso);
   const digits = normalizeNationalNumber(iso, national);
-  if (!country || !country.lengths.includes(digits.length)) {
+  if (!country || !country.lengths.includes(digits.length) || !isPlausibleNational(country.dial, digits)) {
     return null;
   }
   return `+${country.dial}${digits}`;
@@ -230,6 +368,7 @@ export type ApplyFieldErrors = Partial<{
   profession: string;
   yearsOfExperience: string;
   applicant_stage: string;
+  referral_source: string;
 }>;
 
 export function validateApplyFields(input: {
@@ -243,6 +382,8 @@ export function validateApplyFields(input: {
   profession: string;
   yearsOfExperience: string;
   applicant_stage: string;
+  referral_source?: string;
+  referral_source_detail?: string;
 }): ApplyFieldErrors {
   const errors: ApplyFieldErrors = {};
 
@@ -257,14 +398,14 @@ export function validateApplyFields(input: {
     errors.lastName = 'Enter your last name.';
   }
   if (!isValidEmail(input.email)) {
-    errors.email = 'Enter a valid email address.';
+    errors.email = 'Enter a valid email address, like you@company.com.';
   }
 
   if (!toE164(input.phoneCountry, input.phone)) {
     const country = findPhoneCountry(input.phoneCountry);
     const expected = country?.lengths.join(' or ');
     errors.phone = expected
-      ? `Enter a valid ${expected}-digit phone number for the selected country.`
+      ? `Enter a real ${expected}-digit phone number for the selected country.`
       : 'Enter a valid phone number.';
   }
 
@@ -280,8 +421,15 @@ export function validateApplyFields(input: {
     errors.profession = 'Select a profession.';
   }
 
-  if (input.yearsOfExperience === '' || Number.isNaN(Number(input.yearsOfExperience))) {
-    errors.yearsOfExperience = 'Select years of experience.';
+  if (!isValidExperienceYears(input.yearsOfExperience)) {
+    errors.yearsOfExperience = 'Select years of AI training.';
+  }
+
+  if (!isValidReferralSource(input.referral_source ?? '')) {
+    errors.referral_source = 'Select where you found us, or leave this blank.';
+  }
+  if ((input.referral_source_detail ?? '').trim().length > 120) {
+    errors.referral_source = 'Keep this under 120 characters.';
   }
 
   return errors;

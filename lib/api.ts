@@ -1,7 +1,7 @@
 import type { ApplicantStage } from './apply-fields';
 
 function apiBaseUrl(): string {
-  // Same origin as the site (:3000). Vite/vinext proxies /v1 to the API on :5000.
+  // Same origin as the site (:3000). Vite/vinext proxies /v1 to the API on :4000.
   return '';
 }
 
@@ -48,6 +48,7 @@ export type CreateApplicationInput = {
   ipAddress?: string;
   ipLocation?: string;
   applicant_stage: ApplicantStage;
+  referral_source?: string;
 };
 
 export class ApiError extends Error {

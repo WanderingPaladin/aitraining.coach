@@ -14,18 +14,21 @@ import {
 import {
   findPhoneCountry,
   findPhoneCountryByName,
+  experienceYearOptions,
+  isValidApplicantStage,
+  isValidEmail,
   phoneCountries,
   professions,
+  referralSources,
+  resolveReferralSource,
+  sanitizePhoneInput,
   toE164,
   usStates,
   validateApplyFields,
-  isValidApplicantStage,
   type ApplicantStage,
   type ApplyFieldErrors,
 } from '../../lib/apply-fields';
 import ApplicantStageSelector from './ApplicantStageSelector';
-
-const yearOptions = Array.from({ length: 21 }, (_, years) => years);
 
 type IpGeo = {
   ip: string;
@@ -153,6 +156,8 @@ type FormState = {
   yearsOfExperience: string;
   timezone: string;
   applicant_stage: ApplicantStage | '';
+  referral_source: string;
+  referral_source_detail: string;
 };
 
 const initialForm = (timezone: string): FormState => ({
@@ -167,6 +172,8 @@ const initialForm = (timezone: string): FormState => ({
   yearsOfExperience: '',
   timezone,
   applicant_stage: '',
+  referral_source: '',
+  referral_source_detail: '',
 });
 
 export default function ApplyBooking() {
@@ -207,17 +214,77 @@ export default function ApplyBooking() {
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
-    if (key === 'phoneCountry' || key in fieldErrors || ['firstName', 'lastName', 'email', 'phone', 'city', 'state', 'profession', 'yearsOfExperience', 'applicant_stage'].includes(key)) {
-      const field = key === 'phoneCountry' ? 'phone' : (key as keyof ApplyFieldErrors);
-      setFieldErrors((current) => {
-        if (!current[field]) {
-          return current;
-        }
-        const next = { ...current };
-        delete next[field];
-        return next;
-      });
+    const field: keyof ApplyFieldErrors | undefined =
+      key === 'phoneCountry'
+        ? 'phone'
+        : key === 'referral_source_detail'
+          ? 'referral_source'
+          : key === 'firstName' ||
+              key === 'lastName' ||
+              key === 'email' ||
+              key === 'phone' ||
+              key === 'city' ||
+              key === 'state' ||
+              key === 'profession' ||
+              key === 'yearsOfExperience' ||
+              key === 'applicant_stage' ||
+              key === 'referral_source'
+            ? key
+            : undefined;
+    if (!field) {
+      return;
     }
+    setFieldErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function validateContactField(field: 'email' | 'phone', current = form) {
+    if (field === 'email') {
+      const email = current.email.trim();
+      if (!email) {
+        return;
+      }
+      setFieldErrors((errors) => {
+        if (isValidEmail(email)) {
+          if (!errors.email) {
+            return errors;
+          }
+          const next = { ...errors };
+          delete next.email;
+          return next;
+        }
+        return { ...errors, email: 'Enter a valid email address, like you@company.com.' };
+      });
+      return;
+    }
+
+    if (!current.phone.trim()) {
+      return;
+    }
+    setFieldErrors((errors) => {
+      if (toE164(current.phoneCountry, current.phone)) {
+        if (!errors.phone) {
+          return errors;
+        }
+        const next = { ...errors };
+        delete next.phone;
+        return next;
+      }
+      const country = findPhoneCountry(current.phoneCountry);
+      const expected = country?.lengths.join(' or ');
+      return {
+        ...errors,
+        phone: expected
+          ? `Enter a real ${expected}-digit phone number for the selected country.`
+          : 'Enter a valid phone number.',
+      };
+    });
   }
 
   async function loadSlots(timezone: string) {
@@ -250,6 +317,8 @@ export default function ApplyBooking() {
       profession: form.profession,
       yearsOfExperience: form.yearsOfExperience,
       applicant_stage: form.applicant_stage,
+      referral_source: form.referral_source,
+      referral_source_detail: form.referral_source_detail,
     });
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
@@ -292,6 +361,7 @@ export default function ApplyBooking() {
         yearsOfExperience: Number(form.yearsOfExperience),
         timezone: form.timezone,
         applicant_stage: form.applicant_stage,
+        referral_source: resolveReferralSource(form.referral_source, form.referral_source_detail),
         ipAddress: geo?.ip,
         ipLocation: geo?.label,
       });
@@ -399,10 +469,13 @@ export default function ApplyBooking() {
                 autoComplete="email"
                 required
                 inputMode="email"
+                spellCheck={false}
+                maxLength={254}
                 className={fieldErrors.email ? 'apply-invalid' : undefined}
                 aria-invalid={Boolean(fieldErrors.email)}
                 value={form.email}
                 onChange={(event) => update('email', event.target.value)}
+                onBlur={() => validateContactField('email')}
               />
               {fieldErrors.email && <span className="apply-field-error">{fieldErrors.email}</span>}
             </label>
@@ -414,7 +487,11 @@ export default function ApplyBooking() {
                   aria-label="Country code"
                   className={fieldErrors.phone ? 'apply-invalid' : undefined}
                   value={form.phoneCountry}
-                  onChange={(event) => update('phoneCountry', event.target.value)}
+                  onChange={(event) => {
+                    const phoneCountry = event.target.value;
+                    update('phoneCountry', phoneCountry);
+                    validateContactField('phone', { ...form, phoneCountry });
+                  }}
                 >
                   {phoneCountries.map((country) => (
                     <option key={country.iso} value={country.iso}>
@@ -428,11 +505,13 @@ export default function ApplyBooking() {
                   autoComplete="tel-national"
                   inputMode="tel"
                   required
+                  maxLength={22}
                   className={fieldErrors.phone ? 'apply-invalid' : undefined}
                   aria-invalid={Boolean(fieldErrors.phone)}
-                  placeholder={selectedPhoneCountry.lengths[0] === 10 ? '555 123 4567' : 'Phone number'}
+                  placeholder={selectedPhoneCountry.lengths[0] === 10 ? '202 555 1234' : 'Phone number'}
                   value={form.phone}
-                  onChange={(event) => update('phone', event.target.value)}
+                  onChange={(event) => update('phone', sanitizePhoneInput(event.target.value))}
+                  onBlur={() => validateContactField('phone')}
                 />
               </div>
               {fieldErrors.phone && <span className="apply-field-error">{fieldErrors.phone}</span>}
@@ -495,7 +574,7 @@ export default function ApplyBooking() {
               {fieldErrors.profession && <span className="apply-field-error">{fieldErrors.profession}</span>}
             </label>
             <label>
-              Years of experience in AI training
+              Years of AI training
               <select
                 name="yearsOfExperience"
                 required
@@ -507,14 +586,49 @@ export default function ApplyBooking() {
                 <option value="" disabled>
                   Select years
                 </option>
-                {yearOptions.map((years) => (
-                  <option key={years} value={years}>
-                    {years === 0 ? 'None yet' : years === 20 ? '20+' : `${years}`}
+                {experienceYearOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>
               {fieldErrors.yearsOfExperience && (
                 <span className="apply-field-error">{fieldErrors.yearsOfExperience}</span>
+              )}
+            </label>
+            <label className="apply-span-2">
+              Where did you find us? <span>(optional)</span>
+              <select
+                name="referral_source"
+                className={fieldErrors.referral_source ? 'apply-invalid' : undefined}
+                aria-invalid={Boolean(fieldErrors.referral_source)}
+                value={form.referral_source}
+                onChange={(event) => {
+                  update('referral_source', event.target.value);
+                  if (event.target.value !== 'other') {
+                    update('referral_source_detail', '');
+                  }
+                }}
+              >
+                <option value="">Select one</option>
+                {referralSources.map((source) => (
+                  <option key={source.value} value={source.value}>
+                    {source.label}
+                  </option>
+                ))}
+              </select>
+              {form.referral_source === 'other' ? (
+                <input
+                  name="referral_source_detail"
+                  maxLength={120}
+                  placeholder="Tell us a bit more"
+                  className={fieldErrors.referral_source ? 'apply-invalid' : undefined}
+                  value={form.referral_source_detail}
+                  onChange={(event) => update('referral_source_detail', event.target.value)}
+                />
+              ) : null}
+              {fieldErrors.referral_source && (
+                <span className="apply-field-error">{fieldErrors.referral_source}</span>
               )}
             </label>
           </div>
