@@ -6,3 +6,15 @@
   NODE_VERSION = "22"
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
   NITRO_PRESET = "netlify"
+
+[[redirects]]
+  from = "/v1/*"
+  to = "https://api.aitrainers.coach/v1/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/health"
+  to = "https://api.aitrainers.coach/health"
+  status = 200
+  force = true

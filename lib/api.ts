@@ -1,7 +1,8 @@
 import type { ApplicantStage } from './apply-fields';
 
 function apiBaseUrl(): string {
-  // Same origin as the site (:3000). Vite/vinext proxies /v1 to the API on :4000.
+  // Same origin as the site. Dev: Vite proxies /v1 to http://127.0.0.1:4000.
+  // Production: Netlify proxies /v1 to https://api.aitrainers.coach.
   return '';
 }
 

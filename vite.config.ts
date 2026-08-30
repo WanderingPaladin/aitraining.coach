@@ -1,4 +1,3 @@
-import { networkInterfaces } from 'node:os';
 import { sites } from '@openai/sites-vite-plugin';
 import tailwindcss from '@tailwindcss/postcss';
 import { nitro } from 'nitro/vite';
@@ -20,16 +19,7 @@ function bookingApiOrigin(): string {
   if (process.env.BOOKING_API_ORIGIN) {
     return process.env.BOOKING_API_ORIGIN;
   }
-  const publicIpv4 = Object.values(networkInterfaces())
-    .flat()
-    .filter((iface): iface is NonNullable<typeof iface> =>
-      Boolean(iface && !iface.internal && iface.family === 'IPv4'),
-    )
-    .map((iface) => iface.address);
-  if (publicIpv4[0]) {
-    return `http://${publicIpv4[0]}:4000`;
-  }
-  return 'http://[::1]:4000';
+  return 'http://127.0.0.1:4000';
 }
 
 const localBindingConfig = {
