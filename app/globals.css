@@ -181,8 +181,10 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 }
 .hero-copy h2 { margin: 18px 0 22px; font-size: 24px; font-weight: 500; line-height: 1.3; letter-spacing: -0.02em; animation: hero-enter 600ms var(--ease-elegant) 80ms both; }
 .intro { color: #d6def4; max-width: 540px; font-size: 16px; font-weight: 400; line-height: 1.6; animation: hero-enter 600ms var(--ease-elegant) 80ms both; }
-.benefit-chips { display: flex; gap: 12px; margin: 24px 0; }
+.hero-benefit-rail { margin: 24px 0 0; }
+.benefit-chips { display: flex; gap: 12px; margin: 0 0 24px; }
 .benefit-chips > span { flex: 1; min-width: 0; padding: 12px 11px; display: flex; align-items: center; gap: 9px; font-size: 12.5px; font-weight: 600; line-height: 1.25; border: 1px solid rgba(51, 117, 255, .75); border-radius: 8px; background: rgba(7, 18, 58, .72); cursor: default; }
+.benefit-rail-indicators { display: none; }
 .hero-actions { display: flex; gap: 16px; margin: 25px 0 27px; animation: hero-enter 600ms var(--ease-elegant) 160ms both; }
 .hero-copy .hero-actions { flex-direction: column; align-items: flex-start; gap: 10px; }
 .hero-primary-cta { width: fit-content; min-height: 56px; padding: 16px 28px; gap: 10px; }
@@ -1264,10 +1266,116 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   .platform-card { height: 48px; }
 }
 
+@media (max-width: 767px) {
+  .hero-benefit-rail {
+    margin: 16px 0 8px;
+    min-width: 0;
+  }
+  .benefit-chips {
+    display: flex;
+    gap: 10px;
+    margin: 0;
+    padding-right: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .benefit-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .benefit-chips > span {
+    flex: 0 0 auto;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    width: min(84vw, 340px, calc(100% - 32px));
+    min-width: 0;
+    max-width: 340px;
+    min-height: 68px;
+    padding: 11px 13px;
+    border-radius: 12px;
+    background: rgba(12, 27, 66, 0.78);
+    border: 1px solid rgba(100, 150, 255, 0.18);
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: left;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    box-shadow: none;
+    cursor: default;
+  }
+  .benefit-chip-copy {
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: left;
+  }
+  .benefit-chips > span .feature-icon {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 9px !important;
+    flex-shrink: 0;
+  }
+  .benefit-rail-indicators {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 0 0;
+    min-height: 22px;
+  }
+  .benefit-rail-indicators button {
+    appearance: none;
+    position: relative;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  .benefit-rail-indicators button::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    width: 6px;
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.20);
+    transform: translateY(-50%);
+    transition: width 250ms ease, background 250ms ease;
+  }
+  .benefit-rail-indicators button.is-active {
+    width: 28px;
+  }
+  .benefit-rail-indicators button.is-active::after {
+    width: 18px;
+    background: linear-gradient(90deg, #14C7E5, #7C3AED);
+  }
+  .benefit-rail-indicators button:focus-visible {
+    outline: 2px solid #60A5FA;
+    outline-offset: 2px;
+    border-radius: 999px;
+  }
+}
+
+@media (max-width: 320px) {
+  .benefit-chips > span {
+    width: min(88vw, calc(100% - 28px));
+  }
+}
+
 @media (max-width: 600px) {
   .shell { width: min(100% - 30px, 1180px); }
   .site-header { height: 70px; }.brand { font-size: 17px; }.mini-cta { padding: 9px 12px; }
-  .benefit-chips { overflow-x: auto; padding-bottom: 4px; }.benefit-chips > span { min-width: 170px; }
   .hero-actions { flex-direction: column; align-items: stretch; }.hero-copy .hero-primary-cta { width: 100%; }.primary-button, .secondary-button { width: 100%; }
   .social-proof { align-items: flex-start; flex-direction: column; }
   .product-stage { height: auto; margin-bottom: 10px; }
@@ -1351,6 +1459,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .benefit-chips { scroll-behavior: auto; }
   .hero h1, .hero-copy h2, .intro, .hero-actions, .payroll-stage, .platform-dock, .hero-carousel {
     animation: none !important;
   }

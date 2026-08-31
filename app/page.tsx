@@ -26,6 +26,7 @@ import {
 import ApplyBooking from './components/ApplyBooking';
 import BookIntroCallButton from './components/BookIntroCallButton';
 import FeatureIcon, { type FeatureIconVariant } from './components/FeatureIcon';
+import HeroBenefitRail from './components/HeroBenefitRail';
 import HeroCarousel from './components/HeroCarousel';
 import SiteFooter from './components/SiteFooter';
 import SiteHeader from './components/SiteHeader';
@@ -119,20 +120,7 @@ export default function Home() {
         <div className="hero-grid shell">
           <div className="hero-copy">
             <HeroCarousel />
-            <div className="benefit-chips">
-              <span>
-                <FeatureIcon icon={ShieldCheck} variant="dark" size={22} tileSize={36} iconClassName="text-[#14C7E5]" />
-                No prior AI training<br />experience needed
-              </span>
-              <span>
-                <FeatureIcon icon={GraduationCap} variant="dark" size={22} tileSize={36} iconClassName="text-[#1687FF]" />
-                Step-by-step<br />expert coaching
-              </span>
-              <span>
-                <FeatureIcon icon={TrendingUp} variant="dark" size={22} tileSize={36} iconClassName="text-[#A855F7]" />
-                Build a clearer<br />path forward
-              </span>
-            </div>
+            <HeroBenefitRail />
             <div className="hero-actions">
               <BookIntroCallButton className="primary-button hero-primary-cta" href="#apply" />
               <p className="hero-cta-note">No experience required to start the conversation.</p>
