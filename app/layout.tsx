@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Manrope } from 'next/font/google';
+import { siteIcons } from '../lib/siteIcons';
 import './globals.css';
 
 const manrope = Manrope({
@@ -11,16 +12,7 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: 'AI Trainers — Become an AI Training Expert',
   description: 'Coaching, guidance, and real opportunities for people building careers as AI trainers.',
-  icons: {
-    icon: [
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon.ico' },
-    ],
-    apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
-  },
+  icons: siteIcons,
   openGraph: {
     title: 'Become an AI Training Expert',
     description: 'Coaching, guidance, and real opportunities.',
@@ -41,6 +33,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={manrope.variable}>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+      </head>
       <body>{children}</body>
     </html>
   );

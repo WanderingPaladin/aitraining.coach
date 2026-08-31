@@ -5,12 +5,14 @@ import SiteHeader from '../components/SiteHeader';
 import StoriesHero from '../components/StoriesHero';
 import StoryCatalog from '../components/StoryCatalog';
 import StoryConvertCta from '../components/StoryConvertCta';
+import { siteIcons } from '../../lib/siteIcons';
 import { getFeaturedStory } from '../../lib/stories';
 
 export const metadata: Metadata = {
   title: 'Success Stories — AI Trainers',
   description:
     'Coaching journeys about starting from zero, waiting for projects, struggling with assessments, and building confidence in AI training.',
+  icons: siteIcons,
 };
 
 export default function SuccessStoriesPage() {

@@ -6,6 +6,7 @@ import SiteFooter from '../../components/SiteFooter';
 import SiteHeader from '../../components/SiteHeader';
 import StoryConvertCta from '../../components/StoryConvertCta';
 import StoryIdentityMark from '../../components/StoryIdentityMark';
+import { siteIcons } from '../../../lib/siteIcons';
 import { getStory, ILLUSTRATIVE_DISCLOSURE, stories } from '../../../lib/stories';
 
 type StoryPageProps = {
@@ -20,11 +21,12 @@ export async function generateMetadata({ params }: StoryPageProps): Promise<Meta
   const { slug } = await params;
   const story = getStory(slug);
   if (!story) {
-    return { title: 'Story — AI Trainers' };
+    return { title: 'Story — AI Trainers', icons: siteIcons };
   }
   return {
     title: `${story.title} — AI Trainers`,
     description: story.preview,
+    icons: siteIcons,
   };
 }
 
