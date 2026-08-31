@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowRight,
   CalendarDays,
@@ -9,7 +9,7 @@ import {
   ClipboardCheck,
   Clock,
   Gift,
-  Globe,
+  Globe2,
   Mail,
   MapPin,
   RotateCcw,
@@ -43,6 +43,7 @@ import {
   type ApplyFieldErrors,
 } from '../../lib/apply-fields';
 import ApplicantStageSelector from './ApplicantStageSelector';
+import BookingScheduler from './BookingScheduler';
 
 type IpGeo = {
   ip: string;
@@ -136,39 +137,6 @@ async function lookupIpLocation(): Promise<IpGeo | null> {
   }
 
   return null;
-}
-
-function groupSlotsByDay(slots: TimeSlot[]): Array<[string, TimeSlot[]]> {
-  const groups = new Map<string, TimeSlot[]>();
-  for (const slot of slots) {
-    const day = slot.local.startsAt?.slice(0, 10) ?? slot.startsAt.slice(0, 10);
-    const list = groups.get(day) ?? [];
-    list.push(slot);
-    groups.set(day, list);
-  }
-  return [...groups.entries()];
-}
-
-function formatDayHeading(slot: TimeSlot): string {
-  return new Intl.DateTimeFormat('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    timeZone: slot.local.timezone,
-  }).format(new Date(slot.startsAt));
-}
-
-function formatSlotTime(slot: TimeSlot): string {
-  return new Intl.DateTimeFormat('en-US', {
-    timeStyle: 'short',
-    timeZone: slot.local.timezone,
-  }).format(new Date(slot.startsAt));
-}
-
-function formatSlotSummary(slot: TimeSlot): string {
-  const date = formatDayHeading(slot);
-  const time = formatSlotTime(slot);
-  return `${date} at ${time}`;
 }
 
 function formatBookingWhen(startsAt: string, timezone: string): string {
@@ -482,7 +450,7 @@ export default function ApplyBooking() {
       setStep('done');
     } catch (err) {
       if (err instanceof ApiError && err.code === 'SLOT_UNAVAILABLE') {
-        setError('That time was just taken. Pick another slot.');
+        setError('That time was just booked by someone else. Please choose another available time.');
         await loadSlots(form.timezone);
         setSelectedSlot('');
       } else {
@@ -514,11 +482,6 @@ export default function ApplyBooking() {
     }
   }
 
-  const groupedSlots = useMemo(() => groupSlotsByDay(slots), [slots]);
-  const chosenSlot = useMemo(
-    () => slots.find((slot) => slot.startsAt === selectedSlot) ?? null,
-    [slots, selectedSlot],
-  );
   const selectedPhoneCountry = findPhoneCountry(form.phoneCountry) ?? phoneCountries[0];
 
   return (
@@ -811,7 +774,9 @@ export default function ApplyBooking() {
           <div className="apply-book-head">
             <h3>Book Your Free Intro Call</h3>
             <p>
-              We already have your application details. Just choose a time that works best for you.
+              We already have your application details.
+              <br />
+              Just choose a time that works best for you.
             </p>
           </div>
 
@@ -835,73 +800,80 @@ export default function ApplyBooking() {
           </ul>
 
           <p className="apply-book-timezone">
-            <Globe size={14} strokeWidth={2} aria-hidden="true" />
-            Times shown in <strong>{formatTimezoneLabel(form.timezone)}</strong>
+            <Globe2 size={14} strokeWidth={2} aria-hidden="true" />
+            Times shown in: <strong>{formatTimezoneLabel(form.timezone)}</strong>
           </p>
 
-          {loadingSlots && <p className="apply-muted">Loading open times…</p>}
+          <div className="apply-book-layout">
+            <aside className="apply-book-sidebar">
+              <div className="apply-book-expect">
+                <h4>What to expect in this call</h4>
+                <ul>
+                  <li>
+                    <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    A focused 30-minute conversation
+                  </li>
+                  <li>
+                    <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    Understand your background and goals
+                  </li>
+                  <li>
+                    <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    Discuss where AI training could fit
+                  </li>
+                  <li>
+                    <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    Clarify your next steps
+                  </li>
+                  <li>
+                    <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    Answer your questions
+                  </li>
+                </ul>
+              </div>
+              <div className="apply-book-received">
+                <h4>Application received</h4>
+                <p>
+                  <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                  We already have your information. No extra form needed.
+                </p>
+              </div>
+            </aside>
 
-          {!loadingSlots && groupedSlots.length === 0 && (
-            <p className="apply-muted">
-              No intro-call times are open right now. Check back soon, or email us and we’ll find a slot.
-            </p>
-          )}
+            <div className="apply-book-scheduler">
+              {loadingSlots && <p className="apply-muted">Loading open times…</p>}
 
-          <div className="slot-groups">
-            {groupedSlots.map(([day, daySlots]) => (
-              <section key={day} className="slot-day">
-                <h4>{daySlots[0] ? formatDayHeading(daySlots[0]) : day}</h4>
-                <div className="slot-grid">
-                  {daySlots.map((slot) => {
-                    const selected = selectedSlot === slot.startsAt;
-                    return (
-                      <label key={slot.startsAt} className={selected ? 'selected' : ''}>
-                        <input
-                          type="radio"
-                          name="slot"
-                          value={slot.startsAt}
-                          checked={selected}
-                          onChange={() => setSelectedSlot(slot.startsAt)}
-                        />
-                        {formatSlotTime(slot)}
-                      </label>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </div>
+              {!loadingSlots && slots.length === 0 && (
+                <p className="apply-muted">
+                  No intro-call times are open right now. Check back soon, or email us and we’ll find a
+                  slot.
+                </p>
+              )}
 
-          {chosenSlot && (
-            <p className="apply-book-selected">
-              Selected: <strong>{formatSlotSummary(chosenSlot)}</strong>
-            </p>
-          )}
+              {!loadingSlots && slots.length > 0 && (
+                <BookingScheduler
+                  slots={slots}
+                  timezone={form.timezone}
+                  selectedSlot={selectedSlot}
+                  onSelectSlot={setSelectedSlot}
+                />
+              )}
 
-          <aside className="apply-book-expect">
-            <h4>What to expect in this call</h4>
-            <ul>
-              <li>A focused 30-minute conversation about your background and goals</li>
-              <li>How AI training work could fit the experience you already have</li>
-              <li>Clear next steps if you’re a good match for coaching</li>
-            </ul>
-          </aside>
-
-          <div className="apply-book-actions">
-            <button
-              className="apply-secondary"
-              type="button"
-              onClick={() => {
-                setStep('apply');
-                setError(null);
-              }}
-            >
-              Back to application
-            </button>
-            <button className="apply-submit" type="submit" disabled={submitting || !selectedSlot}>
-              {submitting ? 'Booking…' : selectedSlot ? 'Confirm Booking' : 'Choose a time'}
-              <CalendarDays className="btn-icon" size={16} strokeWidth={2} />
-            </button>
+              <button className="apply-book-confirm" type="submit" disabled={submitting || !selectedSlot}>
+                {submitting ? 'Booking…' : 'Confirm Booking'}
+                <ArrowRight className="btn-icon" size={16} strokeWidth={2} />
+              </button>
+              <button
+                className="apply-secondary"
+                type="button"
+                onClick={() => {
+                  setStep('apply');
+                  setError(null);
+                }}
+              >
+                Back to application
+              </button>
+            </div>
           </div>
         </form>
       )}
