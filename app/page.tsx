@@ -7,6 +7,7 @@ import {
   CircleCheckBig,
   ClipboardCheck,
   Code2,
+  ExternalLink,
   FileText,
   FlaskConical,
   GraduationCap,
@@ -82,10 +83,12 @@ function PayrollPreview() {
       <div className="orbit orbit-two" />
       <div className="payroll-visual-group">
         <div className="payroll-stage">
-          <div className="dashboard">
-            <img src="/brands/payroll-overview.png" alt="Snorkel payroll overview dashboard" />
+          <div className="payroll-visual">
+            <div className="dashboard">
+              <img src="/brands/payroll-overview.png" alt="Snorkel payroll overview dashboard" />
+            </div>
+            <img className="mascot" src="/brands/snorkel-icon.png" alt="" />
           </div>
-          <img className="mascot" src="/brands/snorkel-icon.png" alt="" />
         </div>
         <div className="platform-dock">
           <p className="platform-dock-label">Explore AI Training Platforms</p>
@@ -97,10 +100,13 @@ function PayrollPreview() {
                 href={platform.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={platform.name}
+                aria-label={`${platform.name} (opens in a new tab)`}
                 title={platform.name}
+                data-platform={platform.name}
               >
                 <img src={platform.src} alt="" />
+                <span className="platform-card-name">{platform.name}</span>
+                <ExternalLink className="platform-card-link-icon" size={12} strokeWidth={2} aria-hidden="true" />
               </a>
             ))}
           </div>

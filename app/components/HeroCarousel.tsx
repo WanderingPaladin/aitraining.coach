@@ -64,8 +64,7 @@ function SlideCopy({ slide, heading }: { slide: HeroSlide; heading: boolean }) {
     <>
       <TitleTag className="hero-slide-title">
         {slide.headlineLines.map((line, lineIndex) => (
-          <span key={lineIndex}>
-            {lineIndex > 0 ? <br /> : null}
+          <span className="hero-title-line" key={lineIndex}>
             {line.map((part, partIndex) =>
               part.highlight ? (
                 <span key={partIndex} className="hero-hl">
