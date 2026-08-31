@@ -46,9 +46,11 @@ export type Story = {
   quote: string;
   preview: string;
   identity: StoryIdentity;
+  name: string;
+  location: string;
+  status: string;
   verified: boolean;
   featured?: boolean;
-  name?: string;
   photo?: string;
   results?: string;
   sections: StorySections;
@@ -56,18 +58,16 @@ export type Story = {
 };
 
 export const ILLUSTRATIVE_DISCLOSURE =
-  'Illustrative coaching journeys based on common challenges faced by new AI trainers.';
-
-export const YOAN_FULL_NAME = 'Yoan Felipe Rada Alvis';
+  'Illustrative stories based on common coaching experiences. Names and identifying details may be changed or created to protect privacy.';
 
 export const storyFilters = ['All Stories', ...STORY_CATEGORIES] as const;
 
 export type StoryFilter = (typeof storyFilters)[number];
 
-const yoanNote = (quote: string): FounderNote => ({
+const coachNote = (quote: string): FounderNote => ({
   quote,
-  author: YOAN_FULL_NAME,
-  role: 'AI Trainers',
+  author: 'AI Trainers Coaching Team',
+  role: 'Coach’s Note',
 });
 
 export const stories: Story[] = [
@@ -79,7 +79,10 @@ export const stories: Story[] = [
       'Creating the account felt like an achievement — until I realized I had no idea what came next.',
     preview:
       'The login was easy. Understanding what a strong AI trainer was supposed to do was not. Coaching turned the mystery into a process.',
-    identity: { label: 'New AI Trainer', initials: 'NT', kind: 'newcomer' },
+    name: 'Emily Carter',
+    location: 'Austin, TX',
+    status: 'New to AI Training',
+    identity: { label: 'New to AI Training', initials: 'EC', kind: 'newcomer' },
     verified: false,
     sections: {
       before: [
@@ -92,7 +95,7 @@ export const stories: Story[] = [
       ],
       turningPoint: [
         'What changed for me was having someone actually break the work down.',
-        'Instead of telling me to “just practice,” Yoan and the AI Trainers coaches helped me understand how to read tasks, identify what was really being evaluated, slow down when necessary, and review my own work before submitting anything.',
+        'Instead of telling me to “just practice,” my coach helped me understand how to read tasks, identify what was really being evaluated, slow down when necessary, and review my own work before submitting anything.',
       ],
       workedOn: [
         'Reading tasks and identifying what was actually being evaluated',
@@ -106,11 +109,11 @@ export const stories: Story[] = [
         'I went from being afraid to touch anything to actually understanding why one answer was stronger than another.',
       ],
       thankYou:
-        'Thank you to Yoan and the AI Trainers coaching team for making something that initially felt overwhelming feel learnable.',
+        'I’m grateful to the AI Trainers coaching team for making something that initially felt overwhelming feel learnable.',
       takeaway:
         'You don’t need to know everything before you begin. Sometimes you need someone to show you what good work actually looks like.',
     },
-    founderNote: yoanNote(
+    founderNote: coachNote(
       'The hardest part for many newcomers isn’t ability — it’s knowing what to focus on first. Once there is a clear process, the work often becomes much less intimidating.',
     ),
   },
@@ -122,7 +125,10 @@ export const stories: Story[] = [
       'No projects felt like rejection. I eventually learned that waiting and failing are not the same thing.',
     preview:
       'Refreshing an empty dashboard started to feel personal. Coaching helped turn waiting time into preparation instead of a reason to stop.',
-    identity: { label: 'Anonymous Coaching Journey', initials: 'AC', kind: 'anonymous' },
+    name: 'Marcus Reed',
+    location: 'Atlanta, GA',
+    status: 'Waiting for Projects',
+    identity: { label: 'Waiting for Projects', initials: 'MR', kind: 'anonymous' },
     verified: false,
     sections: {
       before: [
@@ -138,7 +144,7 @@ export const stories: Story[] = [
       turningPoint: [
         'That was where coaching helped me most.',
         'The AI Trainers team helped me stop treating an empty dashboard as a reason to give up.',
-        'Yoan kept reminding me that waiting is much easier when you’re actually preparing.',
+        'My coach helped me realize that waiting becomes much more productive when you’re actually preparing.',
       ],
       workedOn: [
         'Understanding task instructions',
@@ -152,10 +158,10 @@ export const stories: Story[] = [
         'Instead of checking the platform twenty times a day, I started using that time to become better prepared for the next opportunity.',
       ],
       thankYou:
-        'Thank you to the AI Trainers coaches for helping me turn frustrating downtime into something productive.',
+        'The coaching team gave me the structure I had been missing while I waited.',
       takeaway: 'An empty dashboard does not mean there is nothing you can work on.',
     },
-    founderNote: yoanNote(
+    founderNote: coachNote(
       'Waiting is much easier when you are actually preparing. An empty dashboard is not the same thing as having nothing useful to do.',
     ),
   },
@@ -167,7 +173,10 @@ export const stories: Story[] = [
       'I kept focusing on everything I didn’t know about AI instead of everything I already knew about my profession.',
     preview:
       'A finance background felt unrelated to AI training at first. The turning point was learning where existing expertise could actually be useful.',
-    identity: { label: 'Finance Professional', initials: 'FP', kind: 'finance' },
+    name: 'Rachel Kim',
+    location: 'Seattle, WA',
+    status: 'Career Switcher',
+    identity: { label: 'Career Switcher', initials: 'RK', kind: 'finance' },
     verified: false,
     sections: {
       before: [
@@ -181,7 +190,7 @@ export const stories: Story[] = [
         'They also need people who understand the world AI is being asked to reason about.',
         'My professional experience wasn’t something I needed to erase.',
         'It was something I could build from.',
-        'Yoan helped me look at my existing knowledge differently.',
+        'My coach at AI Trainers helped me look at my existing knowledge differently.',
         'Instead of asking “How can I become an AI expert overnight?” we started asking “Where can the expertise I already have make me useful?”',
       ],
       workedOn: [
@@ -194,10 +203,10 @@ export const stories: Story[] = [
         'I stopped treating my previous career as irrelevant and started seeing it as an advantage.',
       ],
       thankYou:
-        'Thank you to Yoan and the coaches for helping me stop treating my previous career as irrelevant and start seeing it as an advantage.',
+        'What I appreciated most was finally having someone help me understand how my previous career could be an advantage.',
       takeaway: 'Your path into AI training may begin with what you already know.',
     },
-    founderNote: yoanNote(
+    founderNote: coachNote(
       'AI systems need people who understand the world they are being asked to reason about. Your profession is often the starting point, not the obstacle.',
     ),
   },
@@ -209,7 +218,10 @@ export const stories: Story[] = [
       'I thought completing more tasks made me better. My biggest improvement came when I learned to slow down.',
     preview:
       'Speed looked like progress until small requirements started getting missed. The coaches treated quality as a skill that could be practiced.',
-    identity: { label: 'Research Professional', initials: 'RP', kind: 'research' },
+    name: 'Daniel Brooks',
+    location: 'Chicago, IL',
+    status: 'Improving Quality',
+    identity: { label: 'Improving Quality', initials: 'DB', kind: 'research' },
     verified: false,
     sections: {
       before: [
@@ -236,10 +248,10 @@ export const stories: Story[] = [
         'I started measuring it by whether I could explain why my answer met the requirements.',
       ],
       thankYou:
-        'Thank you to the AI Trainers coaches for teaching me that quality is a skill — and that it can be practiced.',
+        'The coaches helped me stop guessing and start working with a clearer plan for quality.',
       takeaway: 'Faster isn’t always better. Strong trainers learn when to slow down.',
     },
-    founderNote: yoanNote(
+    founderNote: coachNote(
       'Speed can hide mistakes. Strong trainers learn to separate reading, doing, and reviewing — even when that feels slower at first.',
     ),
   },
@@ -251,7 +263,10 @@ export const stories: Story[] = [
       'The hardest part wasn’t failing. It was convincing myself that one result defined my ability.',
     preview:
       'One difficult qualification started to feel like a verdict. Coaching turned it back into information about what to practice next.',
-    identity: { label: 'Anonymous Coaching Journey', initials: 'AJ', kind: 'anonymous' },
+    name: 'Olivia Bennett',
+    location: 'Denver, CO',
+    status: 'Assessment Struggles',
+    identity: { label: 'Assessment Struggles', initials: 'OB', kind: 'anonymous' },
     verified: false,
     sections: {
       before: [
@@ -261,10 +276,10 @@ export const stories: Story[] = [
         'Then I didn’t get the outcome I wanted.',
         'Immediately, my brain turned one result into a conclusion:',
         'Maybe I’m simply not good at this.',
-        'I told Yoan I was considering stopping.',
+        'I told my coach I was considering stopping.',
       ],
       turningPoint: [
-        'Instead of giving me empty motivation, he helped me examine what had actually happened.',
+        'Instead of giving me empty motivation, they helped me examine what had actually happened.',
         'That distinction mattered.',
         'The qualification stopped being a judgment about me and became information about what I needed to improve.',
       ],
@@ -279,10 +294,10 @@ export const stories: Story[] = [
         'A difficult result became something I could study instead of something I had to carry as a verdict.',
       ],
       thankYou:
-        'Thank you to Yoan and the AI Trainers team for helping me look at setbacks analytically instead of emotionally.',
+        'I’m grateful to my coach for helping me look at setbacks analytically instead of emotionally.',
       takeaway: 'A difficult result can be feedback, not a verdict.',
     },
-    founderNote: yoanNote(
+    founderNote: coachNote(
       'One difficult result is information, not a verdict. We look at what happened, then decide what to practice next.',
     ),
   },
@@ -294,7 +309,10 @@ export const stories: Story[] = [
       'I kept creating more accounts because I thought another platform would solve the problem.',
     preview:
       'More logins looked like progress from the outside. Coaching replaced scattered activity with a simple system for what to prioritize.',
-    identity: { label: 'Software Professional', initials: 'SP', kind: 'software' },
+    name: 'Ethan Parker',
+    location: 'Raleigh, NC',
+    status: 'Finding Focus',
+    identity: { label: 'Finding Focus', initials: 'EP', kind: 'software' },
     verified: false,
     sections: {
       before: [
@@ -320,10 +338,10 @@ export const stories: Story[] = [
         'I stopped chasing every possible opportunity and started becoming better prepared for the right ones.',
       ],
       thankYou:
-        'Thank you to the coaching team for helping me stop chasing every possible opportunity and start becoming better prepared for the right ones.',
+        'Thank you to the AI Trainers coaching team for helping me turn uncertainty into a process I could follow.',
       takeaway: 'More platforms do not automatically mean more progress. A better system matters.',
     },
-    founderNote: yoanNote(
+    founderNote: coachNote(
       'Activity and direction are not the same thing. A simple system usually beats another new account.',
     ),
   },
@@ -335,7 +353,10 @@ export const stories: Story[] = [
       'I assumed AI training was all coding. Then I realized how much careful reading, reasoning, and writing mattered.',
     preview:
       'A writing background felt too far from technical work. The coaches helped connect years of editorial skill to a different kind of evaluation.',
-    identity: { label: 'Writer', initials: 'WR', kind: 'writer' },
+    name: 'Maya Thompson',
+    location: 'Boston, MA',
+    status: 'Writing Professional',
+    identity: { label: 'Writing Professional', initials: 'MT', kind: 'writer' },
     verified: false,
     sections: {
       before: [
@@ -359,11 +380,11 @@ export const stories: Story[] = [
         'I still had plenty to learn, but I no longer felt like I was starting with nothing.',
       ],
       thankYou:
-        'Thank you to Yoan and the team for helping me recognize that professional skills don’t stop being valuable just because the industry changes.',
+        'I’m grateful to my coach for helping me understand that professional skills don’t stop being valuable just because the industry changes.',
       takeaway:
         'AI training can reward abilities you’ve been developing long before you discovered AI training.',
     },
-    founderNote: yoanNote(
+    founderNote: coachNote(
       'Careful reading, comparison, and explanation are technical skills. Many writers already have more of them than they think.',
     ),
   },
@@ -375,7 +396,10 @@ export const stories: Story[] = [
       'I had experience, but experience without a repeatable process still felt inconsistent.',
     preview:
       'Coaching did not feel like a beginner move. It became a way to turn uneven experience into a workflow that could actually be refined.',
-    identity: { label: 'Experienced AI Trainer', initials: 'ET', kind: 'experienced' },
+    name: 'Jordan Lewis',
+    location: 'Phoenix, AZ',
+    status: 'Experienced AI Trainer',
+    identity: { label: 'Experienced AI Trainer', initials: 'JL', kind: 'experienced' },
     verified: false,
     sections: {
       before: [
@@ -408,7 +432,7 @@ export const stories: Story[] = [
         'Thank you to the AI Trainers coaching team for showing me that asking for structure doesn’t mean you’re a beginner. Sometimes it means you’re ready to improve deliberately.',
       takeaway: 'Experience gets stronger when you can turn it into a repeatable system.',
     },
-    founderNote: yoanNote(
+    founderNote: coachNote(
       'Asking for structure doesn’t mean you’re a beginner. It often means you’re ready to improve on purpose.',
     ),
   },
@@ -420,7 +444,10 @@ export const stories: Story[] = [
       'I thought I needed experience before talking to a coach. The call was where I learned I didn’t.',
     preview:
       'The tab closed more than once. An account, no projects, and nothing impressive to say felt like a reason to wait. The conversation started there anyway.',
-    identity: { label: 'New AI Trainer', initials: 'NT', kind: 'newcomer' },
+    name: 'Natalie Foster',
+    location: 'Tampa, FL',
+    status: 'Starting From Zero',
+    identity: { label: 'Starting From Zero', initials: 'NF', kind: 'newcomer' },
     verified: false,
     featured: true,
     sections: {
@@ -451,11 +478,11 @@ export const stories: Story[] = [
         'The first conversation felt like guidance instead of an interview I had to pass.',
       ],
       thankYou:
-        'Thank you to Yoan and the AI Trainers coaches for making that first conversation feel like guidance instead of an interview I had to pass.',
+        'Thank you to the AI Trainers coaching team for making that first conversation feel like guidance instead of an interview I had to pass.',
       takeaway: 'You don’t need experience before asking for direction.',
     },
-    founderNote: yoanNote(
-      'You don’t need a polished story before the first conversation. The call is where we figure out the starting point together.',
+    founderNote: coachNote(
+      'Many newcomers assume they need experience before asking for help. In practice, knowing where to focus first is often exactly what coaching can provide.',
     ),
   },
   {
@@ -466,7 +493,10 @@ export const stories: Story[] = [
       'I stopped opening the platform hoping something would magically make sense. I finally knew how to approach the work.',
     preview:
       'Every new task carried the same worry: What if something obvious is missing? Coaching made those questions internal — and the work less dependent.',
-    identity: { label: 'New AI Trainer', initials: 'NT', kind: 'newcomer' },
+    name: 'Chris Morgan',
+    location: 'Columbus, OH',
+    status: 'Building Momentum',
+    identity: { label: 'Building Momentum', initials: 'CM', kind: 'newcomer' },
     verified: false,
     sections: {
       before: [
@@ -494,11 +524,11 @@ export const stories: Story[] = [
         'That was the moment I realized I was becoming more independent.',
       ],
       thankYou:
-        'Thank you to Yoan and the AI Trainers coaching team for not simply telling me what to do — but helping me learn how to think through the work myself.',
+        'What I appreciated most was finally having someone help me learn how to think through the work myself.',
       takeaway:
         'The goal of good coaching isn’t dependency. It’s helping you develop the judgment to move forward with confidence.',
     },
-    founderNote: yoanNote(
+    founderNote: coachNote(
       'The goal of coaching isn’t to keep giving you answers. It’s to help you ask better questions of your own work.',
     ),
   },
