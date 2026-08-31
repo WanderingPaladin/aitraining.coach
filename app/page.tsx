@@ -268,7 +268,7 @@ export default function Home() {
           <FeatureIcon icon={BriefcaseBusiness} variant="cta" size={28} tileSize={60} className="cta-icon" />
           <div>
             <h2>Ready to Start Your Journey?</h2>
-            <p>Not sure where to start? That’s exactly what the intro call is for. Share a few details, then pick a time — we’ll send a Google Meet invite to your inbox.</p>
+            <p>Not sure where to start? That’s exactly what the intro call is for. Share a few details, then pick a time — we’ll send a Microsoft Teams invite to your inbox.</p>
           </div>
           <FeatureIcon icon={CircleCheckBig} variant="cta" size={28} tileSize={60} className="cta-icon" />
         </div>

@@ -34,6 +34,7 @@ export type Booking = {
   endsAt: string;
   status: string;
   meetingUrl: string | null;
+  cancelToken?: string;
 };
 
 export type CreateApplicationInput = {
@@ -126,5 +127,12 @@ export function createBooking(input: { applicationId: string; startsAt: string }
   return request<{ booking: Booking }>('/v1/bookings', {
     method: 'POST',
     body: JSON.stringify(input),
+  });
+}
+
+export function cancelBooking(id: string, token: string) {
+  return request<{ booking: Booking }>(`/v1/bookings/${id}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ token }),
   });
 }

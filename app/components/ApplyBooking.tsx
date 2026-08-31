@@ -1,9 +1,23 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ArrowRight, CalendarDays, CircleCheckBig, MapPin, Phone } from 'lucide-react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  ArrowRight,
+  CalendarDays,
+  Check,
+  CircleCheckBig,
+  ClipboardCheck,
+  Clock,
+  Gift,
+  Globe2,
+  Mail,
+  MapPin,
+  RotateCcw,
+  Video,
+} from 'lucide-react';
 import {
   ApiError,
+  cancelBooking,
   createApplication,
   createBooking,
   listSlots,
@@ -29,6 +43,7 @@ import {
   type ApplyFieldErrors,
 } from '../../lib/apply-fields';
 import ApplicantStageSelector from './ApplicantStageSelector';
+import BookingScheduler from './BookingScheduler';
 
 type IpGeo = {
   ip: string;
@@ -124,24 +139,53 @@ async function lookupIpLocation(): Promise<IpGeo | null> {
   return null;
 }
 
-function groupSlotsByDay(slots: TimeSlot[]): Array<[string, TimeSlot[]]> {
-  const groups = new Map<string, TimeSlot[]>();
-  for (const slot of slots) {
-    const day = slot.local.startsAt?.slice(0, 10) ?? slot.startsAt.slice(0, 10);
-    const list = groups.get(day) ?? [];
-    list.push(slot);
-    groups.set(day, list);
-  }
-  return [...groups.entries()];
-}
-
-function formatDayHeading(slot: TimeSlot): string {
-  return new Intl.DateTimeFormat('en-US', {
+function formatBookingWhen(startsAt: string, timezone: string): string {
+  const date = new Date(startsAt);
+  const day = new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
-    timeZone: slot.local.timezone,
-  }).format(new Date(slot.startsAt));
+    timeZone: timezone,
+  }).format(date);
+  const time = new Intl.DateTimeFormat('en-US', {
+    timeStyle: 'short',
+    timeZone: timezone,
+  }).format(date);
+  return `${day} at ${time}`;
+}
+
+function formatTimezoneLabel(timezone: string): string {
+  try {
+    const offset = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'shortOffset',
+    })
+      .formatToParts(new Date())
+      .find((part) => part.type === 'timeZoneName')?.value;
+    const name = timezone.replace(/_/g, ' ');
+    return offset ? `${name} (${offset})` : name;
+  } catch {
+    return timezone.replace(/_/g, ' ');
+  }
+}
+
+const flowSteps = [
+  { id: 'apply', label: 'Apply' },
+  { id: 'book', label: 'Book a Call' },
+  { id: 'done', label: 'Confirmed' },
+] as const;
+
+function flowStepClass(step: 'apply' | 'book' | 'done', id: (typeof flowSteps)[number]['id']) {
+  if (id === step) {
+    return 'current';
+  }
+  if (id === 'apply' && step !== 'apply') {
+    return 'complete';
+  }
+  if (id === 'book' && step === 'done') {
+    return 'complete';
+  }
+  return 'upcoming';
 }
 
 type FormState = {
@@ -190,6 +234,7 @@ export default function ApplyBooking() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<ApplyFieldErrors>({});
+  const skipStepScroll = useRef(true);
 
   useEffect(() => {
     setForm((current) => ({ ...current, timezone: detectTimezone() }));
@@ -213,6 +258,14 @@ export default function ApplyBooking() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (skipStepScroll.current) {
+      skipStepScroll.current = false;
+      return;
+    }
+    document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [step]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -397,7 +450,7 @@ export default function ApplyBooking() {
       setStep('done');
     } catch (err) {
       if (err instanceof ApiError && err.code === 'SLOT_UNAVAILABLE') {
-        setError('That time was just taken. Pick another slot.');
+        setError('That time was just booked by someone else. Please choose another available time.');
         await loadSlots(form.timezone);
         setSelectedSlot('');
       } else {
@@ -408,15 +461,43 @@ export default function ApplyBooking() {
     }
   }
 
-  const groupedSlots = useMemo(() => groupSlotsByDay(slots), [slots]);
+  async function handleReschedule() {
+    if (!booking) {
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      if (booking.cancelToken) {
+        await cancelBooking(booking.id, booking.cancelToken);
+      }
+      setBooking(null);
+      setSelectedSlot('');
+      setStep('book');
+      await loadSlots(form.timezone);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not open rescheduling. Try again, or use the link in your email.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   const selectedPhoneCountry = findPhoneCountry(form.phoneCountry) ?? phoneCountries[0];
 
   return (
     <div className="apply-panel">
       <ol className="apply-steps" aria-label="Application steps">
-        <li className={step === 'apply' ? 'current' : 'complete'}>1. Apply</li>
-        <li className={step === 'book' ? 'current' : step === 'done' ? 'complete' : ''}>2. Book a call</li>
-        <li className={step === 'done' ? 'current' : ''}>3. Confirmed</li>
+        {flowSteps.map((item, index) => {
+          const status = flowStepClass(step, item.id);
+          return (
+            <li key={item.id} className={status} aria-current={status === 'current' ? 'step' : undefined}>
+              <span className="apply-step-index" aria-hidden="true">
+                {status === 'complete' ? <Check size={12} strokeWidth={3} /> : index + 1}
+              </span>
+              <span className="apply-step-label">{item.label}</span>
+            </li>
+          );
+        })}
       </ol>
 
       {error && (
@@ -689,77 +770,151 @@ export default function ApplyBooking() {
       )}
 
       {step === 'book' && (
-        <form className="apply-form" onSubmit={handleBook}>
-          <p className="apply-book-copy">
-            Thanks{application?.firstName ? `, ${application.firstName}` : ''}. Pick a 30-minute intro call. Times are shown in <strong>{form.timezone}</strong>.
-          </p>
-
-          {loadingSlots && <p className="apply-muted">Loading open times…</p>}
-
-          {!loadingSlots && groupedSlots.length === 0 && (
-            <p className="apply-muted">No intro-call times are open right now. Check back soon, or email us and we’ll find a slot.</p>
-          )}
-
-          <div className="slot-groups">
-            {groupedSlots.map(([day, daySlots]) => (
-              <section key={day} className="slot-day">
-                <h3>{daySlots[0] ? formatDayHeading(daySlots[0]) : day}</h3>
-                <div className="slot-grid">
-                  {daySlots.map((slot) => {
-                    const timeLabel = new Intl.DateTimeFormat('en-US', {
-                      timeStyle: 'short',
-                      timeZone: slot.local.timezone,
-                    }).format(new Date(slot.startsAt));
-                    return (
-                      <label key={slot.startsAt} className={selectedSlot === slot.startsAt ? 'selected' : ''}>
-                        <input
-                          type="radio"
-                          name="slot"
-                          value={slot.startsAt}
-                          checked={selectedSlot === slot.startsAt}
-                          onChange={() => setSelectedSlot(slot.startsAt)}
-                        />
-                        {timeLabel}
-                      </label>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
+        <form className="apply-form apply-book" onSubmit={handleBook}>
+          <div className="apply-book-head">
+            <h3>Book Your Free Intro Call</h3>
+            <p>
+              We already have your application details.
+              <br />
+              Just choose a time that works best for you.
+            </p>
           </div>
 
-          <div className="apply-book-actions">
-            <button className="apply-submit" type="submit" disabled={submitting || !selectedSlot}>
-              {submitting ? 'Booking…' : 'Book this intro call'}
-              <Phone className="btn-icon" size={16} strokeWidth={2} />
-            </button>
-            <button
-              className="apply-secondary"
-              type="button"
-              onClick={() => {
-                setStep('apply');
-                setError(null);
-              }}
-            >
-              Back to application
-            </button>
+          <ul className="apply-book-meta">
+            <li>
+              <Clock size={14} strokeWidth={2} aria-hidden="true" />
+              30 minutes
+            </li>
+            <li>
+              <Video size={14} strokeWidth={2} aria-hidden="true" />
+              Microsoft Teams
+            </li>
+            <li>
+              <Gift size={14} strokeWidth={2} aria-hidden="true" />
+              Free
+            </li>
+            <li>
+              <ClipboardCheck size={14} strokeWidth={2} aria-hidden="true" />
+              No extra form needed
+            </li>
+          </ul>
+
+          <p className="apply-book-timezone">
+            <Globe2 size={14} strokeWidth={2} aria-hidden="true" />
+            Times shown in: <strong>{formatTimezoneLabel(form.timezone)}</strong>
+          </p>
+
+          <div className="apply-book-layout">
+            <aside className="apply-book-sidebar">
+              <div className="apply-book-expect">
+                <h4>What to expect in this call</h4>
+                <ul>
+                  <li>
+                    <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    A focused 30-minute conversation
+                  </li>
+                  <li>
+                    <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    Understand your background and goals
+                  </li>
+                  <li>
+                    <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    Discuss where AI training could fit
+                  </li>
+                  <li>
+                    <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    Clarify your next steps
+                  </li>
+                  <li>
+                    <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    Answer your questions
+                  </li>
+                </ul>
+              </div>
+              <div className="apply-book-received">
+                <h4>Application received</h4>
+                <p>
+                  <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                  We already have your information. No extra form needed.
+                </p>
+              </div>
+            </aside>
+
+            <div className="apply-book-scheduler">
+              {loadingSlots && <p className="apply-muted">Loading open times…</p>}
+
+              {!loadingSlots && slots.length === 0 && (
+                <p className="apply-muted">
+                  No intro-call times are open right now. Check back soon, or email us and we’ll find a
+                  slot.
+                </p>
+              )}
+
+              {!loadingSlots && slots.length > 0 && (
+                <BookingScheduler
+                  slots={slots}
+                  timezone={form.timezone}
+                  selectedSlot={selectedSlot}
+                  onSelectSlot={setSelectedSlot}
+                />
+              )}
+
+              <button className="apply-book-confirm" type="submit" disabled={submitting || !selectedSlot}>
+                {submitting ? 'Booking…' : 'Confirm Booking'}
+                <ArrowRight className="btn-icon" size={16} strokeWidth={2} />
+              </button>
+              <button
+                className="apply-secondary"
+                type="button"
+                onClick={() => {
+                  setStep('apply');
+                  setError(null);
+                }}
+              >
+                Back to application
+              </button>
+            </div>
           </div>
         </form>
       )}
 
       {step === 'done' && booking && (
         <div className="apply-success">
-          <CircleCheckBig size={36} strokeWidth={2} color="#1687FF" aria-hidden="true" />
+          <span className="apply-success-icon" aria-hidden="true">
+            <CircleCheckBig size={32} strokeWidth={2} />
+          </span>
           <h3>You’re booked</h3>
           <p>
-            We sent a confirmation email with a calendar invite. Join with Google Meet at the time you chose.
+            Thanks{application?.firstName ? `, ${application.firstName}` : ''}. Your free intro call is
+            confirmed.
           </p>
+          <ul className="apply-success-details">
+            <li>
+              <CalendarDays size={16} strokeWidth={2} aria-hidden="true" />
+              <span>
+                <strong>{formatBookingWhen(booking.startsAt, form.timezone)}</strong>
+                <small>{formatTimezoneLabel(form.timezone)}</small>
+              </span>
+            </li>
+            <li>
+              <Video size={16} strokeWidth={2} aria-hidden="true" />
+              <span>We’ll meet on Microsoft Teams. The join link is in your invite.</span>
+            </li>
+            <li>
+              <Mail size={16} strokeWidth={2} aria-hidden="true" />
+              <span>Check your email for the confirmation and calendar invite.</span>
+            </li>
+          </ul>
           {booking.meetingUrl && (
             <a className="apply-submit" href={booking.meetingUrl} target="_blank" rel="noopener noreferrer">
-              Open Google Meet
-              <CalendarDays className="btn-icon" size={16} strokeWidth={2} />
+              Open Microsoft Teams
+              <Video className="btn-icon" size={16} strokeWidth={2} />
             </a>
           )}
+          <button className="apply-secondary" type="button" disabled={submitting} onClick={() => void handleReschedule()}>
+            {submitting ? 'Opening times…' : 'Reschedule'}
+            <RotateCcw className="btn-icon" size={16} strokeWidth={2} />
+          </button>
         </div>
       )}
     </div>
