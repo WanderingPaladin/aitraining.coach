@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ArrowRight, CalendarDays, CircleCheckBig, Phone } from 'lucide-react';
+import { ArrowRight, CalendarDays, CircleCheckBig, MapPin, Phone } from 'lucide-react';
 import {
   ApiError,
   createApplication,
@@ -158,6 +158,7 @@ type FormState = {
   applicant_stage: ApplicantStage | '';
   referral_source: string;
   referral_source_detail: string;
+  us_eligibility_confirmed: boolean;
 };
 
 const initialForm = (timezone: string): FormState => ({
@@ -174,6 +175,7 @@ const initialForm = (timezone: string): FormState => ({
   applicant_stage: '',
   referral_source: '',
   referral_source_detail: '',
+  us_eligibility_confirmed: false,
 });
 
 export default function ApplyBooking() {
@@ -228,7 +230,8 @@ export default function ApplyBooking() {
               key === 'profession' ||
               key === 'yearsOfExperience' ||
               key === 'applicant_stage' ||
-              key === 'referral_source'
+              key === 'referral_source' ||
+              key === 'us_eligibility_confirmed'
             ? key
             : undefined;
     if (!field) {
@@ -319,6 +322,7 @@ export default function ApplyBooking() {
       applicant_stage: form.applicant_stage,
       referral_source: form.referral_source,
       referral_source_detail: form.referral_source_detail,
+      us_eligibility_confirmed: form.us_eligibility_confirmed,
     });
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
@@ -362,6 +366,7 @@ export default function ApplyBooking() {
         timezone: form.timezone,
         applicant_stage: form.applicant_stage,
         referral_source: resolveReferralSource(form.referral_source, form.referral_source_detail),
+        us_eligibility_confirmed: form.us_eligibility_confirmed,
         ipAddress: geo?.ip,
         ipLocation: geo?.label,
       });
@@ -425,6 +430,17 @@ export default function ApplyBooking() {
           <input type="hidden" name="timezone" value={form.timezone} />
           <input type="hidden" name="ipAddress" value={ipGeo?.ip ?? ''} />
           <input type="hidden" name="ipLocation" value={ipGeo?.label ?? ''} />
+
+          <div className="apply-eligibility-notice">
+            <MapPin size={16} strokeWidth={2} aria-hidden="true" />
+            <div>
+              <strong>Currently available to U.S.-based participants</strong>
+              <p>
+                You must currently reside in the United States and be eligible to create accounts on
+                supported AI-training platforms.
+              </p>
+            </div>
+          </div>
 
           <ApplicantStageSelector
             value={form.applicant_stage}
@@ -631,6 +647,38 @@ export default function ApplyBooking() {
                 <span className="apply-field-error">{fieldErrors.referral_source}</span>
               )}
             </label>
+          </div>
+
+          <div className="apply-eligibility-confirm">
+            <label
+              className={[
+                'apply-eligibility-label',
+                form.us_eligibility_confirmed ? 'is-checked' : '',
+                fieldErrors.us_eligibility_confirmed ? 'has-error' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              <input
+                type="checkbox"
+                name="us_eligibility_confirmed"
+                required
+                checked={form.us_eligibility_confirmed}
+                aria-invalid={Boolean(fieldErrors.us_eligibility_confirmed)}
+                onChange={(event) => update('us_eligibility_confirmed', event.target.checked)}
+              />
+              <span className="apply-eligibility-copy">
+                I currently reside in the United States and am eligible to create accounts on supported
+                AI-training platforms.
+              </span>
+            </label>
+            <p className="apply-eligibility-note">
+              This requirement helps ensure applicants can access the platforms and opportunities
+              discussed during coaching.
+            </p>
+            {fieldErrors.us_eligibility_confirmed && (
+              <span className="apply-field-error">{fieldErrors.us_eligibility_confirmed}</span>
+            )}
           </div>
 
           <button className="apply-submit" type="submit" disabled={submitting}>

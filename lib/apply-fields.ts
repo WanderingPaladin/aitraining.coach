@@ -369,6 +369,7 @@ export type ApplyFieldErrors = Partial<{
   yearsOfExperience: string;
   applicant_stage: string;
   referral_source: string;
+  us_eligibility_confirmed: string;
 }>;
 
 export function validateApplyFields(input: {
@@ -384,6 +385,7 @@ export function validateApplyFields(input: {
   applicant_stage: string;
   referral_source?: string;
   referral_source_detail?: string;
+  us_eligibility_confirmed?: boolean;
 }): ApplyFieldErrors {
   const errors: ApplyFieldErrors = {};
 
@@ -430,6 +432,11 @@ export function validateApplyFields(input: {
   }
   if ((input.referral_source_detail ?? '').trim().length > 120) {
     errors.referral_source = 'Keep this under 120 characters.';
+  }
+
+  if (!input.us_eligibility_confirmed) {
+    errors.us_eligibility_confirmed =
+      'Please confirm that you meet the current U.S. eligibility requirement.';
   }
 
   return errors;

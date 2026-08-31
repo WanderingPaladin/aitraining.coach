@@ -50,6 +50,7 @@ export type CreateApplicationInput = {
   ipLocation?: string;
   applicant_stage: ApplicantStage;
   referral_source?: string;
+  us_eligibility_confirmed: boolean;
 };
 
 export class ApiError extends Error {
