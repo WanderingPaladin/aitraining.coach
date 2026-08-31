@@ -1,9 +1,23 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ArrowRight, CalendarDays, CircleCheckBig, MapPin, Phone } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import {
+  ArrowRight,
+  CalendarDays,
+  Check,
+  CircleCheckBig,
+  ClipboardCheck,
+  Clock,
+  Gift,
+  Globe,
+  Mail,
+  MapPin,
+  RotateCcw,
+  Video,
+} from 'lucide-react';
 import {
   ApiError,
+  cancelBooking,
   createApplication,
   createBooking,
   listSlots,
@@ -144,6 +158,68 @@ function formatDayHeading(slot: TimeSlot): string {
   }).format(new Date(slot.startsAt));
 }
 
+function formatSlotTime(slot: TimeSlot): string {
+  return new Intl.DateTimeFormat('en-US', {
+    timeStyle: 'short',
+    timeZone: slot.local.timezone,
+  }).format(new Date(slot.startsAt));
+}
+
+function formatSlotSummary(slot: TimeSlot): string {
+  const date = formatDayHeading(slot);
+  const time = formatSlotTime(slot);
+  return `${date} at ${time}`;
+}
+
+function formatBookingWhen(startsAt: string, timezone: string): string {
+  const date = new Date(startsAt);
+  const day = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    timeZone: timezone,
+  }).format(date);
+  const time = new Intl.DateTimeFormat('en-US', {
+    timeStyle: 'short',
+    timeZone: timezone,
+  }).format(date);
+  return `${day} at ${time}`;
+}
+
+function formatTimezoneLabel(timezone: string): string {
+  try {
+    const offset = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'shortOffset',
+    })
+      .formatToParts(new Date())
+      .find((part) => part.type === 'timeZoneName')?.value;
+    const name = timezone.replace(/_/g, ' ');
+    return offset ? `${name} (${offset})` : name;
+  } catch {
+    return timezone.replace(/_/g, ' ');
+  }
+}
+
+const flowSteps = [
+  { id: 'apply', label: 'Apply' },
+  { id: 'book', label: 'Book a Call' },
+  { id: 'done', label: 'Confirmed' },
+] as const;
+
+function flowStepClass(step: 'apply' | 'book' | 'done', id: (typeof flowSteps)[number]['id']) {
+  if (id === step) {
+    return 'current';
+  }
+  if (id === 'apply' && step !== 'apply') {
+    return 'complete';
+  }
+  if (id === 'book' && step === 'done') {
+    return 'complete';
+  }
+  return 'upcoming';
+}
+
 type FormState = {
   firstName: string;
   lastName: string;
@@ -190,6 +266,7 @@ export default function ApplyBooking() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<ApplyFieldErrors>({});
+  const skipStepScroll = useRef(true);
 
   useEffect(() => {
     setForm((current) => ({ ...current, timezone: detectTimezone() }));
@@ -213,6 +290,14 @@ export default function ApplyBooking() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (skipStepScroll.current) {
+      skipStepScroll.current = false;
+      return;
+    }
+    document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [step]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -408,15 +493,48 @@ export default function ApplyBooking() {
     }
   }
 
+  async function handleReschedule() {
+    if (!booking) {
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      if (booking.cancelToken) {
+        await cancelBooking(booking.id, booking.cancelToken);
+      }
+      setBooking(null);
+      setSelectedSlot('');
+      setStep('book');
+      await loadSlots(form.timezone);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not open rescheduling. Try again, or use the link in your email.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   const groupedSlots = useMemo(() => groupSlotsByDay(slots), [slots]);
+  const chosenSlot = useMemo(
+    () => slots.find((slot) => slot.startsAt === selectedSlot) ?? null,
+    [slots, selectedSlot],
+  );
   const selectedPhoneCountry = findPhoneCountry(form.phoneCountry) ?? phoneCountries[0];
 
   return (
     <div className="apply-panel">
       <ol className="apply-steps" aria-label="Application steps">
-        <li className={step === 'apply' ? 'current' : 'complete'}>1. Apply</li>
-        <li className={step === 'book' ? 'current' : step === 'done' ? 'complete' : ''}>2. Book a call</li>
-        <li className={step === 'done' ? 'current' : ''}>3. Confirmed</li>
+        {flowSteps.map((item, index) => {
+          const status = flowStepClass(step, item.id);
+          return (
+            <li key={item.id} className={status} aria-current={status === 'current' ? 'step' : undefined}>
+              <span className="apply-step-index" aria-hidden="true">
+                {status === 'complete' ? <Check size={12} strokeWidth={3} /> : index + 1}
+              </span>
+              <span className="apply-step-label">{item.label}</span>
+            </li>
+          );
+        })}
       </ol>
 
       {error && (
@@ -689,37 +807,63 @@ export default function ApplyBooking() {
       )}
 
       {step === 'book' && (
-        <form className="apply-form" onSubmit={handleBook}>
-          <p className="apply-book-copy">
-            Thanks{application?.firstName ? `, ${application.firstName}` : ''}. Pick a 30-minute intro call. Times are shown in <strong>{form.timezone}</strong>.
+        <form className="apply-form apply-book" onSubmit={handleBook}>
+          <div className="apply-book-head">
+            <h3>Book Your Free Intro Call</h3>
+            <p>
+              We already have your application details. Just choose a time that works best for you.
+            </p>
+          </div>
+
+          <ul className="apply-book-meta">
+            <li>
+              <Clock size={14} strokeWidth={2} aria-hidden="true" />
+              30 minutes
+            </li>
+            <li>
+              <Video size={14} strokeWidth={2} aria-hidden="true" />
+              Microsoft Teams
+            </li>
+            <li>
+              <Gift size={14} strokeWidth={2} aria-hidden="true" />
+              Free
+            </li>
+            <li>
+              <ClipboardCheck size={14} strokeWidth={2} aria-hidden="true" />
+              No extra form needed
+            </li>
+          </ul>
+
+          <p className="apply-book-timezone">
+            <Globe size={14} strokeWidth={2} aria-hidden="true" />
+            Times shown in <strong>{formatTimezoneLabel(form.timezone)}</strong>
           </p>
 
           {loadingSlots && <p className="apply-muted">Loading open times…</p>}
 
           {!loadingSlots && groupedSlots.length === 0 && (
-            <p className="apply-muted">No intro-call times are open right now. Check back soon, or email us and we’ll find a slot.</p>
+            <p className="apply-muted">
+              No intro-call times are open right now. Check back soon, or email us and we’ll find a slot.
+            </p>
           )}
 
           <div className="slot-groups">
             {groupedSlots.map(([day, daySlots]) => (
               <section key={day} className="slot-day">
-                <h3>{daySlots[0] ? formatDayHeading(daySlots[0]) : day}</h3>
+                <h4>{daySlots[0] ? formatDayHeading(daySlots[0]) : day}</h4>
                 <div className="slot-grid">
                   {daySlots.map((slot) => {
-                    const timeLabel = new Intl.DateTimeFormat('en-US', {
-                      timeStyle: 'short',
-                      timeZone: slot.local.timezone,
-                    }).format(new Date(slot.startsAt));
+                    const selected = selectedSlot === slot.startsAt;
                     return (
-                      <label key={slot.startsAt} className={selectedSlot === slot.startsAt ? 'selected' : ''}>
+                      <label key={slot.startsAt} className={selected ? 'selected' : ''}>
                         <input
                           type="radio"
                           name="slot"
                           value={slot.startsAt}
-                          checked={selectedSlot === slot.startsAt}
+                          checked={selected}
                           onChange={() => setSelectedSlot(slot.startsAt)}
                         />
-                        {timeLabel}
+                        {formatSlotTime(slot)}
                       </label>
                     );
                   })}
@@ -728,11 +872,22 @@ export default function ApplyBooking() {
             ))}
           </div>
 
+          {chosenSlot && (
+            <p className="apply-book-selected">
+              Selected: <strong>{formatSlotSummary(chosenSlot)}</strong>
+            </p>
+          )}
+
+          <aside className="apply-book-expect">
+            <h4>What to expect in this call</h4>
+            <ul>
+              <li>A focused 30-minute conversation about your background and goals</li>
+              <li>How AI training work could fit the experience you already have</li>
+              <li>Clear next steps if you’re a good match for coaching</li>
+            </ul>
+          </aside>
+
           <div className="apply-book-actions">
-            <button className="apply-submit" type="submit" disabled={submitting || !selectedSlot}>
-              {submitting ? 'Booking…' : 'Book this intro call'}
-              <Phone className="btn-icon" size={16} strokeWidth={2} />
-            </button>
             <button
               className="apply-secondary"
               type="button"
@@ -743,23 +898,51 @@ export default function ApplyBooking() {
             >
               Back to application
             </button>
+            <button className="apply-submit" type="submit" disabled={submitting || !selectedSlot}>
+              {submitting ? 'Booking…' : selectedSlot ? 'Confirm Booking' : 'Choose a time'}
+              <CalendarDays className="btn-icon" size={16} strokeWidth={2} />
+            </button>
           </div>
         </form>
       )}
 
       {step === 'done' && booking && (
         <div className="apply-success">
-          <CircleCheckBig size={36} strokeWidth={2} color="#1687FF" aria-hidden="true" />
+          <span className="apply-success-icon" aria-hidden="true">
+            <CircleCheckBig size={32} strokeWidth={2} />
+          </span>
           <h3>You’re booked</h3>
           <p>
-            We sent a confirmation email with a calendar invite. Join with Google Meet at the time you chose.
+            Thanks{application?.firstName ? `, ${application.firstName}` : ''}. Your free intro call is
+            confirmed.
           </p>
+          <ul className="apply-success-details">
+            <li>
+              <CalendarDays size={16} strokeWidth={2} aria-hidden="true" />
+              <span>
+                <strong>{formatBookingWhen(booking.startsAt, form.timezone)}</strong>
+                <small>{formatTimezoneLabel(form.timezone)}</small>
+              </span>
+            </li>
+            <li>
+              <Video size={16} strokeWidth={2} aria-hidden="true" />
+              <span>We’ll meet on Microsoft Teams. The join link is in your invite.</span>
+            </li>
+            <li>
+              <Mail size={16} strokeWidth={2} aria-hidden="true" />
+              <span>Check your email for the confirmation and calendar invite.</span>
+            </li>
+          </ul>
           {booking.meetingUrl && (
             <a className="apply-submit" href={booking.meetingUrl} target="_blank" rel="noopener noreferrer">
-              Open Google Meet
-              <CalendarDays className="btn-icon" size={16} strokeWidth={2} />
+              Open Microsoft Teams
+              <Video className="btn-icon" size={16} strokeWidth={2} />
             </a>
           )}
+          <button className="apply-secondary" type="button" disabled={submitting} onClick={() => void handleReschedule()}>
+            {submitting ? 'Opening times…' : 'Reschedule'}
+            <RotateCcw className="btn-icon" size={16} strokeWidth={2} />
+          </button>
         </div>
       )}
     </div>
