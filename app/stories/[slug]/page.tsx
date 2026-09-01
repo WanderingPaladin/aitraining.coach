@@ -7,7 +7,7 @@ import SiteHeader from '../../components/SiteHeader';
 import StoryConvertCta from '../../components/StoryConvertCta';
 import StoryIdentityMark from '../../components/StoryIdentityMark';
 import { siteIcons } from '../../../lib/siteIcons';
-import { getStory, ILLUSTRATIVE_DISCLOSURE, stories } from '../../../lib/stories';
+import { getStory, ILLUSTRATIVE_DISCLOSURE, stories, storyStructuredData } from '../../../lib/stories';
 
 type StoryPageProps = {
   params: Promise<{ slug: string }>;
@@ -26,7 +26,19 @@ export async function generateMetadata({ params }: StoryPageProps): Promise<Meta
   return {
     title: `${story.title} — AI Trainers`,
     description: story.preview,
+    authors: [{ name: 'AI Trainers Coaching Team' }],
     icons: siteIcons,
+    openGraph: {
+      title: `${story.title} — AI Trainers`,
+      description: story.preview,
+      siteName: 'AI Trainers',
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${story.title} — AI Trainers`,
+      description: story.preview,
+    },
   };
 }
 
@@ -106,13 +118,18 @@ export default async function StoryPage({ params }: StoryPageProps) {
           </section>
 
           <aside className="story-founder">
-            <p className="journal-eyebrow quiet">From Yoan</p>
+            <p className="journal-eyebrow quiet">Coach’s Note</p>
             <blockquote>“{story.founderNote.quote}”</blockquote>
             <footer>
               <b>{story.founderNote.author}</b>
               <small>{story.founderNote.role}</small>
             </footer>
           </aside>
+
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(storyStructuredData(story)) }}
+          />
         </div>
       </article>
 

@@ -64,10 +64,10 @@ export const storyFilters = ['All Stories', ...STORY_CATEGORIES] as const;
 
 export type StoryFilter = (typeof storyFilters)[number];
 
-const coachNote = (quote: string): FounderNote => ({
+const coachNote = (quote: string, role: string): FounderNote => ({
   quote,
   author: 'AI Trainers Coaching Team',
-  role: 'Coach’s Note',
+  role,
 });
 
 export const stories: Story[] = [
@@ -115,6 +115,7 @@ export const stories: Story[] = [
     },
     founderNote: coachNote(
       'The hardest part for many newcomers isn’t ability — it’s knowing what to focus on first. Once there is a clear process, the work often becomes much less intimidating.',
+      'Newcomer Guidance',
     ),
   },
   {
@@ -163,6 +164,7 @@ export const stories: Story[] = [
     },
     founderNote: coachNote(
       'Waiting is much easier when you are actually preparing. An empty dashboard is not the same thing as having nothing useful to do.',
+      'Platform & Progress Guidance',
     ),
   },
   {
@@ -208,6 +210,7 @@ export const stories: Story[] = [
     },
     founderNote: coachNote(
       'AI systems need people who understand the world they are being asked to reason about. Your profession is often the starting point, not the obstacle.',
+      'Career Transition Guidance',
     ),
   },
   {
@@ -253,6 +256,7 @@ export const stories: Story[] = [
     },
     founderNote: coachNote(
       'Speed can hide mistakes. Strong trainers learn to separate reading, doing, and reviewing — even when that feels slower at first.',
+      'Performance & Workflow Coaching',
     ),
   },
   {
@@ -299,6 +303,7 @@ export const stories: Story[] = [
     },
     founderNote: coachNote(
       'One difficult result is information, not a verdict. We look at what happened, then decide what to practice next.',
+      'Assessment Preparation',
     ),
   },
   {
@@ -343,6 +348,7 @@ export const stories: Story[] = [
     },
     founderNote: coachNote(
       'Activity and direction are not the same thing. A simple system usually beats another new account.',
+      'Platform Strategy',
     ),
   },
   {
@@ -386,6 +392,7 @@ export const stories: Story[] = [
     },
     founderNote: coachNote(
       'Careful reading, comparison, and explanation are technical skills. Many writers already have more of them than they think.',
+      'Domain Expertise Guidance',
     ),
   },
   {
@@ -434,6 +441,7 @@ export const stories: Story[] = [
     },
     founderNote: coachNote(
       'Asking for structure doesn’t mean you’re a beginner. It often means you’re ready to improve on purpose.',
+      'Performance & Workflow Coaching',
     ),
   },
   {
@@ -483,6 +491,7 @@ export const stories: Story[] = [
     },
     founderNote: coachNote(
       'Many newcomers assume they need experience before asking for help. In practice, knowing where to focus first is often exactly what coaching can provide.',
+      'Newcomer Guidance',
     ),
   },
   {
@@ -530,6 +539,7 @@ export const stories: Story[] = [
     },
     founderNote: coachNote(
       'The goal of coaching isn’t to keep giving you answers. It’s to help you ask better questions of your own work.',
+      'Trainer Development',
     ),
   },
 ];
@@ -544,6 +554,23 @@ export const blogPreviewSlugs = [
 
 export function getStory(slug: string): Story | undefined {
   return stories.find((story) => story.slug === slug);
+}
+
+export function storyStructuredData(story: Story) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: story.title,
+    description: story.preview,
+    author: {
+      '@type': 'Organization',
+      name: 'AI Trainers Coaching Team',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'AI Trainers',
+    },
+  };
 }
 
 export function getFeaturedStory(): Story {
