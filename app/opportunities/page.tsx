@@ -5,6 +5,7 @@ import OpportunitiesBoard from '../components/OpportunitiesBoard';
 import PayrollPreview from '../components/PayrollPreview';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
+import { fetchOpportunitiesServer, fetchPublicJobsServer } from '../../lib/api';
 import { siteIcons } from '../../lib/siteIcons';
 
 export const metadata: Metadata = {
@@ -20,7 +21,29 @@ const benefits = [
   { icon: Target, label: 'Profile matching' },
 ];
 
-export default function OpportunitiesPage() {
+type OpportunitiesPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function paramValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {
+  const params = searchParams ? await searchParams : {};
+  const filtered = Boolean(
+    paramValue(params.q) ||
+      paramValue(params.platform) ||
+      paramValue(params.category) ||
+      paramValue(params.experience) ||
+      paramValue(params.employmentType) ||
+      paramValue(params.remote) ||
+      paramValue(params.page),
+  );
+  const [initialCurated, initialJobs] = filtered
+    ? [null, null]
+    : await Promise.all([fetchOpportunitiesServer(), fetchPublicJobsServer()]);
+
   return (
     <main className="journal-page" id="top">
       <div className="journal-hero-wrap">
@@ -67,7 +90,7 @@ export default function OpportunitiesPage() {
       <div className="journal-light" id="listings">
         <div className="shell journal-main">
           <Suspense fallback={<div className="opportunity-skeleton-list" aria-hidden="true"><div className="opportunity-card is-skeleton" /><div className="opportunity-card is-skeleton" /><div className="opportunity-card is-skeleton" /></div>}>
-            <OpportunitiesBoard />
+            <OpportunitiesBoard initialCurated={initialCurated} initialJobs={initialJobs} />
           </Suspense>
         </div>
       </div>

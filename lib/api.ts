@@ -316,6 +316,12 @@ export function resendVerification() {
   return request<{ ok: true }>('/v1/auth/resend-verification', { method: 'POST' });
 }
 
+export type OpportunityListResponse = {
+  opportunities: Opportunity[];
+  filters: { platforms: string[]; categories: string[] };
+  matchAvailable: boolean;
+};
+
 export function listOpportunities(filters: OpportunityFilters = {}) {
   const params = new URLSearchParams();
   if (filters.q) params.set('q', filters.q);
@@ -326,11 +332,7 @@ export function listOpportunities(filters: OpportunityFilters = {}) {
   if (filters.sort) params.set('sort', filters.sort);
   if (filters.limit) params.set('limit', String(filters.limit));
   const query = params.toString();
-  return request<{
-    opportunities: Opportunity[];
-    filters: { platforms: string[]; categories: string[] };
-    matchAvailable: boolean;
-  }>(`/v1/opportunities${query ? `?${query}` : ''}`);
+  return request<OpportunityListResponse>(`/v1/opportunities${query ? `?${query}` : ''}`);
 }
 
 export function saveOpportunity(id: string) {
@@ -462,6 +464,33 @@ export function apiOrigin(): string {
     return process.env.BOOKING_API_ORIGIN.replace(/\/$/, '');
   }
   return process.env.NODE_ENV === 'production' ? 'https://api.aitrainers.coach' : 'http://127.0.0.1:4000';
+}
+
+async function fetchJsonServer<T>(path: string): Promise<T | null> {
+  try {
+    const response = await fetch(`${apiOrigin()}${path}`, {
+      headers: { accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      return null;
+    }
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchOpportunitiesServer(): Promise<OpportunityListResponse | null> {
+  return fetchJsonServer<OpportunityListResponse>('/v1/opportunities');
+}
+
+export async function fetchPublicJobsServer(filters: JobListFilters = {}): Promise<JobListResponse | null> {
+  const params = new URLSearchParams();
+  params.set('page', String(filters.page ?? 1));
+  params.set('pageSize', String(filters.pageSize ?? 20));
+  if (filters.sort) params.set('sort', filters.sort);
+  return fetchJsonServer<JobListResponse>(`/v1/jobs?${params.toString()}`);
 }
 
 export async function fetchPublicJobServer(slug: string): Promise<PublicJob | null> {
