@@ -1,9 +1,10 @@
 'use client';
 
-import { Bookmark, BookmarkCheck, ExternalLink } from 'lucide-react';
+import { Bookmark, BookmarkCheck, BriefcaseBusiness, ExternalLink, GraduationCap, Laptop, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import type { Opportunity } from '../../lib/api';
 import { saveOpportunity, unsaveOpportunity } from '../../lib/api';
+import { platformLogoSrc } from '../../lib/platforms';
 import { useAuth } from './AuthProvider';
 import MatchBadge from './MatchBadge';
 
@@ -19,10 +20,11 @@ export default function OpportunityCard({
   const { user } = useAuth();
   const [saved, setSaved] = useState(opportunity.saved);
   const [busy, setBusy] = useState(false);
+  const returnTo = `/opportunities`;
 
   async function toggleSave() {
     if (!user) {
-      window.location.href = `/login?next=${encodeURIComponent('/opportunities')}`;
+      window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}`;
       return;
     }
     setBusy(true);
@@ -41,26 +43,69 @@ export default function OpportunityCard({
     }
   }
 
+  const chips: Array<{ icon: typeof BriefcaseBusiness; text: string }> = [
+    { icon: BriefcaseBusiness, text: opportunity.category },
+  ];
+  if (opportunity.location || opportunity.remoteStatus) {
+    chips.push({
+      icon: opportunity.remoteStatus === 'remote' ? Laptop : MapPin,
+      text: opportunity.location || 'Remote',
+    });
+  }
+  if (!opportunity.beginnerFriendly && opportunity.experienceRequirement) {
+    chips.push({
+      icon: GraduationCap,
+      text: opportunity.experienceRequirement.length <= 32 ? opportunity.experienceRequirement : 'Experienced',
+    });
+  }
+
   return (
     <article className={`opportunity-card${compact ? ' is-compact' : ''}`}>
-      <div className="opportunity-card-top">
-        <div>
-          <p className="opportunity-platform">{opportunity.sourcePlatform}</p>
+      <button
+        type="button"
+        className={`save-button${saved ? ' is-saved' : ''}`}
+        onClick={() => void toggleSave()}
+        disabled={busy}
+        aria-label={saved ? 'Remove saved opportunity' : 'Save opportunity'}
+      >
+        {saved ? <BookmarkCheck size={16} strokeWidth={2} /> : <Bookmark size={16} strokeWidth={2} />}
+      </button>
+      <img
+        className="opportunity-logo"
+        src={platformLogoSrc(opportunity.sourcePlatform)}
+        alt=""
+        width={48}
+        height={48}
+      />
+      <div className="opportunity-body">
+        <div className="opportunity-title-row">
           <h3>{opportunity.title}</h3>
+          {opportunity.beginnerFriendly ? <span className="beginner-label">Beginner Friendly</span> : null}
         </div>
-        <MatchBadge match={opportunity.match} />
+        <p className="opportunity-platform">
+          {opportunity.sourcePlatform}
+          <ExternalLink size={13} strokeWidth={2} aria-hidden="true" />
+        </p>
+        <ul className="opportunity-meta">
+          {chips.slice(0, 4).map((chip) => {
+            const Icon = chip.icon;
+            return (
+              <li key={chip.text}>
+                <Icon size={14} strokeWidth={2} aria-hidden="true" />
+                {chip.text}
+              </li>
+            );
+          })}
+        </ul>
+        <p className="opportunity-summary">{opportunity.summary}</p>
       </div>
-      <p className="opportunity-summary">{opportunity.summary}</p>
-      <ul className="opportunity-meta">
-        <li>{opportunity.category}</li>
-        {opportunity.experienceRequirement ? <li>{opportunity.experienceRequirement}</li> : null}
-        {opportunity.location ? <li>{opportunity.location}</li> : null}
-        {opportunity.beginnerFriendly ? <li>Beginner-friendly</li> : null}
-        {opportunity.compensationText ? <li>{opportunity.compensationText}</li> : null}
-      </ul>
       <div className="opportunity-card-actions">
+        {opportunity.compensationText ? (
+          <p className="opportunity-pay">{opportunity.compensationText}</p>
+        ) : null}
+        <MatchBadge match={opportunity.match} returnTo={returnTo} />
         <a
-          className="primary-button"
+          className="primary-button opportunity-view"
           href={opportunity.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -68,16 +113,6 @@ export default function OpportunityCard({
           View Opportunity
           <ExternalLink className="btn-icon" size={16} strokeWidth={2} />
         </a>
-        <button
-          type="button"
-          className={`save-button${saved ? ' is-saved' : ''}`}
-          onClick={() => void toggleSave()}
-          disabled={busy}
-          aria-label={saved ? 'Remove saved opportunity' : 'Save opportunity'}
-        >
-          {saved ? <BookmarkCheck size={18} strokeWidth={2} /> : <Bookmark size={18} strokeWidth={2} />}
-          {saved ? 'Saved' : 'Save'}
-        </button>
       </div>
     </article>
   );

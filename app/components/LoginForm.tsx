@@ -26,7 +26,7 @@ export default function LoginForm({
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
-  const next = safeNext(searchParams.get('next'));
+  const next = safeNext(searchParams.get('returnTo') ?? searchParams.get('next'));
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();

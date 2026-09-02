@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import BookIntroCallButton from '../components/BookIntroCallButton';
+import { ArrowDown, ExternalLink, GraduationCap, Laptop, PhoneCall, Target } from 'lucide-react';
 import OpportunitiesBoard from '../components/OpportunitiesBoard';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
@@ -14,53 +14,84 @@ export const metadata: Metadata = {
   icons: siteIcons,
 };
 
+const benefits = [
+  { icon: GraduationCap, label: 'Beginner-friendly roles' },
+  { icon: Laptop, label: 'Remote opportunities' },
+  { icon: Target, label: 'Profile matching' },
+];
+
 export default function OpportunitiesPage() {
   return (
     <main className="journal-page" id="top">
       <div className="journal-hero-wrap">
         <SiteHeader current="opportunities" />
-        <section className="journal-hero">
+        <section className="journal-hero opportunities-hero">
           <div className="hero-glow" />
-          <div className="journal-hero-grid shell">
+          <div className="journal-hero-grid shell opportunities-hero-grid">
             <div className="journal-hero-copy">
               <p className="journal-eyebrow">AI training opportunities</p>
               <h1>
-                Find AI Training Opportunities
+                Find AI Training
                 <br />
-                <span className="hero-hl">That Fit Your Background.</span>
+                <span className="hero-hl">Opportunities That Fit You.</span>
               </h1>
               <p className="journal-lead">
-                Explore current AI-training opportunities across leading platforms and discover which roles align with your professional experience.
+                Browse real AI-training opportunities across leading platforms, then use your profile to understand which roles align best with your background and skills.
               </p>
-              <div className="hero-actions">
+              <div className="hero-actions opportunities-hero-actions">
                 <a className="primary-button" href="#listings">
                   Browse Opportunities
+                  <ArrowDown className="btn-icon" size={16} strokeWidth={2} />
                 </a>
-                <BookIntroCallButton className="secondary-button" href="/#apply" />
+                <a className="secondary-button" href="/#apply">
+                  <PhoneCall className="btn-icon-lead" size={16} strokeWidth={2} />
+                  Book a Free Intro Call
+                </a>
               </div>
-              <ul className="opportunity-chips">
-                <li>Beginner-friendly roles</li>
-                <li>Remote opportunities</li>
-                <li>Multiple professional backgrounds</li>
+              <ul className="opportunity-benefits">
+                {benefits.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <li key={item.label}>
+                      <Icon size={16} strokeWidth={2} aria-hidden="true" />
+                      {item.label}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
-            <div className="platform-dock opportunities-hero-platforms">
-              <p className="platform-dock-label">Explore opportunities across AI-training platforms</p>
-              <div className="platform-dock-row">
-                {trainingPlatforms.map((platform) => (
-                  <a
-                    key={platform.name}
-                    className="platform-card"
-                    href={platform.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${platform.name} (opens in a new tab)`}
-                    data-platform={platform.name}
-                  >
-                    <img src={platform.src} alt="" />
-                    <span className="platform-card-name">{platform.name}</span>
-                  </a>
-                ))}
+            <div className="opportunities-hero-visual">
+              <img
+                className="job-board-orbit"
+                src="/illustrations/job-board-orbit.svg"
+                alt=""
+                aria-hidden="true"
+              />
+              <div className="opportunities-hero-card">
+                <img
+                  src="/illustrations/opportunities-hero-illustration.svg"
+                  alt=""
+                />
+              </div>
+              <div className="platform-dock opp-platform-row">
+                <p className="platform-dock-label">Explore AI Training Platforms</p>
+                <div className="platform-dock-row">
+                  {trainingPlatforms.map((platform) => (
+                    <a
+                      key={platform.name}
+                      className="platform-card"
+                      href={platform.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${platform.name} (opens in a new tab)`}
+                      data-platform={platform.name}
+                    >
+                      <img src={platform.src} alt="" />
+                      <span className="platform-card-name">{platform.name}</span>
+                      <ExternalLink className="platform-card-link-icon" size={13} strokeWidth={2} aria-hidden="true" />
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -68,20 +99,11 @@ export default function OpportunitiesPage() {
       </div>
       <div className="journal-light" id="listings">
         <div className="shell journal-main">
-          <Suspense fallback={<p className="opportunity-empty">Loading opportunities…</p>}>
+          <Suspense fallback={<div className="opportunity-skeleton-list" aria-hidden="true"><div className="opportunity-card is-skeleton" /><div className="opportunity-card is-skeleton" /><div className="opportunity-card is-skeleton" /></div>}>
             <OpportunitiesBoard />
           </Suspense>
         </div>
       </div>
-      <section className="story-convert">
-        <div className="shell story-convert-inner">
-          <h2>Not sure which opportunities fit you?</h2>
-          <p>Our coaching team can review your background and help you build a clearer path forward.</p>
-          <div className="hero-actions">
-            <BookIntroCallButton href="/#apply" />
-          </div>
-        </div>
-      </section>
       <SiteFooter />
     </main>
   );

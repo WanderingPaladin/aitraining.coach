@@ -5,3 +5,12 @@ export const trainingPlatforms: Array<{ name: string; src: string; href: string 
   { name: 'micro1', src: '/brands/micro1.png', href: 'https://www.micro1.ai/experts' },
   { name: 'DataAnnotation', src: '/brands/dataannotation.png', href: 'https://www.dataannotation.tech/' },
 ];
+
+const PLATFORM_FALLBACK = '/illustrations/platform-fallback.svg';
+
+export function platformLogoSrc(name: string): string {
+  const match = trainingPlatforms.find(
+    (platform) => platform.name.toLowerCase() === name.trim().toLowerCase(),
+  );
+  return match?.src ?? PLATFORM_FALLBACK;
+}

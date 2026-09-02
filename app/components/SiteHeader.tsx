@@ -6,10 +6,10 @@ export type NavCurrent = 'home' | 'how' | 'stories' | 'blog' | 'faq' | 'opportun
 
 const links: Array<{ id: NavCurrent; label: string; homeHref: string; href: string; offPage?: boolean }> = [
   { id: 'home', label: 'Home', homeHref: '#top', href: '/' },
+  { id: 'opportunities', label: 'Opportunities', homeHref: '/opportunities', href: '/opportunities', offPage: true },
   { id: 'how', label: 'How It Works', homeHref: '#how', href: '/#how' },
   { id: 'faq', label: 'FAQ', homeHref: '#faq', href: '/#faq' },
   { id: 'stories', label: 'Stories', homeHref: '/stories', href: '/stories', offPage: true },
-  { id: 'opportunities', label: 'Opportunities', homeHref: '/opportunities', href: '/opportunities', offPage: true },
 ];
 
 export default function SiteHeader({

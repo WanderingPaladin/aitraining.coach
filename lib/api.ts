@@ -277,7 +277,7 @@ export function listOpportunities(filters: OpportunityFilters = {}) {
   if (filters.q) params.set('q', filters.q);
   if (filters.platform) params.set('platform', filters.platform);
   if (filters.category) params.set('category', filters.category);
-  if (filters.beginnerFriendly) params.set('beginnerFriendly', 'true');
+  if (filters.beginnerFriendly != null) params.set('beginnerFriendly', String(filters.beginnerFriendly));
   if (filters.remote) params.set('remote', 'true');
   if (filters.sort) params.set('sort', filters.sort);
   if (filters.limit) params.set('limit', String(filters.limit));
