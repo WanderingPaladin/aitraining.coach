@@ -1,5 +1,4 @@
 import Brand from './Brand';
-import { Linkedin } from './FeatureIcon';
 
 export default function SiteFooter() {
   return (
@@ -27,18 +26,9 @@ export default function SiteFooter() {
           <a href="/blog">Stories From the Journey</a>
           <a href="/stories">Success Stories</a>
         </div>
-        <div>
-          <h3>Connect With Us</h3>
-          <div className="social-links">
-            <a href="https://www.linkedin.com" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer">
-              <Linkedin size={14} strokeWidth={2} />
-            </a>
-          </div>
-        </div>
       </div>
       <div className="shell footer-bottom">
         <span>© 2026 AI Trainers. All rights reserved.</span>
-        <span>Privacy Policy &nbsp;&nbsp; Terms of Service &nbsp;&nbsp; Contact Us</span>
       </div>
     </footer>
   );
