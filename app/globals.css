@@ -2152,7 +2152,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 .opportunity-count { color: #334155; font-size: 14px; font-weight: 600; white-space: nowrap; }
 .opportunity-filters {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto auto;
+  grid-template-columns: minmax(160px, 1.6fr) repeat(5, minmax(0, 1fr)) auto auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 24px;
@@ -2203,8 +2203,14 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   animation: opp-shimmer 1.2s ease-in-out infinite;
 }
 .opportunity-logo { width: 48px; height: 48px; object-fit: contain; border-radius: 12px; background: #f8faff; border: 1px solid #e8eef8; padding: 6px; }
+.opportunity-letter-logo {
+  width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;
+  background: #eef6ff; color: #2455df; font-weight: 700; font-size: 18px; border: 1px solid #e8eef8;
+}
 .opportunity-title-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-right: 36px; }
 .opportunity-card h3 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.03em; color: #0f172a; }
+.opportunity-card h3 a { color: inherit; text-decoration: none; }
+.opportunity-card h3 a:hover { color: #2455df; }
 .beginner-label { padding: 3px 8px; border-radius: 999px; background: #eef6ff; color: #2455df; font-size: 11px; font-weight: 700; }
 .opportunity-platform { margin: 6px 0 0; display: inline-flex; align-items: center; gap: 6px; color: #475569; font-size: 13px; font-weight: 600; }
 .opportunity-summary {
@@ -2253,6 +2259,26 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 .match-explain li { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; color: #334155; }
 .match-explain li svg { flex: none; margin-top: 2px; color: #64748b; }
 .opportunity-disclosure, .opportunity-empty, .opportunity-error { color: #66708b; font-size: 14px; line-height: 1.6; }
+.opportunity-pagination {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center;
+  color: #334155; font-size: 14px; font-weight: 600;
+}
+.opportunity-pagination button:disabled { opacity: 0.45; cursor: not-allowed; }
+.opportunity-detail-hero { padding-bottom: 28px; }
+.opportunity-detail-hero .journal-hero-copy { max-width: 760px; }
+.opportunity-detail-hero h1 { max-width: 760px; font-size: 44px; }
+.opportunity-detail-meta { margin-top: 16px; }
+.opportunity-detail-card {
+  background: #fff; border: 1px solid #e4eaf8; border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  padding: 28px; display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 16px;
+}
+.opportunity-detail-card h2 { margin: 0 0 12px; font-size: 22px; letter-spacing: -0.03em; }
+.job-description { color: #334155; font-size: 16px; line-height: 1.7; }
+.job-description p, .job-description ul, .job-description ol { margin: 0 0 12px; }
+.job-description ul, .job-description ol { padding-left: 20px; }
+.job-description a { color: #2455df; }
+.opportunity-detail-card .opportunity-disclosure { margin: 20px 0 0; }
 .opportunity-error { color: #9f1239; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 12px; }
 .opportunity-empty { text-align: center; padding: 28px 16px; }
 .opportunity-empty img { width: min(280px, 100%); margin: 0 auto 12px; display: block; }
@@ -2322,6 +2348,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   .opportunity-filters { grid-template-columns: 1fr 1fr 1fr; }
   .opportunity-filters .filter-field.is-search { grid-column: 1 / -1; }
   .opportunity-card { grid-template-columns: 48px minmax(0, 1fr); }
+  .opportunity-detail-card { grid-template-columns: 1fr; }
+  .opportunity-detail-hero h1 { font-size: 36px; }
   .opportunity-card-actions { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; padding-top: 0; }
   .auth-copy { order: 2; }
   .auth-card { order: 1; }
@@ -2341,6 +2369,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   .job-board-orbit { display: none; }
   .opportunities-hero { min-height: 0; padding-bottom: 28px; }
   .opportunities-hero .journal-hero-copy h1 { font-size: 38px; }
+  .opportunity-detail-hero h1 { font-size: 32px; }
   .opp-platform-row .platform-dock-row {
     display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px;
   }

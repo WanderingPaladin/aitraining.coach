@@ -52,6 +52,12 @@ export default function OpportunityCard({
       text: opportunity.location || 'Remote',
     });
   }
+  if (opportunity.employmentType) {
+    chips.push({
+      icon: BriefcaseBusiness,
+      text: opportunity.employmentType.replace(/-/g, ' '),
+    });
+  }
   if (!opportunity.beginnerFriendly && opportunity.experienceRequirement) {
     chips.push({
       icon: GraduationCap,
@@ -59,38 +65,52 @@ export default function OpportunityCard({
     });
   }
 
+  const isJob = opportunity.listingKind === 'job';
+  const viewHref = isJob && opportunity.slug ? `/opportunities/${opportunity.slug}` : opportunity.sourceUrl;
+  const viewExternal = !isJob;
+
   return (
     <article className={`opportunity-card${compact ? ' is-compact' : ''}`}>
-      <button
-        type="button"
-        className={`save-button${saved ? ' is-saved' : ''}`}
-        onClick={() => void toggleSave()}
-        disabled={busy}
-        aria-label={saved ? 'Remove saved opportunity' : 'Save opportunity'}
-      >
-        {saved ? <BookmarkCheck size={16} strokeWidth={2} /> : <Bookmark size={16} strokeWidth={2} />}
-      </button>
-      <img
-        className="opportunity-logo"
-        src={platformLogoSrc(opportunity.sourcePlatform)}
-        alt=""
-        width={48}
-        height={48}
-      />
+      {isJob ? null : (
+        <button
+          type="button"
+          className={`save-button${saved ? ' is-saved' : ''}`}
+          onClick={() => void toggleSave()}
+          disabled={busy}
+          aria-label={saved ? 'Remove saved opportunity' : 'Save opportunity'}
+        >
+          {saved ? <BookmarkCheck size={16} strokeWidth={2} /> : <Bookmark size={16} strokeWidth={2} />}
+        </button>
+      )}
+      {opportunity.companyLogoUrl ? (
+        <img className="opportunity-logo" src={opportunity.companyLogoUrl} alt="" width={48} height={48} />
+      ) : isJob ? (
+        <span className="opportunity-letter-logo" aria-hidden="true">
+          {opportunity.sourcePlatform.slice(0, 1).toUpperCase()}
+        </span>
+      ) : (
+        <img
+          className="opportunity-logo"
+          src={platformLogoSrc(opportunity.sourcePlatform)}
+          alt=""
+          width={48}
+          height={48}
+        />
+      )}
       <div className="opportunity-body">
         <div className="opportunity-title-row">
-          <h3>{opportunity.title}</h3>
+          <h3>{isJob && opportunity.slug ? <a href={`/opportunities/${opportunity.slug}`}>{opportunity.title}</a> : opportunity.title}</h3>
           {opportunity.beginnerFriendly ? <span className="beginner-label">Beginner Friendly</span> : null}
         </div>
         <p className="opportunity-platform">
           {opportunity.sourcePlatform}
-          <ExternalLink size={13} strokeWidth={2} aria-hidden="true" />
+          {viewExternal ? <ExternalLink size={13} strokeWidth={2} aria-hidden="true" /> : null}
         </p>
         <ul className="opportunity-meta">
           {chips.slice(0, 4).map((chip) => {
             const Icon = chip.icon;
             return (
-              <li key={chip.text}>
+              <li key={`${chip.text}-${chip.icon.displayName ?? chip.text}`}>
                 <Icon size={14} strokeWidth={2} aria-hidden="true" />
                 {chip.text}
               </li>
@@ -103,15 +123,18 @@ export default function OpportunityCard({
         {opportunity.compensationText ? (
           <p className="opportunity-pay">{opportunity.compensationText}</p>
         ) : null}
-        <MatchBadge match={opportunity.match} returnTo={returnTo} />
+        {isJob ? (
+          <p className="match-badge is-prompt">Employer listing</p>
+        ) : (
+          <MatchBadge match={opportunity.match} returnTo={returnTo} />
+        )}
         <a
           className="primary-button opportunity-view"
-          href={opportunity.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={viewHref}
+          {...(viewExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         >
           View Opportunity
-          <ExternalLink className="btn-icon" size={16} strokeWidth={2} />
+          {viewExternal ? <ExternalLink className="btn-icon" size={16} strokeWidth={2} /> : null}
         </a>
       </div>
     </article>

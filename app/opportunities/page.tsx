@@ -36,7 +36,7 @@ export default function OpportunitiesPage() {
                 <span className="hero-hl">Opportunities That Fit You.</span>
               </h1>
               <p className="journal-lead">
-                Browse real AI-training opportunities across leading platforms, then use your profile to understand which roles align best with your background and skills.
+                Browse real AI-training opportunities curated in one place, then use your profile to understand which roles align best with your background and skills.
               </p>
               <div className="hero-actions opportunities-hero-actions">
                 <a className="primary-button" href="#listings">

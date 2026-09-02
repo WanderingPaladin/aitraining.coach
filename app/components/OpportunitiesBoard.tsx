@@ -2,6 +2,7 @@
 
 import {
   ArrowUpDown,
+  BriefcaseBusiness,
   ChevronDown,
   GraduationCap,
   Laptop,
@@ -14,12 +15,15 @@ import {
   UserPlus,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   getAccountProfile,
+  jobToOpportunity,
   listOpportunities,
+  listPublicJobs,
   type AccountProfile,
+  type JobListResponse,
   type Opportunity,
   type ReadinessScore,
 } from '../../lib/api';
@@ -27,32 +31,91 @@ import { useAuth } from './AuthProvider';
 import OpportunityCard from './OpportunityCard';
 
 type ExperienceFilter = '' | 'beginner' | 'experienced';
+type SortFilter = 'newest' | 'match';
+
+const PAGE_SIZE = 20;
+
+function emptyJobs(): JobListResponse {
+  return {
+    jobs: [],
+    total: 0,
+    page: 1,
+    pageSize: PAGE_SIZE,
+    pageCount: 1,
+    filters: { categories: [], companies: [], employmentTypes: [] },
+  };
+}
+
+function listingTime(item: Opportunity) {
+  return Date.parse(item.postedAt || item.firstSeenAt) || 0;
+}
+
+function listingScore(item: Opportunity) {
+  if (item.listingKind === 'job') {
+    return item.relevanceScore ?? 0;
+  }
+  return item.match?.score ?? 0;
+}
 
 export default function OpportunitiesBoard() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const [query, setQuery] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [platform, setPlatform] = useState('');
-  const [category, setCategory] = useState('');
-  const [experience, setExperience] = useState<ExperienceFilter>('');
-  const [remote, setRemote] = useState(false);
-  const [sort, setSort] = useState<'newest' | 'match'>(searchParams.get('sort') === 'match' ? 'match' : 'newest');
+  const [query, setQuery] = useState(() => (searchParams.get('q') ?? '').trim());
+  const [searchInput, setSearchInput] = useState(() => searchParams.get('q') ?? '');
+  const [platform, setPlatform] = useState(() => searchParams.get('platform') ?? '');
+  const [category, setCategory] = useState(() => searchParams.get('category') ?? '');
+  const [experience, setExperience] = useState<ExperienceFilter>(
+    () => (searchParams.get('experience') as ExperienceFilter) || '',
+  );
+  const [employmentType, setEmploymentType] = useState(() => searchParams.get('employmentType') ?? '');
+  const [remote, setRemote] = useState(() => searchParams.get('remote') === '1' || searchParams.get('remote') === 'true');
+  const [sort, setSort] = useState<SortFilter>(searchParams.get('sort') === 'match' ? 'match' : 'newest');
+  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page')) || 1));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [items, setItems] = useState<Opportunity[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [employmentTypes, setEmploymentTypes] = useState<string[]>([]);
+  const [total, setTotal] = useState(0);
+  const [pageCount, setPageCount] = useState(1);
   const [matchAvailable, setMatchAvailable] = useState(false);
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [readiness, setReadiness] = useState<ReadinessScore | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const skipPageReset = useRef(true);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setQuery(searchInput.trim()), 250);
     return () => window.clearTimeout(timer);
   }, [searchInput]);
+
+  useEffect(() => {
+    if (skipPageReset.current) {
+      skipPageReset.current = false;
+      return;
+    }
+    setPage(1);
+  }, [query, platform, category, experience, employmentType, remote, sort]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (platform) params.set('platform', platform);
+    if (category) params.set('category', category);
+    if (experience) params.set('experience', experience);
+    if (employmentType) params.set('employmentType', employmentType);
+    if (remote) params.set('remote', '1');
+    if (sort !== 'newest') params.set('sort', sort);
+    if (page > 1) params.set('page', String(page));
+    const next = params.toString();
+    const current = searchParams.toString();
+    if (next !== current) {
+      router.replace(next ? `/opportunities?${next}` : '/opportunities', { scroll: false });
+    }
+  }, [query, platform, category, experience, employmentType, remote, sort, page, router, searchParams]);
 
   useEffect(() => {
     if (!user) {
@@ -81,20 +144,68 @@ export default function OpportunitiesBoard() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    void listOpportunities({
-      q: query,
-      platform,
-      category,
-      beginnerFriendly: experience === 'beginner' ? true : experience === 'experienced' ? false : undefined,
-      remote: remote || undefined,
-      sort,
-    })
-      .then((result) => {
+    const includeCuratedItems = !employmentType && page === 1;
+    const includeJobItems = experience === '';
+
+    void Promise.allSettled([
+      listOpportunities({
+        q: query,
+        platform,
+        category,
+        beginnerFriendly: experience === 'beginner' ? true : experience === 'experienced' ? false : undefined,
+        remote: remote || undefined,
+        sort,
+      }),
+      listPublicJobs({
+        q: query,
+        remote: remote || undefined,
+        category,
+        employmentType: employmentType || undefined,
+        company: platform || undefined,
+        sort: sort === 'match' ? 'relevant' : 'newest',
+        page,
+        pageSize: PAGE_SIZE,
+      }),
+    ])
+      .then(([curatedSettled, jobsSettled]) => {
         if (cancelled) return;
-        setItems(result.opportunities);
-        setPlatforms(result.filters.platforms);
-        setCategories(result.filters.categories);
-        setMatchAvailable(result.matchAvailable);
+        const curatedResult =
+          curatedSettled.status === 'fulfilled'
+            ? curatedSettled.value
+            : { opportunities: [], filters: { platforms: [], categories: [] }, matchAvailable: false };
+        const jobsFailed = jobsSettled.status === 'rejected';
+        if (curatedSettled.status === 'rejected' && jobsFailed) {
+          throw curatedSettled.reason;
+        }
+        const jobsResult = jobsSettled.status === 'fulfilled' ? jobsSettled.value : emptyJobs();
+        const curatedItems = curatedResult.opportunities.map((item) => ({
+          ...item,
+          listingKind: item.listingKind ?? 'curated',
+        }));
+        const jobItems = includeJobItems ? jobsResult.jobs.map(jobToOpportunity) : [];
+        const merged = [...(includeCuratedItems ? curatedItems : []), ...jobItems].sort((left, right) => {
+          if (sort === 'match') {
+            return listingScore(right) - listingScore(left) || listingTime(right) - listingTime(left);
+          }
+          return listingTime(right) - listingTime(left);
+        });
+        const curatedCount = employmentType ? 0 : curatedItems.length;
+        const jobTotal = includeJobItems ? jobsResult.total : 0;
+        setItems(merged);
+        setPlatforms(
+          [...new Set([...(curatedResult?.filters.platforms ?? []), ...jobsResult.filters.companies])].sort((a, b) =>
+            a.localeCompare(b),
+          ),
+        );
+        setCategories(
+          [...new Set([...(curatedResult?.filters.categories ?? []), ...jobsResult.filters.categories])].sort((a, b) =>
+            a.localeCompare(b),
+          ),
+        );
+        setEmploymentTypes(jobsResult.filters.employmentTypes);
+        setMatchAvailable(Boolean(curatedResult.matchAvailable));
+        setTotal(curatedCount + jobTotal);
+        setPageCount(includeJobItems ? Math.max(jobsResult.pageCount, 1) : 1);
         setError('');
       })
       .catch(() => {
@@ -106,11 +217,11 @@ export default function OpportunitiesBoard() {
     return () => {
       cancelled = true;
     };
-  }, [query, platform, category, experience, remote, sort, user?.id, reloadKey]);
+  }, [query, platform, category, experience, employmentType, remote, sort, page, user?.id, reloadKey]);
 
   const filterCount = useMemo(
-    () => [platform, category, experience, remote].filter(Boolean).length,
-    [platform, category, experience, remote],
+    () => [platform, category, experience, employmentType, remote].filter(Boolean).length,
+    [platform, category, experience, employmentType, remote],
   );
 
   function clearFilters() {
@@ -119,8 +230,10 @@ export default function OpportunitiesBoard() {
     setPlatform('');
     setCategory('');
     setExperience('');
+    setEmploymentType('');
     setRemote(false);
     setSort('newest');
+    setPage(1);
   }
 
   const filterFields = (
@@ -135,7 +248,7 @@ export default function OpportunitiesBoard() {
           <input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search by role, skill, or platform..."
+            placeholder="Search by role, skill, company, or platform..."
           />
         </div>
       </label>
@@ -190,13 +303,32 @@ export default function OpportunitiesBoard() {
           <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
         </span>
       </label>
+      {employmentTypes.length ? (
+        <label className="filter-field">
+          <span className="filter-label">
+            <BriefcaseBusiness size={16} strokeWidth={2} aria-hidden="true" />
+            Type
+          </span>
+          <span className="filter-select">
+            <select value={employmentType} onChange={(event) => setEmploymentType(event.target.value)}>
+              <option value="">All types</option>
+              {employmentTypes.map((name) => (
+                <option key={name} value={name}>
+                  {name.replace(/-/g, ' ')}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
+          </span>
+        </label>
+      ) : null}
       <label className="filter-field">
         <span className="filter-label">
           <ArrowUpDown size={16} strokeWidth={2} aria-hidden="true" />
           Sort
         </span>
         <span className="filter-select">
-          <select value={sort} onChange={(event) => setSort(event.target.value as 'newest' | 'match')}>
+          <select value={sort} onChange={(event) => setSort(event.target.value as SortFilter)}>
             <option value="newest">Newest</option>
             {user ? <option value="match">Best Match</option> : null}
           </select>
@@ -218,9 +350,9 @@ export default function OpportunitiesBoard() {
       <div className="opportunity-board-head">
         <div>
           <h2>AI Training Opportunities</h2>
-          <p>Explore current roles and open the original listing to apply.</p>
+          <p>Explore current roles curated in one place, then open the original listing to apply.</p>
         </div>
-        {!loading && !error ? <p className="opportunity-count">{items.length} opportunities</p> : null}
+        {!loading && !error ? <p className="opportunity-count">{total} opportunities</p> : null}
       </div>
 
       <form className="opportunity-filters" onSubmit={(event) => event.preventDefault()}>
@@ -239,7 +371,7 @@ export default function OpportunitiesBoard() {
           <input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search by role, skill, or platform..."
+            placeholder="Search by role, skill, company, or platform..."
           />
         </div>
         <button type="button" className="filter-toggle secondary-button on-light" onClick={() => setFiltersOpen(true)}>
@@ -278,7 +410,7 @@ export default function OpportunitiesBoard() {
           {!loading && !error
             ? items.map((item) => (
                 <OpportunityCard
-                  key={item.id}
+                  key={`${item.listingKind ?? 'curated'}-${item.id}`}
                   opportunity={item}
                   onSavedChange={(id, saved) => {
                     setItems((current) => current.map((row) => (row.id === id ? { ...row, saved } : row)));
@@ -286,8 +418,27 @@ export default function OpportunitiesBoard() {
                 />
               ))
             : null}
+          {!loading && !error && pageCount > 1 ? (
+            <nav className="opportunity-pagination" aria-label="Opportunity pages">
+              <button type="button" className="secondary-button on-light" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+                Previous
+              </button>
+              <span>
+                Page {page} of {pageCount}
+              </span>
+              <button
+                type="button"
+                className="secondary-button on-light"
+                disabled={page >= pageCount}
+                onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
+              >
+                Next
+              </button>
+            </nav>
+          ) : null}
           <p className="opportunity-disclosure">
-            AI Trainers curates external opportunities for discovery. Always verify requirements and availability on the original platform.
+            AI Trainers curates external opportunities for discovery and is not the employer. Employer listings are
+            collected from public career pages. Always verify requirements and apply on the original platform.
           </p>
         </div>
 
