@@ -2113,11 +2113,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   color: rgba(226,232,240,0.82); font-size: 13px; font-weight: 600;
 }
 .opportunity-benefits svg { color: #63ddff; flex: none; }
-.opportunities-hero { min-height: 430px; padding: 12px 0 36px; }
-.opportunities-hero-grid {
-  grid-template-columns: minmax(0, 0.54fr) minmax(0, 0.46fr);
-  align-items: start;
-}
+.opportunities-hero { padding: 12px 0 36px; }
 .opportunities-hero .journal-hero-copy h1 {
   max-width: 600px;
   font-size: 56px;
@@ -2335,7 +2331,6 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   .profile-identity, .profile-identity-actions { flex-direction: column; }
   .match-badge { max-width: none; }
   .auth-copy h1 { font-size: 36px; }
-  .opportunities-hero-grid { grid-template-columns: 1fr; }
   .opportunities-hero .journal-hero-copy h1 { font-size: 44px; }
 }
 

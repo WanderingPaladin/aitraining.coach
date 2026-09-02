@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { ArrowDown, ExternalLink, GraduationCap, Laptop, PhoneCall, Target } from 'lucide-react';
+import { ArrowDown, GraduationCap, Laptop, PhoneCall, Target } from 'lucide-react';
 import OpportunitiesBoard from '../components/OpportunitiesBoard';
+import PayrollPreview from '../components/PayrollPreview';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
-import { trainingPlatforms } from '../../lib/platforms';
 import { siteIcons } from '../../lib/siteIcons';
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default function OpportunitiesPage() {
         <SiteHeader current="opportunities" />
         <section className="journal-hero opportunities-hero">
           <div className="hero-glow" />
-          <div className="journal-hero-grid shell opportunities-hero-grid">
+          <div className="hero-grid shell">
             <div className="journal-hero-copy">
               <p className="journal-eyebrow">AI training opportunities</p>
               <h1>
@@ -60,40 +60,7 @@ export default function OpportunitiesPage() {
                 })}
               </ul>
             </div>
-            <div className="opportunities-hero-visual">
-              <img
-                className="job-board-orbit"
-                src="/illustrations/job-board-orbit.svg"
-                alt=""
-                aria-hidden="true"
-              />
-              <div className="opportunities-hero-card">
-                <img
-                  src="/illustrations/opportunities-hero-illustration.svg"
-                  alt=""
-                />
-              </div>
-              <div className="platform-dock opp-platform-row">
-                <p className="platform-dock-label">Explore AI Training Platforms</p>
-                <div className="platform-dock-row">
-                  {trainingPlatforms.map((platform) => (
-                    <a
-                      key={platform.name}
-                      className="platform-card"
-                      href={platform.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${platform.name} (opens in a new tab)`}
-                      data-platform={platform.name}
-                    >
-                      <img src={platform.src} alt="" />
-                      <span className="platform-card-name">{platform.name}</span>
-                      <ExternalLink className="platform-card-link-icon" size={13} strokeWidth={2} aria-hidden="true" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <PayrollPreview />
           </div>
         </section>
       </div>
