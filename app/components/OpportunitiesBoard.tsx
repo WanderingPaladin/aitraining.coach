@@ -22,12 +22,10 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   getAccountProfile,
   jobToOpportunity,
-  listOpportunities,
   listPublicJobs,
   type AccountProfile,
   type JobListResponse,
   type Opportunity,
-  type OpportunityListResponse,
   type ReadinessScore,
 } from '../../lib/api';
 import { useAuth } from './AuthProvider';
@@ -38,43 +36,14 @@ type SortFilter = 'newest' | 'match';
 
 const PAGE_SIZE = 20;
 
-function emptyJobs(): JobListResponse {
-  return {
-    jobs: [],
-    total: 0,
-    page: 1,
-    pageSize: PAGE_SIZE,
-    pageCount: 1,
-    filters: { categories: [], companies: [], employmentTypes: [] },
-  };
-}
-
-function tagCurated(items: Opportunity[]): Opportunity[] {
-  return items.map((item) => ({ ...item, listingKind: item.listingKind ?? 'curated' }));
-}
-
-function listingTime(item: Opportunity) {
-  return Date.parse(item.postedAt || item.firstSeenAt) || 0;
-}
-
-function listingScore(item: Opportunity) {
-  if (item.listingKind === 'job') {
-    return item.relevanceScore ?? 0;
+function filterByExperience(items: Opportunity[], experience: ExperienceFilter) {
+  if (!experience) {
+    return items;
   }
-  return item.match?.score ?? 0;
-}
-
-function mergeListings(curated: Opportunity[], jobs: Opportunity[], sort: SortFilter) {
-  return [...curated, ...jobs].sort((left, right) => {
-    if (sort === 'match') {
-      return listingScore(right) - listingScore(left) || listingTime(right) - listingTime(left);
-    }
-    return listingTime(right) - listingTime(left);
-  });
-}
-
-function emptyCurated(): OpportunityListResponse {
-  return { opportunities: [], filters: { platforms: [], categories: [] }, matchAvailable: false };
+  if (experience === 'beginner') {
+    return items.filter((item) => item.beginnerFriendly);
+  }
+  return items.filter((item) => !item.beginnerFriendly);
 }
 
 function paginationItems(current: number, total: number): Array<number | 'ellipsis'> {
@@ -106,19 +75,15 @@ function paginationItems(current: number, total: number): Array<number | 'ellips
 }
 
 export default function OpportunitiesBoard({
-  initialCurated = null,
   initialJobs = null,
 }: {
-  initialCurated?: OpportunityListResponse | null;
   initialJobs?: JobListResponse | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const initialPage = Math.max(1, Number(searchParams.get('page')) || 1);
-  const seededCurated = initialPage === 1 ? tagCurated(initialCurated?.opportunities ?? []) : [];
-  const seededJobs = (initialJobs?.jobs ?? []).map(jobToOpportunity);
-  const seededItems = mergeListings(seededCurated, seededJobs, 'newest');
+  const seededItems = filterByExperience((initialJobs?.jobs ?? []).map(jobToOpportunity), '');
   const [query, setQuery] = useState(() => (searchParams.get('q') ?? '').trim());
   const [searchInput, setSearchInput] = useState(() => searchParams.get('q') ?? '');
   const [platform, setPlatform] = useState(() => searchParams.get('platform') ?? '');
@@ -135,19 +100,15 @@ export default function OpportunitiesBoard({
   const [error, setError] = useState('');
   const [items, setItems] = useState<Opportunity[]>(seededItems);
   const [platforms, setPlatforms] = useState<string[]>(() =>
-    [...new Set([...(initialCurated?.filters.platforms ?? []), ...(initialJobs?.filters.companies ?? [])])].sort((a, b) =>
-      a.localeCompare(b),
-    ),
+    [...new Set(initialJobs?.filters.companies ?? [])].sort((a, b) => a.localeCompare(b)),
   );
   const [categories, setCategories] = useState<string[]>(() =>
-    [...new Set([...(initialCurated?.filters.categories ?? []), ...(initialJobs?.filters.categories ?? [])])].sort((a, b) =>
-      a.localeCompare(b),
-    ),
+    [...new Set(initialJobs?.filters.categories ?? [])].sort((a, b) => a.localeCompare(b)),
   );
   const [employmentTypes, setEmploymentTypes] = useState<string[]>(initialJobs?.filters.employmentTypes ?? []);
-  const [total, setTotal] = useState(seededCurated.length + (initialJobs?.total ?? 0));
+  const [total, setTotal] = useState(initialJobs?.total ?? 0);
   const [pageCount, setPageCount] = useState(Math.max(initialJobs?.pageCount ?? 1, 1));
-  const [matchAvailable, setMatchAvailable] = useState(Boolean(initialCurated?.matchAvailable));
+  const [matchAvailable, setMatchAvailable] = useState(Boolean(initialJobs?.matchAvailable));
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [readiness, setReadiness] = useState<ReadinessScore | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -211,75 +172,9 @@ export default function OpportunitiesBoard({
 
   useEffect(() => {
     let cancelled = false;
-    const includeCuratedItems = !employmentType && page === 1;
-    const includeJobItems = experience === '';
     if (itemsRef.current.length === 0) {
       setLoading(true);
     }
-
-    let curatedResult = emptyCurated();
-    let jobsResult = emptyJobs();
-    let curatedDone = false;
-    let jobsDone = false;
-    let curatedFailed = false;
-    let jobsFailed = false;
-
-    const publish = () => {
-      if (cancelled) return;
-      if (curatedFailed && jobsFailed) {
-        if (itemsRef.current.length === 0) {
-          setError("We couldn't load opportunities right now. Please try again.");
-        }
-        setLoading(false);
-        return;
-      }
-      if (!curatedDone && jobsDone && jobsResult.jobs.length === 0) {
-        return;
-      }
-      const curatedItems = includeCuratedItems ? tagCurated(curatedResult.opportunities) : [];
-      const jobItems = includeJobItems ? jobsResult.jobs.map(jobToOpportunity) : [];
-      setItems(mergeListings(curatedItems, jobItems, sort));
-      setPlatforms(
-        [...new Set([...curatedResult.filters.platforms, ...jobsResult.filters.companies])].sort((a, b) =>
-          a.localeCompare(b),
-        ),
-      );
-      setCategories(
-        [...new Set([...curatedResult.filters.categories, ...jobsResult.filters.categories])].sort((a, b) =>
-          a.localeCompare(b),
-        ),
-      );
-      if (jobsDone) {
-        setEmploymentTypes(jobsResult.filters.employmentTypes);
-      }
-      setMatchAvailable(Boolean(curatedResult.matchAvailable));
-      setTotal((employmentType ? 0 : curatedResult.opportunities.length) + (includeJobItems ? jobsResult.total : 0));
-      setPageCount(includeJobItems ? Math.max(jobsResult.pageCount, 1) : 1);
-      setError('');
-      if (curatedDone || jobItems.length > 0) {
-        setLoading(false);
-      }
-    };
-
-    void listOpportunities({
-      q: query,
-      platform,
-      category,
-      beginnerFriendly: experience === 'beginner' ? true : experience === 'experienced' ? false : undefined,
-      remote: remote || undefined,
-      sort,
-    })
-      .then((result) => {
-        curatedResult = result;
-      })
-      .catch(() => {
-        curatedFailed = true;
-        curatedResult = emptyCurated();
-      })
-      .finally(() => {
-        curatedDone = true;
-        publish();
-      });
 
     void listPublicJobs({
       q: query,
@@ -287,20 +182,29 @@ export default function OpportunitiesBoard({
       category,
       employmentType: employmentType || undefined,
       company: platform || undefined,
-      sort: sort === 'match' ? 'relevant' : 'newest',
+      sort,
       page,
       pageSize: PAGE_SIZE,
     })
       .then((result) => {
-        jobsResult = result;
+        if (cancelled) return;
+        const jobItems = filterByExperience(result.jobs.map(jobToOpportunity), experience);
+        setItems(jobItems);
+        setPlatforms([...new Set(result.filters.companies)].sort((a, b) => a.localeCompare(b)));
+        setCategories([...new Set(result.filters.categories)].sort((a, b) => a.localeCompare(b)));
+        setEmploymentTypes(result.filters.employmentTypes);
+        setMatchAvailable(Boolean(result.matchAvailable));
+        setTotal(experience ? jobItems.length : result.total);
+        setPageCount(Math.max(result.pageCount, 1));
+        setError('');
+        setLoading(false);
       })
       .catch(() => {
-        jobsFailed = true;
-        jobsResult = emptyJobs();
-      })
-      .finally(() => {
-        jobsDone = true;
-        publish();
+        if (cancelled) return;
+        if (itemsRef.current.length === 0) {
+          setError("We couldn't load opportunities right now. Please try again.");
+        }
+        setLoading(false);
       });
 
     return () => {
@@ -527,7 +431,7 @@ export default function OpportunitiesBoard({
                           Your Matches
                         </h3>
                         {matched.map((item) => (
-                          <OpportunityCard key={`${item.listingKind ?? 'curated'}-${item.id}`} opportunity={item} />
+                          <OpportunityCard key={`job-${item.id}`} opportunity={item} />
                         ))}
                       </div>
                     ) : (
@@ -540,7 +444,7 @@ export default function OpportunitiesBoard({
                       <div className="match-group">
                         <h3 className="match-group-heading is-secondary">Other Opportunities</h3>
                         {rest.map((item) => (
-                          <OpportunityCard key={`${item.listingKind ?? 'curated'}-${item.id}`} opportunity={item} />
+                          <OpportunityCard key={`job-${item.id}`} opportunity={item} />
                         ))}
                       </div>
                     ) : null}
@@ -549,7 +453,7 @@ export default function OpportunitiesBoard({
               })()
             : items.length > 0
               ? items.map((item) => (
-                  <OpportunityCard key={`${item.listingKind ?? 'curated'}-${item.id}`} opportunity={item} />
+                  <OpportunityCard key={`job-${item.id}`} opportunity={item} />
                 ))
               : null}
           {!loading && items.length > 0 && pageCount > 1 ? (

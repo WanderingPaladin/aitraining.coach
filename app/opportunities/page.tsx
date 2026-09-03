@@ -5,7 +5,7 @@ import OpportunitiesBoard from '../components/OpportunitiesBoard';
 import PayrollPreview from '../components/PayrollPreview';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
-import { fetchOpportunitiesServer, fetchPublicJobsServer } from '../../lib/api';
+import { fetchPublicJobsServer } from '../../lib/api';
 import { siteIcons } from '../../lib/siteIcons';
 
 export const metadata: Metadata = {
@@ -40,9 +40,9 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       paramValue(params.employmentType) ||
       paramValue(params.remote),
   );
-  const [initialCurated, initialJobs] = hasFilters
-    ? [null, null]
-    : await Promise.all([fetchOpportunitiesServer(), fetchPublicJobsServer({ page, pageSize: 20 })]);
+  const initialJobs = hasFilters
+    ? null
+    : await fetchPublicJobsServer({ page, pageSize: 20 });
 
   return (
     <main className="journal-page" id="top">
@@ -90,7 +90,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       <div className="journal-light" id="listings">
         <div className="shell journal-main">
           <Suspense fallback={<div className="opportunity-skeleton-list" aria-hidden="true"><div className="opportunity-card is-skeleton" /><div className="opportunity-card is-skeleton" /><div className="opportunity-card is-skeleton" /></div>}>
-            <OpportunitiesBoard initialCurated={initialCurated} initialJobs={initialJobs} />
+            <OpportunitiesBoard initialJobs={initialJobs} />
           </Suspense>
         </div>
       </div>

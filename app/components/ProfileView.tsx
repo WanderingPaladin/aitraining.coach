@@ -14,7 +14,8 @@ import {
   ApiError,
   getAccountProfile,
   listAccountActivity,
-  listOpportunities,
+  listPublicJobs,
+  jobToOpportunity,
   resendVerification,
   type AccountActivity,
   type AccountProfile,
@@ -100,16 +101,21 @@ export default function ProfileView() {
     let cancelled = false;
     void Promise.all([
       getAccountProfile(),
-      listOpportunities({ sort: 'match', limit: 3 }),
+      listPublicJobs({ sort: 'match', pageSize: 3 }),
       listAccountActivity(),
     ])
-      .then(([account, opportunityResult, activityResult]) => {
+      .then(([account, jobsResult, activityResult]) => {
         if (cancelled) return;
         setProfile(account.profile);
         setReadiness(account.readiness);
         setCanScore(account.canScoreMatch);
         setApplications(account.applications ?? []);
-        setMatches(opportunityResult.opportunities.slice(0, 3));
+        setMatches(
+          jobsResult.jobs
+            .map(jobToOpportunity)
+            .filter((item) => item.match && item.match.score > 0)
+            .slice(0, 3),
+        );
         setActivity(activityResult.activity);
         setLoadingData(false);
       })

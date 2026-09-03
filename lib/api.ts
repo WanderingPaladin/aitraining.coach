@@ -207,6 +207,7 @@ export type PublicJob = {
   expiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  match?: OpportunityMatch | null;
 };
 
 export type JobListResponse = {
@@ -215,6 +216,7 @@ export type JobListResponse = {
   page: number;
   pageSize: number;
   pageCount: number;
+  matchAvailable?: boolean;
   filters: {
     categories: string[];
     companies: string[];
@@ -342,7 +344,7 @@ export type JobListFilters = {
   category?: string;
   employmentType?: string;
   company?: string;
-  sort?: 'newest' | 'relevant';
+  sort?: 'newest' | 'relevant' | 'match';
   page?: number;
   pageSize?: number;
 };
@@ -363,6 +365,8 @@ export function formatJobSalary(job: Pick<PublicJob, 'salaryMin' | 'salaryMax' |
 
 export function jobToOpportunity(job: PublicJob): Opportunity {
   const summary = (job.descriptionText || '').replace(/\s+/g, ' ').trim().slice(0, 220);
+  const experienceText = `${job.experienceLevel ?? ''} ${job.descriptionText ?? ''}`.toLowerCase();
+  const beginnerFriendly = /entry|junior|beginner|no (prior )?experience|0\+?\s*year|intern/i.test(experienceText);
   return {
     id: job.id,
     listingKind: 'job',
@@ -381,14 +385,14 @@ export function jobToOpportunity(job: PublicJob): Opportunity {
     location: job.location,
     remoteStatus: job.remoteType,
     compensationText: formatJobSalary(job),
-    beginnerFriendly: false,
+    beginnerFriendly,
     eligibility: null,
     postedAt: job.postedAt,
     firstSeenAt: job.createdAt,
     lastVerifiedAt: job.updatedAt,
     status: 'open',
     saved: false,
-    match: null,
+    match: job.match ?? null,
   };
 }
 
