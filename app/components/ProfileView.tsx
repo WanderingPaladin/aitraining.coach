@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   Circle,
-  CircleHelp,
   Pencil,
   Sparkles,
   Target,
@@ -56,12 +56,12 @@ function strongestSignals(profile: AccountProfile): string[] {
   if (profile.profession) signals.push(profile.profession);
   if (profile.yearsDomainExperience) {
     signals.push(
-      `${profile.yearsDomainExperience} year${profile.yearsDomainExperience === 1 ? '' : 's'} professional experience`,
+      `${profile.yearsDomainExperience}+ year${profile.yearsDomainExperience === 1 ? '' : 's'} experience`,
     );
   }
   if (profile.specialties[0]) signals.push(profile.specialties[0]);
   if (profile.usEligibilityConfirmed) signals.push('U.S.-based');
-  if (profile.weeklyAvailability) signals.push(`${profile.weeklyAvailability} availability`);
+  if (profile.weeklyAvailability) signals.push(profile.weeklyAvailability);
   if (profile.remotePreference) signals.push(profile.remotePreference);
   if (profile.platformsJoined.length) {
     signals.push(
@@ -98,7 +98,6 @@ export default function ProfileView() {
       return;
     }
     let cancelled = false;
-    setLoadingData(true);
     void Promise.all([
       getAccountProfile(),
       listOpportunities({ sort: 'match', limit: 3 }),
@@ -154,15 +153,13 @@ export default function ProfileView() {
   const statusTags = [
     profile.applicantStage ? STAGE_LABELS[profile.applicantStage] : null,
     profile.platformStatus === 'active' ? 'Active AI Trainer' : null,
-    profile.usEligibilityConfirmed ? 'U.S. Eligible' : null,
   ].filter((value, index, list): value is string => Boolean(value) && list.indexOf(value) === index);
 
   const journey = [
-    { label: 'Profile Created', done: true },
-    { label: 'Profile Completed', done: canScore },
-    { label: 'Application Submitted', done: applications.length > 0 },
-    { label: 'Intro Call Booked', done: booked },
-    { label: 'Coaching Started', done: coaching },
+    { label: 'Profile', done: true },
+    { label: 'Application', done: applications.length > 0 },
+    { label: 'Intro Call', done: booked },
+    { label: 'Coaching', done: coaching },
   ];
 
   if (sparse) {
@@ -228,9 +225,11 @@ export default function ProfileView() {
           <div className="profile-avatar" aria-hidden="true">
             {initials(profile, user.email)}
           </div>
-          <div>
+          <div className="profile-identity-copy">
             <h2>{name}</h2>
-            <p>{identityLine || 'Add your background to personalize matches.'}</p>
+            <p className="profile-identity-line">
+              {identityLine || 'Add your background and location to personalize matches.'}
+            </p>
             {statusTags.length ? (
               <ul className="profile-status-tags">
                 {statusTags.map((tag) => (
@@ -239,14 +238,14 @@ export default function ProfileView() {
               </ul>
             ) : null}
             <div className="profile-identity-actions">
-              <a className="primary-button" href="/opportunities?sort=match">
-                <Target size={16} strokeWidth={2} aria-hidden="true" />
-                View My Matches
-              </a>
-              <a className="secondary-button on-light" href="/profile/edit">
+              <Link className="secondary-button on-light" href="/profile/edit">
                 <Pencil size={16} strokeWidth={2} aria-hidden="true" />
                 Edit Profile
-              </a>
+              </Link>
+              <Link className="primary-button" href="/opportunities?sort=match">
+                <Target size={16} strokeWidth={2} aria-hidden="true" />
+                View My Matches
+              </Link>
             </div>
           </div>
         </div>
@@ -262,7 +261,6 @@ export default function ProfileView() {
             <i style={{ width: `${Math.min(100, readiness.score)}%` }} />
           </div>
         </div>
-        <p className="match-disclaimer">AI Training Readiness measures how complete and prepared your profile is. It is not a Profile Match for a specific opportunity, and it is not a chance of being hired.</p>
         {hints.length ? (
           <div className="improve-block">
             <p>Improve your profile:</p>
@@ -273,25 +271,33 @@ export default function ProfileView() {
             </ul>
           </div>
         ) : null}
-        <details className="score-help">
-          <summary>
-            <CircleHelp size={16} strokeWidth={2} aria-hidden="true" />
-            What affects this score?
-          </summary>
-          <ul className="readiness-bars">
-            {readiness.components.map((item) => (
-              <li key={item.key}>
-                <span>
-                  {item.label}
-                  {item.hint ? <small>{item.hint}</small> : null}
-                </span>
-                <b>
-                  <i style={{ width: `${Math.round((item.score / item.max) * 100)}%` }} />
-                </b>
-              </li>
-            ))}
-          </ul>
-        </details>
+      </section>
+
+      <section className="profile-panel matches-panel">
+        <div className="profile-section-head">
+          <h3>
+            <Target size={18} strokeWidth={2} aria-hidden="true" />
+            Top Opportunity Matches
+          </h3>
+          <Link href="/opportunities?sort=match">View All Matches</Link>
+        </div>
+        {!canScore ? (
+          <div className="opportunity-empty">
+            <p>Complete your profile to unlock personalized opportunity matches.</p>
+            <Link className="primary-button" href="/profile/edit">
+              Complete Profile
+            </Link>
+          </div>
+        ) : matches.length ? (
+          matches.map((item) => <OpportunityCard key={item.id} opportunity={item} compact />)
+        ) : (
+          <div className="opportunity-empty">
+            <p>No matching opportunities yet. Browse the board while we continue adding listings.</p>
+            <Link className="primary-button" href="/opportunities">
+              Browse Opportunities
+            </Link>
+          </div>
+        )}
       </section>
 
       <section className="profile-panel">
@@ -302,40 +308,13 @@ export default function ProfileView() {
           </h3>
         </div>
         {signals.length ? (
-          <ul className="signal-list">
+          <ul className="signal-list is-stacked">
             {signals.map((signal) => (
               <li key={signal}>{signal}</li>
             ))}
           </ul>
         ) : (
           <p>Add background details to highlight where you fit.</p>
-        )}
-      </section>
-
-      <section className="profile-panel matches-panel">
-        <div className="profile-section-head">
-          <h3>
-            <Target size={18} strokeWidth={2} aria-hidden="true" />
-            Top Opportunity Matches
-          </h3>
-          <a href="/opportunities?sort=match">View All Matches →</a>
-        </div>
-        {!canScore ? (
-          <div className="opportunity-empty">
-            <p>Complete your profile to unlock personalized opportunity matches.</p>
-            <a className="primary-button" href="/profile/edit">
-              Complete Profile
-            </a>
-          </div>
-        ) : matches.length ? (
-          matches.map((item) => <OpportunityCard key={item.id} opportunity={item} compact />)
-        ) : (
-          <div className="opportunity-empty">
-            <p>No matching opportunities yet. Browse the board while we continue adding listings.</p>
-            <a className="primary-button" href="/opportunities">
-              Browse Opportunities
-            </a>
-          </div>
         )}
       </section>
 
@@ -357,7 +336,20 @@ export default function ProfileView() {
         </ol>
       </section>
 
-      <div className="profile-detail-grid">
+      <section className="profile-panel">
+        <div className="profile-section-head">
+          <h3>Saved Opportunities</h3>
+        </div>
+        <div className="saved-opps-empty">
+          <p>Saved opportunities are not available for employer listings yet.</p>
+        </div>
+      </section>
+
+      <section className="profile-panel profile-details-panel">
+        <div className="profile-section-head">
+          <h3>Professional Profile Details</h3>
+        </div>
+        <div className="profile-detail-grid">
         <section className="profile-panel">
           <h3>Background</h3>
           <dl className="profile-facts">
@@ -430,7 +422,8 @@ export default function ProfileView() {
             </div>
           </dl>
         </section>
-      </div>
+        </div>
+      </section>
 
       <section className="profile-panel coaching-panel">
         <p>Want help turning this profile into a focused AI-training plan?</p>
