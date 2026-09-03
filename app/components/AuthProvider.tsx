@@ -64,8 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return result.user;
       },
       logout: async () => {
-        await logoutAccount();
-        setUser(null);
+        try {
+          await logoutAccount();
+        } finally {
+          setUser(null);
+        }
       },
     }),
     [user, loading, refresh],

@@ -61,8 +61,11 @@ export default function AccountNav() {
             role="menuitem"
             onClick={async () => {
               setOpen(false);
-              await logout();
-              window.location.href = '/';
+              try {
+                await logout();
+              } finally {
+                window.location.href = '/';
+              }
             }}
           >
             Sign out

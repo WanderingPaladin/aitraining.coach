@@ -288,7 +288,7 @@ export function loginAccount(input: { email: string; password: string; remember?
 }
 
 export function logoutAccount() {
-  return request<{ ok: true }>('/v1/auth/logout', { method: 'POST' });
+  return request<{ ok: true }>('/v1/auth/logout', { method: 'POST', body: '{}' });
 }
 
 export function verifyAccountEmail(token: string) {
@@ -313,7 +313,7 @@ export function resetPassword(input: { token: string; password: string }) {
 }
 
 export function resendVerification() {
-  return request<{ ok: true }>('/v1/auth/resend-verification', { method: 'POST' });
+  return request<{ ok: true }>('/v1/auth/resend-verification', { method: 'POST', body: '{}' });
 }
 
 export type OpportunityListResponse = {
