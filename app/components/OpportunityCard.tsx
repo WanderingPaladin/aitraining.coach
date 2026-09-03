@@ -145,11 +145,7 @@ export default function OpportunityCard({
             {opportunity.compensationText}
           </p>
         ) : null}
-        {isJob ? (
-          <p className="match-badge is-prompt">Employer listing</p>
-        ) : (
-          <MatchBadge match={opportunity.match} returnTo={returnTo} />
-        )}
+        <MatchBadge match={opportunity.match} returnTo={returnTo} />
         {viewLink}
       </div>
     </article>
