@@ -279,7 +279,7 @@ export default function ProfileView() {
             <Target size={18} strokeWidth={2} aria-hidden="true" />
             Top Opportunity Matches
           </h3>
-          <Link href="/opportunities?sort=match">View All Matches</Link>
+          <a href="/opportunities?sort=match">View All Matches</a>
         </div>
         {!canScore ? (
           <div className="opportunity-empty">
