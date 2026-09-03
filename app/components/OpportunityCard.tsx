@@ -1,56 +1,18 @@
 'use client';
 
-import {
-  Bookmark,
-  BookmarkCheck,
-  BriefcaseBusiness,
-  DollarSign,
-  ExternalLink,
-  GraduationCap,
-  Laptop,
-  MapPin,
-} from 'lucide-react';
-import { useState } from 'react';
+import { BriefcaseBusiness, DollarSign, ExternalLink, GraduationCap, Laptop, MapPin } from 'lucide-react';
 import type { Opportunity } from '../../lib/api';
-import { saveOpportunity, unsaveOpportunity } from '../../lib/api';
 import { platformLogoSrc } from '../../lib/platforms';
-import { useAuth } from './AuthProvider';
 import MatchBadge from './MatchBadge';
 
 export default function OpportunityCard({
   opportunity,
   compact = false,
-  onSavedChange,
 }: {
   opportunity: Opportunity;
   compact?: boolean;
-  onSavedChange?: (id: string, saved: boolean) => void;
 }) {
-  const { user } = useAuth();
-  const [saved, setSaved] = useState(opportunity.saved);
-  const [busy, setBusy] = useState(false);
   const returnTo = `/opportunities`;
-
-  async function toggleSave() {
-    if (!user) {
-      window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}`;
-      return;
-    }
-    setBusy(true);
-    try {
-      if (saved) {
-        await unsaveOpportunity(opportunity.id);
-        setSaved(false);
-        onSavedChange?.(opportunity.id, false);
-      } else {
-        await saveOpportunity(opportunity.id);
-        setSaved(true);
-        onSavedChange?.(opportunity.id, true);
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
 
   const chips: Array<{ icon: typeof BriefcaseBusiness; text: string }> = [];
   if (opportunity.remoteStatus === 'remote' || /remote/i.test(opportunity.location ?? '')) {
@@ -96,19 +58,6 @@ export default function OpportunityCard({
       height={48}
     />
   );
-
-  const saveControl =
-    isJob ? null : (
-      <button
-        type="button"
-        className={`save-button${saved ? ' is-saved' : ''}`}
-        onClick={() => void toggleSave()}
-        disabled={busy}
-        aria-label={saved ? 'Remove saved opportunity' : 'Save opportunity'}
-      >
-        {saved ? <BookmarkCheck size={16} strokeWidth={2} /> : <Bookmark size={16} strokeWidth={2} />}
-      </button>
-    );
 
   const viewLink = (
     <a
@@ -164,7 +113,6 @@ export default function OpportunityCard({
 
   return (
     <article className="opportunity-card">
-      {saveControl}
       {logo}
       <div className="opportunity-body">
         <div className="opportunity-title-row">

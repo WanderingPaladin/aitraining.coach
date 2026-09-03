@@ -516,13 +516,7 @@ export default function OpportunitiesBoard({
           ) : null}
           {items.length
             ? items.map((item) => (
-                <OpportunityCard
-                  key={`${item.listingKind ?? 'curated'}-${item.id}`}
-                  opportunity={item}
-                  onSavedChange={(id, saved) => {
-                    setItems((current) => current.map((row) => (row.id === id ? { ...row, saved } : row)));
-                  }}
-                />
+                <OpportunityCard key={`${item.listingKind ?? 'curated'}-${item.id}`} opportunity={item} />
               ))
             : null}
           {!loading && items.length > 0 && pageCount > 1 ? (

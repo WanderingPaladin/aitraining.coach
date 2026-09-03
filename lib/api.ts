@@ -335,18 +335,6 @@ export function listOpportunities(filters: OpportunityFilters = {}) {
   return request<OpportunityListResponse>(`/v1/opportunities${query ? `?${query}` : ''}`);
 }
 
-export function saveOpportunity(id: string) {
-  return request<{ opportunity: Opportunity }>(`/v1/opportunities/${id}/save`, { method: 'POST' });
-}
-
-export function unsaveOpportunity(id: string) {
-  return request<{ ok: true }>(`/v1/opportunities/${id}/save`, { method: 'DELETE' });
-}
-
-export function listSavedOpportunities() {
-  return request<{ opportunities: Opportunity[] }>('/v1/opportunities/saved');
-}
-
 export type JobListFilters = {
   q?: string;
   remote?: boolean;

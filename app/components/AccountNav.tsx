@@ -53,9 +53,6 @@ export default function AccountNav() {
           <a href="/profile" role="menuitem" onClick={() => setOpen(false)}>
             Profile
           </a>
-          <a href="/saved-opportunities" role="menuitem" onClick={() => setOpen(false)}>
-            Saved Opportunities
-          </a>
           <button
             type="button"
             role="menuitem"

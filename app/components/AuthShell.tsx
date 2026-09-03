@@ -28,8 +28,8 @@ export default function AuthShell({
                   <p>A transparent profile match, not a hiring prediction.</p>
                 </article>
                 <article>
-                  <strong>Save roles for later</strong>
-                  <p>Bookmark external listings and come back when you are ready.</p>
+                  <strong>Browse current roles</strong>
+                  <p>See AI-training opportunities across leading platforms in one place.</p>
                 </article>
                 <article>
                   <strong>Keep coaching progress together</strong>

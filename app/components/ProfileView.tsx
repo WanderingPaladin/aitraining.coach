@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Bookmark,
   CheckCircle2,
   Circle,
   CircleHelp,
@@ -16,7 +15,6 @@ import {
   getAccountProfile,
   listAccountActivity,
   listOpportunities,
-  listSavedOpportunities,
   resendVerification,
   type AccountActivity,
   type AccountProfile,
@@ -87,7 +85,6 @@ export default function ProfileView() {
   const [readiness, setReadiness] = useState<ReadinessScore | null>(null);
   const [canScore, setCanScore] = useState(false);
   const [matches, setMatches] = useState<Opportunity[]>([]);
-  const [saved, setSaved] = useState<Opportunity[]>([]);
   const [activity, setActivity] = useState<AccountActivity[]>([]);
   const [applications, setApplications] = useState<Array<{ id: string; status: string }>>([]);
   const [error, setError] = useState('');
@@ -105,17 +102,15 @@ export default function ProfileView() {
     void Promise.all([
       getAccountProfile(),
       listOpportunities({ sort: 'match', limit: 3 }),
-      listSavedOpportunities(),
       listAccountActivity(),
     ])
-      .then(([account, opportunityResult, savedResult, activityResult]) => {
+      .then(([account, opportunityResult, activityResult]) => {
         if (cancelled) return;
         setProfile(account.profile);
         setReadiness(account.readiness);
         setCanScore(account.canScoreMatch);
         setApplications(account.applications ?? []);
         setMatches(opportunityResult.opportunities.slice(0, 3));
-        setSaved(savedResult.opportunities.slice(0, 3));
         setActivity(activityResult.activity);
         setLoadingData(false);
       })
@@ -167,7 +162,6 @@ export default function ProfileView() {
     { label: 'Profile Completed', done: canScore },
     { label: 'Application Submitted', done: applications.length > 0 },
     { label: 'Intro Call Booked', done: booked },
-    { label: 'Saved Opportunities', done: saved.length > 0 },
     { label: 'Coaching Started', done: coaching },
   ];
 
@@ -361,26 +355,6 @@ export default function ProfileView() {
             </li>
           ))}
         </ol>
-      </section>
-
-      <section className="profile-panel">
-        <div className="profile-section-head">
-          <h3>
-            <Bookmark size={18} strokeWidth={2} aria-hidden="true" />
-            Saved Opportunities
-          </h3>
-          <a href="/saved-opportunities">View Saved Opportunities</a>
-        </div>
-        {saved.length === 0 ? (
-          <div className="opportunity-empty">
-            <p>You haven&apos;t saved any opportunities yet.</p>
-            <a className="primary-button" href="/opportunities">
-              Browse Opportunities
-            </a>
-          </div>
-        ) : (
-          saved.map((item) => <OpportunityCard key={item.id} opportunity={item} compact />)
-        )}
       </section>
 
       <div className="profile-detail-grid">
