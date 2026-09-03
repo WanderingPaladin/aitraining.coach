@@ -238,14 +238,14 @@ export default function ProfileView() {
               </ul>
             ) : null}
             <div className="profile-identity-actions">
-              <Link className="secondary-button on-light" href="/profile/edit">
+              <a className="secondary-button on-light" href="/profile/edit">
                 <Pencil size={16} strokeWidth={2} aria-hidden="true" />
                 Edit Profile
-              </Link>
-              <Link className="primary-button" href="/opportunities?sort=match">
+              </a>
+              <a className="primary-button" href="/opportunities?sort=match">
                 <Target size={16} strokeWidth={2} aria-hidden="true" />
                 View My Matches
-              </Link>
+              </a>
             </div>
           </div>
         </div>
