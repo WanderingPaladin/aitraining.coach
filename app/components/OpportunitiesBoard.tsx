@@ -514,11 +514,44 @@ export default function OpportunitiesBoard({
               </button>
             </div>
           ) : null}
-          {items.length
-            ? items.map((item) => (
-                <OpportunityCard key={`${item.listingKind ?? 'curated'}-${item.id}`} opportunity={item} />
-              ))
-            : null}
+          {items.length > 0 && sort === 'match' && matchAvailable
+            ? (() => {
+                const matched = items.filter((item) => item.match && item.match.score > 0);
+                const rest = items.filter((item) => !item.match || item.match.score <= 0);
+                return (
+                  <>
+                    {matched.length > 0 ? (
+                      <div className="match-group">
+                        <h3 className="match-group-heading">
+                          <Target size={18} strokeWidth={2} aria-hidden="true" />
+                          Your Matches
+                        </h3>
+                        {matched.map((item) => (
+                          <OpportunityCard key={`${item.listingKind ?? 'curated'}-${item.id}`} opportunity={item} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="opportunity-empty">
+                        <h3>No matches for your profile yet.</h3>
+                        <p>Complete your profile to unlock personalized matches, or browse all opportunities below.</p>
+                      </div>
+                    )}
+                    {rest.length > 0 ? (
+                      <div className="match-group">
+                        <h3 className="match-group-heading is-secondary">Other Opportunities</h3>
+                        {rest.map((item) => (
+                          <OpportunityCard key={`${item.listingKind ?? 'curated'}-${item.id}`} opportunity={item} />
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                );
+              })()
+            : items.length > 0
+              ? items.map((item) => (
+                  <OpportunityCard key={`${item.listingKind ?? 'curated'}-${item.id}`} opportunity={item} />
+                ))
+              : null}
           {!loading && items.length > 0 && pageCount > 1 ? (
             <nav className="opportunity-pagination" aria-label="Opportunity pages">
               <button

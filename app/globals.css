@@ -2308,6 +2308,15 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 .match-explain ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 .match-explain li { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; color: #334155; }
 .match-explain li svg { flex: none; margin-top: 2px; color: #64748b; }
+.match-group { display: flex; flex-direction: column; gap: 10px; }
+.match-group-heading {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 8px 0 0; font-size: 17px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em;
+}
+.match-group-heading.is-secondary {
+  margin-top: 24px; padding-top: 20px; border-top: 1px solid #e4eaf8;
+  color: #475569; font-weight: 600;
+}
 .opportunity-disclosure, .opportunity-empty, .opportunity-error { color: #66708b; font-size: 14px; line-height: 1.6; }
 .opportunity-pagination {
   display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;
