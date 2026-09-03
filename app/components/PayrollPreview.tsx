@@ -1,9 +1,9 @@
 import { ExternalLink } from 'lucide-react';
 import { trainingPlatforms } from '../../lib/platforms';
 
-export default function PayrollPreview() {
+export default function PayrollPreview({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="product-stage" aria-label="Example AI trainer earnings dashboard">
+    <div className={`product-stage${compact ? ' is-compact' : ''}`} aria-label="Example AI trainer earnings dashboard">
       <div className="orbit orbit-one" />
       <div className="orbit orbit-two" />
       <div className="payroll-visual-group">

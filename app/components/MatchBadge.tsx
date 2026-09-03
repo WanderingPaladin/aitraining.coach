@@ -35,7 +35,7 @@ export default function MatchBadge({
   const { user, loading } = useAuth();
 
   if (loading) {
-    return null;
+    return <span className="match-badge is-skeleton" aria-hidden="true" />;
   }
 
   if (!user) {
@@ -45,7 +45,7 @@ export default function MatchBadge({
         href={`/login?returnTo=${encodeURIComponent(returnTo)}`}
       >
         <Sparkles size={16} strokeWidth={2} aria-hidden="true" />
-        See your match
+        See your match →
       </a>
     );
   }
@@ -63,7 +63,7 @@ export default function MatchBadge({
     <details className="match-badge" data-band={band(match.score)}>
       <summary>
         <strong>
-          {match.score}% match
+          {match.score}% Profile Match
         </strong>
         <span>{match.label}</span>
         <em>

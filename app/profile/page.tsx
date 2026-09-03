@@ -18,12 +18,12 @@ export default function ProfilePage() {
           <div className="shell">
             <p className="journal-eyebrow">Your AI training profile</p>
             <h1>
-              See how your background
+              Your AI Training
               <br />
-              <span className="hero-hl">aligns with opportunities.</span>
+              <span className="hero-hl">Career Dashboard.</span>
             </h1>
             <p className="journal-lead">
-              See how your professional background aligns with current AI-training opportunities and what you can improve next.
+              See how ready your profile is, which opportunities fit you, and what to focus on next.
             </p>
           </div>
         </section>

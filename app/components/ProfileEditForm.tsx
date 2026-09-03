@@ -43,7 +43,7 @@ export default function ProfileEditForm() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace('/login?next=/profile/edit');
+      router.replace('/login?returnTo=/profile/edit');
       return;
     }
     void getAccountProfile()
@@ -56,7 +56,7 @@ export default function ProfileEditForm() {
       })
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 401) {
-          router.replace('/login?next=/profile/edit');
+          router.replace('/login?returnTo=/profile/edit');
           return;
         }
         setError(err instanceof Error ? err.message : 'Could not load your profile.');

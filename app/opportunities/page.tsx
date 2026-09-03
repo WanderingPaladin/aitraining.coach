@@ -31,18 +31,18 @@ function paramValue(value: string | string[] | undefined) {
 
 export default async function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {
   const params = searchParams ? await searchParams : {};
-  const filtered = Boolean(
+  const page = Math.max(1, Number(paramValue(params.page)) || 1);
+  const hasFilters = Boolean(
     paramValue(params.q) ||
       paramValue(params.platform) ||
       paramValue(params.category) ||
       paramValue(params.experience) ||
       paramValue(params.employmentType) ||
-      paramValue(params.remote) ||
-      paramValue(params.page),
+      paramValue(params.remote),
   );
-  const [initialCurated, initialJobs] = filtered
+  const [initialCurated, initialJobs] = hasFilters
     ? [null, null]
-    : await Promise.all([fetchOpportunitiesServer(), fetchPublicJobsServer()]);
+    : await Promise.all([fetchOpportunitiesServer(), fetchPublicJobsServer({ page, pageSize: 20 })]);
 
   return (
     <main className="journal-page" id="top">
@@ -52,14 +52,14 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
           <div className="hero-glow" />
           <div className="hero-grid shell">
             <div className="journal-hero-copy">
-              <p className="journal-eyebrow">AI training opportunities</p>
+              <p className="journal-eyebrow">AI Training Opportunities</p>
               <h1>
                 Find AI Training
                 <br />
                 <span className="hero-hl">Opportunities That Fit You.</span>
               </h1>
               <p className="journal-lead">
-                Browse real AI-training opportunities curated in one place, then use your profile to understand which roles align best with your background and skills.
+                Browse AI-training opportunities across leading platforms and see which roles align best with your background, skills, and experience.
               </p>
               <div className="hero-actions opportunities-hero-actions">
                 <a className="primary-button" href="#listings">
@@ -83,7 +83,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
                 })}
               </ul>
             </div>
-            <PayrollPreview />
+            <PayrollPreview compact />
           </div>
         </section>
       </div>

@@ -4,6 +4,8 @@ import {
   ArrowUpDown,
   BriefcaseBusiness,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   GraduationCap,
   Laptop,
   Layers3,
@@ -16,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   getAccountProfile,
   jobToOpportunity,
@@ -75,6 +77,34 @@ function emptyCurated(): OpportunityListResponse {
   return { opportunities: [], filters: { platforms: [], categories: [] }, matchAvailable: false };
 }
 
+function paginationItems(current: number, total: number): Array<number | 'ellipsis'> {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, index) => index + 1);
+  }
+  const pages = new Set([1, total, current]);
+  if (current > 2) pages.add(current - 1);
+  if (current < total - 1) pages.add(current + 1);
+  if (current <= 3) {
+    pages.add(2);
+    pages.add(3);
+    pages.add(4);
+  }
+  if (current >= total - 2) {
+    pages.add(total - 3);
+    pages.add(total - 2);
+    pages.add(total - 1);
+  }
+  const sorted = [...pages].filter((page) => page >= 1 && page <= total).sort((a, b) => a - b);
+  const items: Array<number | 'ellipsis'> = [];
+  for (let index = 0; index < sorted.length; index += 1) {
+    if (index > 0 && sorted[index] - sorted[index - 1] > 1) {
+      items.push('ellipsis');
+    }
+    items.push(sorted[index]);
+  }
+  return items;
+}
+
 export default function OpportunitiesBoard({
   initialCurated = null,
   initialJobs = null,
@@ -85,7 +115,8 @@ export default function OpportunitiesBoard({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const seededCurated = tagCurated(initialCurated?.opportunities ?? []);
+  const initialPage = Math.max(1, Number(searchParams.get('page')) || 1);
+  const seededCurated = initialPage === 1 ? tagCurated(initialCurated?.opportunities ?? []) : [];
   const seededJobs = (initialJobs?.jobs ?? []).map(jobToOpportunity);
   const seededItems = mergeListings(seededCurated, seededJobs, 'newest');
   const [query, setQuery] = useState(() => (searchParams.get('q') ?? '').trim());
@@ -98,7 +129,7 @@ export default function OpportunitiesBoard({
   const [employmentType, setEmploymentType] = useState(() => searchParams.get('employmentType') ?? '');
   const [remote, setRemote] = useState(() => searchParams.get('remote') === '1' || searchParams.get('remote') === 'true');
   const [sort, setSort] = useState<SortFilter>(searchParams.get('sort') === 'match' ? 'match' : 'newest');
-  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page')) || 1));
+  const [page, setPage] = useState(initialPage);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(seededItems.length === 0);
   const [error, setError] = useState('');
@@ -114,9 +145,7 @@ export default function OpportunitiesBoard({
     ),
   );
   const [employmentTypes, setEmploymentTypes] = useState<string[]>(initialJobs?.filters.employmentTypes ?? []);
-  const [total, setTotal] = useState(
-    seededCurated.length + (initialJobs?.total ?? 0),
-  );
+  const [total, setTotal] = useState(seededCurated.length + (initialJobs?.total ?? 0));
   const [pageCount, setPageCount] = useState(Math.max(initialJobs?.pageCount ?? 1, 1));
   const [matchAvailable, setMatchAvailable] = useState(Boolean(initialCurated?.matchAvailable));
   const [profile, setProfile] = useState<AccountProfile | null>(null);
@@ -296,127 +325,140 @@ export default function OpportunitiesBoard({
     setPage(1);
   }
 
-  const filterFields = (
+  function selectField(
+    label: string,
+    icon: ReactNode,
+    value: string,
+    onChange: (value: string) => void,
+    options: Array<{ value: string; label: string }>,
+  ) {
+    return (
+      <label className="filter-field">
+        <span className="filter-label">
+          {icon}
+          {label}
+        </span>
+        <span className="filter-select">
+          <select value={value} onChange={(event) => onChange(event.target.value)}>
+            {options.map((option) => (
+              <option key={option.value || option.label} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
+        </span>
+      </label>
+    );
+  }
+
+  const searchField = (
+    <label className="filter-field is-search">
+      <span className="filter-label">
+        <Search size={16} strokeWidth={2} aria-hidden="true" />
+        Search
+      </span>
+      <div className="filter-search">
+        <Search size={18} strokeWidth={2} aria-hidden="true" />
+        <input
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          placeholder="Search roles, skills, or platforms..."
+          aria-label="Search roles, skills, or platforms"
+        />
+      </div>
+    </label>
+  );
+
+  const coreFilters = (
     <>
-      <label className="filter-field is-search">
-        <span className="filter-label">
-          <Search size={16} strokeWidth={2} aria-hidden="true" />
-          Search
-        </span>
-        <div className="filter-search">
-          <Search size={18} strokeWidth={2} aria-hidden="true" />
-          <input
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search by role, skill, company, or platform..."
-          />
-        </div>
-      </label>
-      <label className="filter-field">
-        <span className="filter-label">
-          <Layers3 size={16} strokeWidth={2} aria-hidden="true" />
-          Platform
-        </span>
-        <span className="filter-select">
-          <select value={platform} onChange={(event) => setPlatform(event.target.value)}>
-            <option value="">All platforms</option>
-            {platforms.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
-        </span>
-      </label>
-      <label className="filter-field">
-        <span className="filter-label">
-          <Tags size={16} strokeWidth={2} aria-hidden="true" />
-          Category
-        </span>
-        <span className="filter-select">
-          <select value={category} onChange={(event) => setCategory(event.target.value)}>
-            <option value="">All categories</option>
-            {categories.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
-        </span>
-      </label>
-      <label className="filter-field">
-        <span className="filter-label">
-          <GraduationCap size={16} strokeWidth={2} aria-hidden="true" />
-          Experience
-        </span>
-        <span className="filter-select">
-          <select
-            value={experience}
-            onChange={(event) => setExperience(event.target.value as ExperienceFilter)}
-          >
-            <option value="">All experience levels</option>
-            <option value="beginner">Beginner-friendly</option>
-            <option value="experienced">Experienced</option>
-          </select>
-          <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
-        </span>
-      </label>
-      {employmentTypes.length ? (
-        <label className="filter-field">
-          <span className="filter-label">
-            <BriefcaseBusiness size={16} strokeWidth={2} aria-hidden="true" />
-            Type
-          </span>
-          <span className="filter-select">
-            <select value={employmentType} onChange={(event) => setEmploymentType(event.target.value)}>
-              <option value="">All types</option>
-              {employmentTypes.map((name) => (
-                <option key={name} value={name}>
-                  {name.replace(/-/g, ' ')}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
-          </span>
-        </label>
-      ) : null}
-      <label className="filter-field">
-        <span className="filter-label">
-          <ArrowUpDown size={16} strokeWidth={2} aria-hidden="true" />
-          Sort
-        </span>
-        <span className="filter-select">
-          <select value={sort} onChange={(event) => setSort(event.target.value as SortFilter)}>
-            <option value="newest">Newest</option>
-            {user ? <option value="match">Best Match</option> : null}
-          </select>
-          <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
-        </span>
-      </label>
-      <label className="filter-remote">
-        <Laptop size={16} strokeWidth={2} aria-hidden="true" />
-        <input type="checkbox" checked={remote} onChange={(event) => setRemote(event.target.checked)} />
-        Remote only
-      </label>
+      {selectField(
+        'Platform',
+        <Layers3 size={16} strokeWidth={2} aria-hidden="true" />,
+        platform,
+        setPlatform,
+        [{ value: '', label: 'All platforms' }, ...platforms.map((name) => ({ value: name, label: name }))],
+      )}
+      {selectField(
+        'Category',
+        <Tags size={16} strokeWidth={2} aria-hidden="true" />,
+        category,
+        setCategory,
+        [{ value: '', label: 'All categories' }, ...categories.map((name) => ({ value: name, label: name }))],
+      )}
+      {selectField(
+        'Experience',
+        <GraduationCap size={16} strokeWidth={2} aria-hidden="true" />,
+        experience,
+        (value) => setExperience(value as ExperienceFilter),
+        [
+          { value: '', label: 'All experience levels' },
+          { value: 'beginner', label: 'Beginner-friendly' },
+          { value: 'experienced', label: 'Experienced' },
+        ],
+      )}
+      {selectField(
+        'Remote',
+        <Laptop size={16} strokeWidth={2} aria-hidden="true" />,
+        remote ? '1' : '',
+        (value) => setRemote(value === '1'),
+        [
+          { value: '', label: 'Any location' },
+          { value: '1', label: 'Remote only' },
+        ],
+      )}
+      {selectField(
+        'Sort',
+        <ArrowUpDown size={16} strokeWidth={2} aria-hidden="true" />,
+        sort,
+        (value) => setSort(value as SortFilter),
+        [
+          { value: 'newest', label: 'Newest' },
+          ...(user ? [{ value: 'match', label: 'Best Match' }] : []),
+        ],
+      )}
     </>
   );
 
-  const topCategories = [...new Set(items.map((item) => item.category))].slice(0, 2);
+  const typeFilter =
+    employmentTypes.length > 0
+      ? selectField(
+          'Type',
+          <BriefcaseBusiness size={16} strokeWidth={2} aria-hidden="true" />,
+          employmentType,
+          setEmploymentType,
+          [
+            { value: '', label: 'All types' },
+            ...employmentTypes.map((name) => ({ value: name, label: name.replace(/-/g, ' ') })),
+          ],
+        )
+      : null;
+
+  const rangeFrom = total === 0 || items.length === 0 ? 0 : page === 1 ? 1 : (page - 1) * PAGE_SIZE + 1;
+  const rangeTo = rangeFrom === 0 ? 0 : rangeFrom + items.length - 1;
+  const topCategories = [...new Set(items.map((item) => item.category).filter(Boolean))].slice(0, 3);
+  const pages = paginationItems(page, pageCount);
 
   return (
     <div className="opportunities-board">
       <div className="opportunity-board-head">
         <div>
-          <h2>AI Training Opportunities</h2>
-          <p>Explore current roles curated in one place, then open the original listing to apply.</p>
+          <h2>Browse opportunities</h2>
+          {items.length > 0 || !loading ? (
+            <p className="opportunity-count">
+              {total === 0
+                ? 'No opportunities to show'
+                : `Showing ${rangeFrom}–${rangeTo} of ${total} opportunities`}
+            </p>
+          ) : (
+            <p className="opportunity-count">Loading opportunities…</p>
+          )}
         </div>
-        {items.length > 0 || !loading ? <p className="opportunity-count">{total} opportunities</p> : null}
       </div>
 
       <form className="opportunity-filters" onSubmit={(event) => event.preventDefault()}>
-        {filterFields}
+        {searchField}
+        {coreFilters}
         {filterCount ? (
           <button type="button" className="filter-clear" onClick={clearFilters}>
             <X size={16} strokeWidth={2} />
@@ -431,10 +473,15 @@ export default function OpportunitiesBoard({
           <input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search by role, skill, company, or platform..."
+            placeholder="Search opportunities..."
+            aria-label="Search opportunities"
           />
         </div>
-        <button type="button" className="filter-toggle secondary-button on-light" onClick={() => setFiltersOpen(true)}>
+        <button
+          type="button"
+          className="filter-toggle secondary-button on-light"
+          onClick={() => setFiltersOpen(true)}
+        >
           <SlidersHorizontal size={16} strokeWidth={2} />
           Filters{filterCount ? ` (${filterCount})` : ''}
         </button>
@@ -463,7 +510,7 @@ export default function OpportunitiesBoard({
               <h3>No opportunities match these filters.</h3>
               <p>Try removing a filter or searching for a broader skill.</p>
               <button type="button" className="primary-button" onClick={clearFilters}>
-                Clear filters
+                Clear Filters
               </button>
             </div>
           ) : null}
@@ -480,19 +527,46 @@ export default function OpportunitiesBoard({
             : null}
           {!loading && items.length > 0 && pageCount > 1 ? (
             <nav className="opportunity-pagination" aria-label="Opportunity pages">
-              <button type="button" className="secondary-button on-light" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+              <button
+                type="button"
+                className="page-nav secondary-button on-light"
+                disabled={page <= 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft size={16} strokeWidth={2} aria-hidden="true" />
                 Previous
               </button>
-              <span>
+              <div className="page-numbers">
+                {pages.map((item, index) =>
+                  item === 'ellipsis' ? (
+                    <span key={`ellipsis-${index}`} className="page-ellipsis">
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`page-num${item === page ? ' is-current' : ''}`}
+                      onClick={() => setPage(item)}
+                      aria-current={item === page ? 'page' : undefined}
+                      aria-label={`Page ${item}`}
+                    >
+                      {item}
+                    </button>
+                  ),
+                )}
+              </div>
+              <span className="page-status">
                 Page {page} of {pageCount}
               </span>
               <button
                 type="button"
-                className="secondary-button on-light"
+                className="page-nav secondary-button on-light"
                 disabled={page >= pageCount}
                 onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
               >
                 Next
+                <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
               </button>
             </nav>
           ) : null}
@@ -505,34 +579,37 @@ export default function OpportunitiesBoard({
         <aside className="opportunity-rail">
           <section className="opportunity-rail-card">
             <h3>
-              <Target size={16} strokeWidth={2} aria-hidden="true" />
+              <Target size={18} strokeWidth={2} aria-hidden="true" />
               Find Your Best Fit
             </h3>
             {!user ? (
               <>
-                <p>Create a profile to see how well each opportunity matches your background, experience, and preferences.</p>
+                <p>Create a profile to see how well opportunities match your experience and skills.</p>
                 <a className="primary-button opportunity-view" href={`/login?returnTo=${encodeURIComponent('/opportunities')}`}>
                   <UserPlus size={16} strokeWidth={2} />
                   Create Your Profile
                 </a>
               </>
-            ) : !matchAvailable ? (
+            ) : !(matchAvailable || readiness?.completeEnough) ? (
               <>
-                <p>Complete your profile to unlock personalized opportunity matches.</p>
+                <p>Complete your profile to unlock personalized matches.</p>
                 <a className="primary-button opportunity-view" href="/profile/edit">
                   Complete Profile
                 </a>
               </>
             ) : (
               <>
-                <p>Your AI Training Fit</p>
-                {readiness ? <p className="fit-score">{Math.min(100, readiness.score)}% profile readiness</p> : null}
+                <p>Your AI Training Readiness</p>
+                {readiness ? <p className="fit-score">{Math.min(100, readiness.score)}%</p> : null}
                 {topCategories.length ? (
-                  <ul className="fit-categories">
-                    {topCategories.map((name) => (
-                      <li key={name}>{name}</li>
-                    ))}
-                  </ul>
+                  <>
+                    <p>Top matching areas</p>
+                    <ul className="fit-categories">
+                      {topCategories.map((name) => (
+                        <li key={name}>{name}</li>
+                      ))}
+                    </ul>
+                  </>
                 ) : null}
                 {profile ? (
                   <a className="secondary-button on-light opportunity-view" href="/profile">
@@ -543,10 +620,13 @@ export default function OpportunitiesBoard({
             )}
           </section>
           <section className="opportunity-rail-card">
-            <h3>Need guidance?</h3>
+            <h3>
+              <PhoneCall size={18} strokeWidth={2} aria-hidden="true" />
+              Need guidance?
+            </h3>
             <p>Not sure which opportunities fit you?</p>
             <p>Our coaching team can help you understand where your background fits and what to focus on next.</p>
-            <a className="primary-button opportunity-view" href="/#apply">
+            <a className="secondary-button on-light opportunity-view" href="/#apply">
               <PhoneCall size={16} strokeWidth={2} />
               Book a Free Intro Call
             </a>
@@ -555,9 +635,10 @@ export default function OpportunitiesBoard({
       </div>
 
       {filtersOpen ? (
-        <div className="filter-drawer" role="dialog" aria-label="Filters">
+        <div className="filter-drawer is-sheet" role="dialog" aria-label="Filters">
           <button type="button" className="filter-drawer-backdrop" onClick={() => setFiltersOpen(false)} aria-label="Close filters" />
           <div className="filter-drawer-panel">
+            <div className="filter-sheet-handle" aria-hidden="true" />
             <div className="filter-drawer-head">
               <h2>Filters</h2>
               <button type="button" className="filter-drawer-close" onClick={() => setFiltersOpen(false)} aria-label="Close filters">
@@ -565,7 +646,14 @@ export default function OpportunitiesBoard({
               </button>
             </div>
             <form className="opportunity-filters is-drawer" onSubmit={(event) => event.preventDefault()}>
-              {filterFields}
+              {coreFilters}
+              {typeFilter}
+              {filterCount ? (
+                <button type="button" className="filter-clear" onClick={clearFilters}>
+                  <X size={16} strokeWidth={2} />
+                  Clear Filters
+                </button>
+              ) : null}
             </form>
           </div>
         </div>

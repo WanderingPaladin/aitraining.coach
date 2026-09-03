@@ -40,6 +40,7 @@ export default function AccountNav() {
       <button
         type="button"
         className="account-avatar"
+        aria-label="Account menu"
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((current) => !current)}
@@ -53,7 +54,7 @@ export default function AccountNav() {
             Profile
           </a>
           <a href="/saved-opportunities" role="menuitem" onClick={() => setOpen(false)}>
-            Saved opportunities
+            Saved Opportunities
           </a>
           <button
             type="button"

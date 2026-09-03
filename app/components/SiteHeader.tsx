@@ -27,6 +27,7 @@ export default function SiteHeader({
           <a
             key={link.id}
             className={current === link.id ? 'current' : undefined}
+            aria-current={current === link.id ? 'page' : undefined}
             href={home ? link.homeHref : link.href}
           >
             {link.label}
