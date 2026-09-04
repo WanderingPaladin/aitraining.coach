@@ -31,7 +31,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 }
 .shell { width: min(1180px, calc(100% - 48px)); margin-inline: auto; }
 
-.hero { min-height: 760px; overflow: hidden; position: relative; color: #fff; background: radial-gradient(circle at 83% 45%, rgba(77, 18, 255, .34), transparent 27%), radial-gradient(circle at 52% 34%, rgba(0, 119, 255, .12), transparent 28%), linear-gradient(115deg, #03071e 0%, #02051a 72%, #09002c 100%); }
+.hero { min-height: 680px; overflow: hidden; position: relative; color: #fff; background: radial-gradient(circle at 83% 45%, rgba(77, 18, 255, .34), transparent 27%), radial-gradient(circle at 52% 34%, rgba(0, 119, 255, .12), transparent 28%), linear-gradient(115deg, #03071e 0%, #02051a 72%, #09002c 100%); }
 .hero::after { content: ''; position: absolute; width: 760px; height: 760px; right: -170px; top: 38px; opacity: .48; border-radius: 50%; background: repeating-radial-gradient(circle, transparent 0 12px, rgba(56, 81, 255, .22) 13px 14px); transform: scaleX(1.2); }
 .hero-glow { position: absolute; inset: auto -130px -260px auto; width: 620px; height: 620px; border-radius: 50%; background: rgba(36, 0, 255, .25); filter: blur(70px); }
 
@@ -84,7 +84,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 28px;
-  min-height: 648px;
+  min-height: 560px;
   align-items: center;
   max-width: 100%;
   min-width: 0;
@@ -96,7 +96,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   box-sizing: border-box;
 }
 .hero-grid > * { min-width: 0; }
-.hero-copy { padding: 32px 0 60px; position: relative; z-index: 3; min-width: 0; max-width: 100%; }
+.hero-copy { padding: 32px 0 28px; position: relative; z-index: 3; min-width: 0; max-width: 100%; }
 .hero-carousel { animation: hero-enter 600ms var(--ease-elegant) both; width: 100%; max-width: 100%; min-width: 0; }
 .hero-carousel-stage {
   position: relative;
@@ -255,7 +255,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 .benefit-chips { display: flex; gap: 12px; margin: 0 0 24px; }
 .benefit-chips > span { flex: 1; min-width: 0; padding: 12px 11px; display: flex; align-items: center; gap: 9px; font-size: 12.5px; font-weight: 600; line-height: 1.25; border: 1px solid rgba(51, 117, 255, .75); border-radius: 8px; background: rgba(7, 18, 58, .72); cursor: default; }
 .benefit-rail-indicators { display: none; }
-.hero-actions { display: flex; gap: 16px; margin: 25px 0 27px; animation: hero-enter 600ms var(--ease-elegant) 160ms both; }
+.hero-actions { display: flex; gap: 16px; margin: 25px 0 0; animation: hero-enter 600ms var(--ease-elegant) 160ms both; }
 .hero-copy .hero-actions { flex-direction: column; align-items: flex-start; gap: 10px; }
 .hero-primary-cta { width: fit-content; max-width: 100%; min-height: 56px; padding: 16px 28px; gap: 10px; }
 .hero-primary-cta:hover, .hero-primary-cta:focus-visible { transform: translateY(-3px) scale(1.02); }
