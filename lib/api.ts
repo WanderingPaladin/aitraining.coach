@@ -1,4 +1,5 @@
 import type { ApplicantStage } from './apply-fields';
+import { formatCompensation, jobSummary } from './opportunityDisplay';
 
 function apiBaseUrl(): string {
   // Same origin as the site. Dev: Vite proxies /v1 to http://127.0.0.1:4000.
@@ -172,6 +173,9 @@ export type Opportunity = {
   skills: string[];
   experienceRequirement: string | null;
   location: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
   remoteStatus: string | null;
   compensationText: string | null;
   beginnerFriendly: boolean;
@@ -179,6 +183,8 @@ export type Opportunity = {
   postedAt: string | null;
   firstSeenAt: string;
   lastVerifiedAt: string;
+  origin?: string | null;
+  originKind?: 'employer' | 'marketplace' | null;
   status: string;
   saved: boolean;
   match: OpportunityMatch | null;
@@ -191,6 +197,9 @@ export type PublicJob = {
   companyName: string;
   companyLogoUrl: string | null;
   location: string | null;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
   remoteType: string | null;
   employmentType: string | null;
   salaryMin: number | null;
@@ -203,6 +212,10 @@ export type PublicJob = {
   sourceUrl: string;
   descriptionHtml?: string;
   descriptionText?: string;
+  summary?: string | null;
+  beginnerFriendly?: boolean;
+  origin?: string | null;
+  originKind?: 'employer' | 'marketplace' | null;
   experienceLevel?: string | null;
   expiresAt?: string | null;
   createdAt: string;
@@ -339,34 +352,26 @@ export function listOpportunities(filters: OpportunityFilters = {}) {
 
 export type JobListFilters = {
   q?: string;
-  remote?: boolean;
+  remote?: boolean | 'remote' | 'hybrid' | 'onsite';
   location?: string;
   category?: string;
   employmentType?: string;
   company?: string;
-  sort?: 'newest' | 'relevant' | 'match';
+  platform?: string;
+  experience?: '' | 'beginner' | 'entry' | 'mid' | 'senior' | 'lead';
+  pay?: '' | 'compensation' | 'hourly' | 'annual';
+  postedWithin?: '' | '1' | '3' | '7' | '30';
+  sort?: 'newest' | 'relevant' | 'match' | 'salary';
   page?: number;
   pageSize?: number;
 };
 
 export function formatJobSalary(job: Pick<PublicJob, 'salaryMin' | 'salaryMax' | 'salaryCurrency'>): string | null {
-  if (job.salaryMin == null && job.salaryMax == null) {
-    return null;
-  }
-  const currency = job.salaryCurrency || 'USD';
-  const format = (amount: number) =>
-    amount >= 1000 && amount % 1000 === 0 ? `${Math.round(amount / 1000)}k` : new Intl.NumberFormat('en-US').format(amount);
-  if (job.salaryMin != null && job.salaryMax != null) {
-    return `${currency} ${format(job.salaryMin)}–${format(job.salaryMax)}`;
-  }
-  const amount = job.salaryMin ?? job.salaryMax;
-  return amount == null ? null : `${currency} ${format(amount)}`;
+  return formatCompensation(job);
 }
 
 export function jobToOpportunity(job: PublicJob): Opportunity {
-  const summary = (job.descriptionText || '').replace(/\s+/g, ' ').trim().slice(0, 220);
-  const experienceText = `${job.experienceLevel ?? ''} ${job.descriptionText ?? ''}`.toLowerCase();
-  const beginnerFriendly = /entry|junior|beginner|no (prior )?experience|0\+?\s*year|intern/i.test(experienceText);
+  const summary = jobSummary(job) ?? '';
   return {
     id: job.id,
     listingKind: 'job',
@@ -378,18 +383,23 @@ export function jobToOpportunity(job: PublicJob): Opportunity {
     sourcePlatform: job.companyName,
     sourceUrl: job.applyUrl,
     title: job.title,
-    summary: summary || 'Open the listing to read the full employer description.',
+    summary,
     category: job.category || 'General AI Training',
     skills: [],
     experienceRequirement: job.experienceLevel ?? null,
     location: job.location,
+    city: job.city,
+    state: job.state,
+    country: job.country,
     remoteStatus: job.remoteType,
-    compensationText: formatJobSalary(job),
-    beginnerFriendly,
+    compensationText: formatCompensation(job),
+    beginnerFriendly: Boolean(job.beginnerFriendly),
     eligibility: null,
     postedAt: job.postedAt,
     firstSeenAt: job.createdAt,
     lastVerifiedAt: job.updatedAt,
+    origin: job.origin ?? 'External opportunity',
+    originKind: job.originKind ?? 'employer',
     status: 'open',
     saved: false,
     match: job.match ?? null,
@@ -399,11 +409,16 @@ export function jobToOpportunity(job: PublicJob): Opportunity {
 export function listPublicJobs(filters: JobListFilters = {}) {
   const params = new URLSearchParams();
   if (filters.q) params.set('q', filters.q);
-  if (filters.remote) params.set('remote', 'true');
+  if (filters.remote === true || filters.remote === 'remote') params.set('remote', 'true');
+  else if (filters.remote === 'hybrid' || filters.remote === 'onsite') params.set('remote', filters.remote);
   if (filters.location) params.set('location', filters.location);
   if (filters.category) params.set('category', filters.category);
   if (filters.employmentType) params.set('employmentType', filters.employmentType);
   if (filters.company) params.set('company', filters.company);
+  if (filters.platform) params.set('platform', filters.platform);
+  if (filters.experience) params.set('experience', filters.experience);
+  if (filters.pay) params.set('pay', filters.pay);
+  if (filters.postedWithin) params.set('postedWithin', filters.postedWithin);
   if (filters.sort) params.set('sort', filters.sort);
   params.set('page', String(filters.page ?? 1));
   params.set('pageSize', String(filters.pageSize ?? 20));
@@ -482,6 +497,15 @@ export async function fetchPublicJobsServer(filters: JobListFilters = {}): Promi
   params.set('page', String(filters.page ?? 1));
   params.set('pageSize', String(filters.pageSize ?? 20));
   if (filters.sort) params.set('sort', filters.sort);
+  if (filters.q) params.set('q', filters.q);
+  if (filters.category) params.set('category', filters.category);
+  if (filters.company) params.set('company', filters.company);
+  if (filters.platform) params.set('platform', filters.platform);
+  if (filters.experience) params.set('experience', filters.experience);
+  if (filters.pay) params.set('pay', filters.pay);
+  if (filters.postedWithin) params.set('postedWithin', filters.postedWithin);
+  if (filters.remote === true || filters.remote === 'remote') params.set('remote', 'true');
+  else if (filters.remote === 'hybrid' || filters.remote === 'onsite') params.set('remote', filters.remote);
   return fetchJsonServer<JobListResponse>(`/v1/jobs?${params.toString()}`);
 }
 

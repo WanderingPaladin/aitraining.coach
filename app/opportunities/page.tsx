@@ -1,10 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { ArrowDown, GraduationCap, Laptop, PhoneCall, Target } from 'lucide-react';
 import OpportunitiesBoard from '../components/OpportunitiesBoard';
-import PayrollPreview from '../components/PayrollPreview';
-import SiteFooter from '../components/SiteFooter';
-import SiteHeader from '../components/SiteHeader';
 import { fetchPublicJobsServer } from '../../lib/api';
 import { siteIcons } from '../../lib/siteIcons';
 
@@ -14,12 +10,6 @@ export const metadata: Metadata = {
     'Explore AI-training opportunities across professional domains and discover roles that may align with your background.',
   icons: siteIcons,
 };
-
-const benefits = [
-  { icon: GraduationCap, label: 'Beginner-friendly roles' },
-  { icon: Laptop, label: 'Remote opportunities' },
-  { icon: Target, label: 'Profile matching' },
-];
 
 type OpportunitiesPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -35,10 +25,14 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   const hasFilters = Boolean(
     paramValue(params.q) ||
       paramValue(params.platform) ||
+      paramValue(params.company) ||
       paramValue(params.category) ||
       paramValue(params.experience) ||
       paramValue(params.employmentType) ||
-      paramValue(params.remote),
+      paramValue(params.remote) ||
+      paramValue(params.pay) ||
+      paramValue(params.postedWithin) ||
+      paramValue(params.sort),
   );
   const initialJobs = hasFilters
     ? null
@@ -46,55 +40,21 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
 
   return (
     <main className="journal-page" id="top">
-      <div className="journal-hero-wrap">
-        <SiteHeader current="opportunities" />
-        <section className="journal-hero opportunities-hero">
-          <div className="hero-glow" />
-          <div className="hero-grid shell">
-            <div className="journal-hero-copy">
-              <p className="journal-eyebrow">AI Training Opportunities</p>
-              <h1>
-                Find AI Training
-                <br />
-                <span className="hero-hl">Opportunities That Fit You.</span>
-              </h1>
-              <p className="journal-lead">
-                Browse AI-training opportunities across leading platforms and see which roles align best with your background, skills, and experience.
-              </p>
-              <div className="hero-actions opportunities-hero-actions">
-                <a className="primary-button" href="#listings">
-                  Browse Opportunities
-                  <ArrowDown className="btn-icon" size={16} strokeWidth={2} />
-                </a>
-                <a className="secondary-button" href="/#apply">
-                  <PhoneCall className="btn-icon-lead" size={16} strokeWidth={2} />
-                  Book a Free Intro Call
-                </a>
+      <Suspense
+        fallback={
+          <div className="journal-light">
+            <div className="shell journal-main">
+              <div className="opportunity-skeleton-list" aria-hidden="true">
+                <div className="opportunity-card is-skeleton" />
+                <div className="opportunity-card is-skeleton" />
+                <div className="opportunity-card is-skeleton" />
               </div>
-              <ul className="opportunity-benefits">
-                {benefits.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <li key={item.label}>
-                      <Icon size={16} strokeWidth={2} aria-hidden="true" />
-                      {item.label}
-                    </li>
-                  );
-                })}
-              </ul>
             </div>
-            <PayrollPreview compact />
           </div>
-        </section>
-      </div>
-      <div className="journal-light" id="listings">
-        <div className="shell journal-main">
-          <Suspense fallback={<div className="opportunity-skeleton-list" aria-hidden="true"><div className="opportunity-card is-skeleton" /><div className="opportunity-card is-skeleton" /><div className="opportunity-card is-skeleton" /></div>}>
-            <OpportunitiesBoard initialJobs={initialJobs} />
-          </Suspense>
-        </div>
-      </div>
-      <SiteFooter />
+        }
+      >
+        <OpportunitiesBoard initialJobs={initialJobs} />
+      </Suspense>
     </main>
   );
 }

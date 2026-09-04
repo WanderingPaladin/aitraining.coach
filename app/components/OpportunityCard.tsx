@@ -1,9 +1,16 @@
 'use client';
 
-import { BriefcaseBusiness, DollarSign, ExternalLink, GraduationCap, Laptop, MapPin } from 'lucide-react';
+import { ArrowRight, Laptop, MapPin } from 'lucide-react';
 import type { Opportunity } from '../../lib/api';
-import { platformLogoSrc } from '../../lib/platforms';
-import MatchBadge from './MatchBadge';
+import {
+  formatEmploymentType,
+  formatFreshness,
+  formatJobLocation,
+  jobSummary,
+  matchChips,
+} from '../../lib/opportunityDisplay';
+import CompanyAvatar from './CompanyAvatar';
+import SavedJobButton from './SavedJobButton';
 
 export default function OpportunityCard({
   opportunity,
@@ -12,142 +19,92 @@ export default function OpportunityCard({
   opportunity: Opportunity;
   compact?: boolean;
 }) {
-  const returnTo = `/opportunities`;
-
-  const chips: Array<{ icon: typeof BriefcaseBusiness; text: string }> = [];
-  if (opportunity.remoteStatus === 'remote' || /remote/i.test(opportunity.location ?? '')) {
-    chips.push({ icon: Laptop, text: 'Remote' });
-  } else if (opportunity.location) {
-    chips.push({ icon: MapPin, text: opportunity.location });
-  }
-  if (opportunity.category) {
-    chips.push({ icon: BriefcaseBusiness, text: opportunity.category });
-  }
-  if (opportunity.beginnerFriendly) {
-    chips.push({ icon: GraduationCap, text: 'Beginner Friendly' });
-  } else if (opportunity.experienceRequirement) {
-    chips.push({
-      icon: GraduationCap,
-      text: opportunity.experienceRequirement.length <= 32 ? opportunity.experienceRequirement : 'Experienced',
-    });
-  }
-  if (opportunity.employmentType && chips.length < 4) {
-    chips.push({
-      icon: BriefcaseBusiness,
-      text: opportunity.employmentType.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
-    });
-  }
-
-  const isJob = opportunity.listingKind === 'job';
-  const viewHref = isJob && opportunity.slug ? `/opportunities/${opportunity.slug}` : opportunity.sourceUrl;
-  const viewExternal = !isJob;
-  const visibleChips = chips.slice(0, compact ? 2 : 4);
-
-  const logo = opportunity.companyLogoUrl ? (
-    <img className="opportunity-logo" src={opportunity.companyLogoUrl} alt="" width={48} height={48} />
-  ) : isJob ? (
-    <span className="opportunity-letter-logo" aria-hidden="true">
-      {opportunity.sourcePlatform.slice(0, 1).toUpperCase()}
-    </span>
-  ) : (
-    <img
-      className="opportunity-logo"
-      src={platformLogoSrc(opportunity.sourcePlatform)}
-      alt=""
-      width={48}
-      height={48}
-    />
-  );
-
-  const viewLink = (
-    <a
-      className={`${compact ? 'opportunity-match-link' : 'secondary-button on-light opportunity-view'}`}
-      href={viewHref}
-      {...(viewExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-    >
-      View Opportunity
-      <ExternalLink className="btn-icon" size={16} strokeWidth={2} aria-hidden="true" />
-    </a>
-  );
-
-  if (compact) {
-    return (
-      <article className="opportunity-card is-compact">
-        <div className="match-preview-score">
-          {opportunity.match ? (
-            <>
-              <strong>{opportunity.match.score}%</strong>
-              <span>{opportunity.match.label}</span>
-            </>
-          ) : (
-            <span>Complete profile</span>
-          )}
-        </div>
-        <div className="opportunity-body">
-          <h3>
-            {isJob && opportunity.slug ? (
-              <a href={`/opportunities/${opportunity.slug}`}>{opportunity.title}</a>
-            ) : (
-              opportunity.title
-            )}
-          </h3>
-          <p className="opportunity-platform">{opportunity.sourcePlatform}</p>
-          {visibleChips.length ? (
-            <ul className="opportunity-meta">
-              {visibleChips.map((chip) => {
-                const Icon = chip.icon;
-                return (
-                  <li key={chip.text}>
-                    <Icon size={14} strokeWidth={2} aria-hidden="true" />
-                    {chip.text}
-                  </li>
-                );
-              })}
-            </ul>
-          ) : null}
-        </div>
-        {viewLink}
-      </article>
-    );
-  }
+  const href = opportunity.listingKind === 'job' && opportunity.slug
+    ? `/opportunities/${opportunity.slug}`
+    : opportunity.sourceUrl;
+  const external = opportunity.listingKind !== 'job';
+  const location = formatJobLocation({
+    location: opportunity.location,
+    city: opportunity.city,
+    state: opportunity.state,
+    country: opportunity.country,
+    remoteType: opportunity.remoteStatus,
+  });
+  const employment = formatEmploymentType(opportunity.employmentType);
+  const summary = jobSummary(opportunity);
+  const freshness = formatFreshness(opportunity.postedAt, opportunity.lastVerifiedAt);
+  const origin = opportunity.origin || 'External opportunity';
+  const chips = [
+    location.label,
+    employment,
+    opportunity.category && opportunity.category !== 'General AI Training' ? opportunity.category : null,
+  ].filter((item): item is string => Boolean(item));
+  const visibleChips = chips.slice(0, compact ? 3 : 4);
+  const match = opportunity.match && opportunity.match.score > 0 ? opportunity.match : null;
+  const reasons = matchChips(match);
 
   return (
-    <article className="opportunity-card">
-      {logo}
+    <article className={`opportunity-card${compact ? ' is-compact' : ''}`}>
+      <a
+        className="opportunity-card-hit"
+        href={href}
+        {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+      >
+        <span className="sr-only">{opportunity.title} at {opportunity.sourcePlatform}</span>
+      </a>
+      <CompanyAvatar name={opportunity.sourcePlatform} logoUrl={opportunity.companyLogoUrl} size={compact ? 40 : 48} />
       <div className="opportunity-body">
         <div className="opportunity-title-row">
-          <h3>
-            {isJob && opportunity.slug ? (
-              <a href={`/opportunities/${opportunity.slug}`}>{opportunity.title}</a>
-            ) : (
-              opportunity.title
-            )}
-          </h3>
+          <div>
+            <h3>
+              <a href={href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+                {opportunity.title}
+              </a>
+            </h3>
+            <p className="opportunity-platform">{opportunity.sourcePlatform}</p>
+          </div>
+          {match ? (
+            <p className="match-pill" data-band={match.score >= 80 ? 'strong' : match.score >= 70 ? 'good' : 'possible'}>
+              <strong>{match.score}% match</strong>
+              <span>{match.label}</span>
+            </p>
+          ) : null}
         </div>
-        <p className="opportunity-platform">{opportunity.sourcePlatform}</p>
-        <ul className="opportunity-meta">
-          {visibleChips.map((chip) => {
-            const Icon = chip.icon;
-            return (
-              <li key={chip.text}>
-                <Icon size={14} strokeWidth={2} aria-hidden="true" />
-                {chip.text}
+        {visibleChips.length ? (
+          <ul className="opportunity-meta">
+            {visibleChips.map((chip) => (
+              <li key={chip}>
+                {/remote|hybrid|on-site/i.test(chip) ? (
+                  <Laptop size={14} strokeWidth={2} aria-hidden="true" />
+                ) : chip === location.label && location.workplace !== 'Remote' ? (
+                  <MapPin size={14} strokeWidth={2} aria-hidden="true" />
+                ) : null}
+                {chip}
               </li>
-            );
-          })}
-        </ul>
-        <p className="opportunity-summary">{opportunity.summary}</p>
-      </div>
-      <div className="opportunity-card-actions">
-        {opportunity.compensationText ? (
-          <p className="opportunity-pay">
-            <DollarSign size={14} strokeWidth={2} aria-hidden="true" />
-            {opportunity.compensationText}
-          </p>
+            ))}
+          </ul>
         ) : null}
-        <MatchBadge match={opportunity.match} returnTo={returnTo} />
-        {viewLink}
+        {match && reasons.length ? (
+          <ul className="match-skill-chips">
+            {reasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        ) : null}
+        {opportunity.compensationText ? (
+          <p className="opportunity-pay">{opportunity.compensationText}</p>
+        ) : null}
+        {freshness ? <p className="opportunity-freshness">{freshness}</p> : null}
+        {!compact && summary ? <p className="opportunity-summary">{summary}</p> : null}
+        <div className="opportunity-card-foot">
+          <span className="origin-badge">{origin}</span>
+          <span className="opportunity-match-link">
+            View details
+            <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+          </span>
+        </div>
       </div>
+      <SavedJobButton jobId={opportunity.id} title={opportunity.title} />
     </article>
   );
 }
