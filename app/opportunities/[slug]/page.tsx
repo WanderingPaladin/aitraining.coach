@@ -1,16 +1,24 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, BriefcaseBusiness, ExternalLink, Laptop, MapPin, PhoneCall } from 'lucide-react';
+import { ArrowLeft, BriefcaseBusiness, ExternalLink, Laptop, MapPin } from 'lucide-react';
+import OpportunityApplySidebar from '../../components/OpportunityApplySidebar';
 import SiteFooter from '../../components/SiteFooter';
 import SiteHeader from '../../components/SiteHeader';
 import {
   fetchPublicJobServer,
-  formatJobSalary,
   jobPostingJsonLd,
   siteOrigin,
   type PublicJob,
 } from '../../../lib/api';
+import {
+  formatCompensation,
+  formatEmploymentType,
+  formatJobLocation,
+  formatPostedDate,
+  splitJobDescription,
+} from '../../../lib/opportunityDisplay';
 import { siteIcons } from '../../../lib/siteIcons';
+import CompanyAvatar from '../../components/CompanyAvatar';
 
 export const revalidate = 3600;
 
@@ -18,8 +26,8 @@ type JobPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-function jobSummary(job: PublicJob) {
-  return (job.descriptionText || job.title).replace(/\s+/g, ' ').trim().slice(0, 160);
+function jobMetaSummary(job: PublicJob) {
+  return (job.summary || job.descriptionText || job.title).replace(/\s+/g, ' ').trim().slice(0, 160);
 }
 
 export async function generateMetadata({ params }: JobPageProps): Promise<Metadata> {
@@ -28,7 +36,7 @@ export async function generateMetadata({ params }: JobPageProps): Promise<Metada
   if (!job) {
     return { title: 'Opportunity | AI Trainers', icons: siteIcons };
   }
-  const description = jobSummary(job);
+  const description = jobMetaSummary(job);
   return {
     title: `${job.title} at ${job.companyName} | AI Trainers`,
     description,
@@ -50,12 +58,12 @@ export default async function OpportunityJobPage({ params }: JobPageProps) {
   }
 
   const canonical = `${siteOrigin()}/opportunities/${job.slug}`;
-  const salary = formatJobSalary(job);
-  const posted = job.postedAt
-    ? new Date(job.postedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : null;
-  const descriptionHtml = job.descriptionHtml?.trim();
-  const descriptionText = job.descriptionText?.trim();
+  const salary = formatCompensation(job);
+  const posted = formatPostedDate(job.postedAt);
+  const location = formatJobLocation(job);
+  const employment = formatEmploymentType(job.employmentType);
+  const sections = splitJobDescription(job.descriptionHtml, job.descriptionText);
+  const origin = job.origin || 'External opportunity';
 
   return (
     <main className="journal-page" id="top">
@@ -66,21 +74,26 @@ export default async function OpportunityJobPage({ params }: JobPageProps) {
           <div className="shell journal-hero-copy">
             <a className="story-back" href="/opportunities">
               <ArrowLeft size={16} strokeWidth={2} />
-              All opportunities
+              Back to opportunities
             </a>
-            <p className="journal-eyebrow">{job.companyName}</p>
+            <p className="journal-eyebrow">{origin}</p>
             <h1>{job.title}</h1>
+            <p className="opportunity-detail-company">{job.companyName}</p>
             <ul className="opportunity-benefits opportunity-detail-meta">
-              {job.location || job.remoteType ? (
+              {location.label ? (
                 <li>
-                  {job.remoteType === 'remote' ? <Laptop size={16} strokeWidth={2} aria-hidden="true" /> : <MapPin size={16} strokeWidth={2} aria-hidden="true" />}
-                  {job.location || 'Remote'}
+                  {location.workplace === 'Remote' ? (
+                    <Laptop size={16} strokeWidth={2} aria-hidden="true" />
+                  ) : (
+                    <MapPin size={16} strokeWidth={2} aria-hidden="true" />
+                  )}
+                  {location.label}
                 </li>
               ) : null}
-              {job.employmentType ? (
+              {employment ? (
                 <li>
                   <BriefcaseBusiness size={16} strokeWidth={2} aria-hidden="true" />
-                  {job.employmentType.replace(/-/g, ' ')}
+                  {employment}
                 </li>
               ) : null}
               {job.category ? (
@@ -92,67 +105,41 @@ export default async function OpportunityJobPage({ params }: JobPageProps) {
               {posted ? <li>Posted {posted}</li> : null}
               {salary ? <li>{salary}</li> : null}
             </ul>
-            <div className="hero-actions opportunities-hero-actions">
-              <a className="primary-button" href={job.applyUrl} target="_blank" rel="noopener noreferrer">
-                Apply on employer site
-                <ExternalLink className="btn-icon" size={16} strokeWidth={2} />
-              </a>
-              <a className="secondary-button" href="/#apply">
-                <PhoneCall className="btn-icon-lead" size={16} strokeWidth={2} />
-                Book a Free Intro Call
-              </a>
-            </div>
           </div>
         </section>
       </div>
       <div className="journal-light">
-        <div className="shell journal-main opportunities-layout">
+        <div className="shell journal-main opportunities-layout is-detail">
           <article className="opportunity-detail-card">
-            {job.companyLogoUrl ? (
-              <img className="opportunity-logo" src={job.companyLogoUrl} alt="" width={48} height={48} />
-            ) : (
-              <span className="opportunity-letter-logo" aria-hidden="true">
-                {job.companyName.slice(0, 1).toUpperCase()}
-              </span>
-            )}
+            <CompanyAvatar name={job.companyName} logoUrl={job.companyLogoUrl} />
             <div className="opportunity-body">
-              <h2>About this role</h2>
-              {descriptionHtml ? (
-                <div className="job-description" dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
-              ) : descriptionText ? (
-                <div className="job-description">
-                  {descriptionText.split(/\n{2,}/).map((paragraph) => (
-                    <p key={paragraph.slice(0, 24)}>{paragraph}</p>
-                  ))}
-                </div>
+              {sections.length ? (
+                sections.map((section) => (
+                  <section key={`${section.id}-${section.title}`} className="job-section">
+                    <h2>{section.title}</h2>
+                    <div className="job-description" dangerouslySetInnerHTML={{ __html: section.html }} />
+                  </section>
+                ))
               ) : (
-                <p className="opportunity-summary">Open the employer listing to read the full description.</p>
+                <section className="job-section">
+                  <h2>Employer-provided description</h2>
+                  <p className="opportunity-summary">The employer did not include a public description for this listing.</p>
+                </section>
               )}
               <p className="opportunity-disclosure">
-                AI Trainers is not the employer. This posting was collected from a public career page. Applications are
-                submitted on the original apply URL.
+                External opportunity. AI Trainers is not the employer. This posting was collected from a public career
+                page. Application is completed on the employer’s website.
               </p>
             </div>
           </article>
-          <aside className="opportunity-rail">
-            <section className="opportunity-rail-card">
-              <h3>Apply with the employer</h3>
-              <p>{job.companyName} hosts this listing. AI Trainers does not take applications for this role.</p>
-              <a className="primary-button opportunity-view" href={job.applyUrl} target="_blank" rel="noopener noreferrer">
-                Apply now
-                <ExternalLink className="btn-icon" size={16} strokeWidth={2} />
-              </a>
-            </section>
-            <section className="opportunity-rail-card">
-              <h3>Need guidance?</h3>
-              <p>Our coaching team can help you understand where your background fits and what to focus on next.</p>
-              <a className="primary-button opportunity-view" href="/#apply">
-                <PhoneCall size={16} strokeWidth={2} />
-                Book a Free Intro Call
-              </a>
-            </section>
-          </aside>
+          <OpportunityApplySidebar job={job} match={job.match} />
         </div>
+      </div>
+      <div className="opportunity-mobile-apply">
+        <a className="primary-button" href={job.applyUrl} target="_blank" rel="noopener noreferrer">
+          Apply on employer site
+          <ExternalLink className="btn-icon" size={16} strokeWidth={2} />
+        </a>
       </div>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingJsonLd(job, canonical)) }} />
       <SiteFooter />

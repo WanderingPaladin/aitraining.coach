@@ -1,77 +1,58 @@
 'use client';
 
-import {
-  ArrowUpDown,
-  BriefcaseBusiness,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  GraduationCap,
-  Laptop,
-  Layers3,
-  PhoneCall,
-  Search,
-  SlidersHorizontal,
-  Tags,
-  Target,
-  UserPlus,
-  X,
-} from 'lucide-react';
+import { ArrowUpDown, Target } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   getAccountProfile,
   jobToOpportunity,
   listPublicJobs,
-  type AccountProfile,
+  type JobListFilters,
   type JobListResponse,
   type Opportunity,
   type ReadinessScore,
 } from '../../lib/api';
 import { useAuth } from './AuthProvider';
+import CoachingCTA from './CoachingCTA';
+import OpportunitiesHero, { PopularCategoryStrip } from './OpportunitiesHero';
+import OpportunitiesPagination from './OpportunitiesPagination';
 import OpportunityCard from './OpportunityCard';
-
-type ExperienceFilter = '' | 'beginner' | 'experienced';
-type SortFilter = 'newest' | 'match';
+import OpportunityFilters, {
+  type OpportunityFilterState,
+} from './OpportunityFilters';
+import SiteFooter from './SiteFooter';
+import SiteHeader from './SiteHeader';
 
 const PAGE_SIZE = 20;
 
-function filterByExperience(items: Opportunity[], experience: ExperienceFilter) {
-  if (!experience) {
-    return items;
-  }
-  if (experience === 'beginner') {
-    return items.filter((item) => item.beginnerFriendly);
-  }
-  return items.filter((item) => !item.beginnerFriendly);
+type SortFilter = 'relevant' | 'newest' | 'salary' | 'match';
+
+function parseRemote(value: string | null): OpportunityFilterState['remote'] {
+  if (value === '1' || value === 'true' || value === 'remote') return 'remote';
+  if (value === 'hybrid' || value === 'onsite') return value;
+  return '';
 }
 
-function paginationItems(current: number, total: number): Array<number | 'ellipsis'> {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, index) => index + 1);
+function parseExperience(value: string | null): OpportunityFilterState['experience'] {
+  if (value === 'beginner' || value === 'entry' || value === 'mid' || value === 'senior' || value === 'lead') {
+    return value;
   }
-  const pages = new Set([1, total, current]);
-  if (current > 2) pages.add(current - 1);
-  if (current < total - 1) pages.add(current + 1);
-  if (current <= 3) {
-    pages.add(2);
-    pages.add(3);
-    pages.add(4);
-  }
-  if (current >= total - 2) {
-    pages.add(total - 3);
-    pages.add(total - 2);
-    pages.add(total - 1);
-  }
-  const sorted = [...pages].filter((page) => page >= 1 && page <= total).sort((a, b) => a - b);
-  const items: Array<number | 'ellipsis'> = [];
-  for (let index = 0; index < sorted.length; index += 1) {
-    if (index > 0 && sorted[index] - sorted[index - 1] > 1) {
-      items.push('ellipsis');
-    }
-    items.push(sorted[index]);
-  }
-  return items;
+  return '';
+}
+
+function parsePay(value: string | null): OpportunityFilterState['pay'] {
+  if (value === 'compensation' || value === 'hourly' || value === 'annual') return value;
+  return '';
+}
+
+function parsePosted(value: string | null): OpportunityFilterState['postedWithin'] {
+  if (value === '1' || value === '3' || value === '7' || value === '30') return value;
+  return '';
+}
+
+function parseSort(value: string | null): SortFilter {
+  if (value === 'match' || value === 'salary' || value === 'relevant' || value === 'newest') return value;
+  return 'newest';
 }
 
 export default function OpportunitiesBoard({
@@ -82,19 +63,19 @@ export default function OpportunitiesBoard({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const initialPage = Math.max(1, Number(searchParams.get('page')) || 1);
-  const seededItems = filterByExperience((initialJobs?.jobs ?? []).map(jobToOpportunity), '');
+  const seededItems = (initialJobs?.jobs ?? []).map(jobToOpportunity);
   const [query, setQuery] = useState(() => (searchParams.get('q') ?? '').trim());
   const [searchInput, setSearchInput] = useState(() => searchParams.get('q') ?? '');
-  const [platform, setPlatform] = useState(() => searchParams.get('platform') ?? '');
-  const [category, setCategory] = useState(() => searchParams.get('category') ?? '');
-  const [experience, setExperience] = useState<ExperienceFilter>(
-    () => (searchParams.get('experience') as ExperienceFilter) || '',
-  );
-  const [employmentType, setEmploymentType] = useState(() => searchParams.get('employmentType') ?? '');
-  const [remote, setRemote] = useState(() => searchParams.get('remote') === '1' || searchParams.get('remote') === 'true');
-  const [sort, setSort] = useState<SortFilter>(searchParams.get('sort') === 'match' ? 'match' : 'newest');
-  const [page, setPage] = useState(initialPage);
+  const [filters, setFilters] = useState<OpportunityFilterState>(() => ({
+    category: searchParams.get('category') ?? '',
+    remote: parseRemote(searchParams.get('remote')),
+    experience: parseExperience(searchParams.get('experience')),
+    pay: parsePay(searchParams.get('pay')),
+    platform: searchParams.get('platform') || searchParams.get('company') || '',
+    postedWithin: parsePosted(searchParams.get('postedWithin')),
+  }));
+  const [sort, setSort] = useState<SortFilter>(() => parseSort(searchParams.get('sort')));
+  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page')) || 1));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(seededItems.length === 0);
   const [error, setError] = useState('');
@@ -105,16 +86,25 @@ export default function OpportunitiesBoard({
   const [categories, setCategories] = useState<string[]>(() =>
     [...new Set(initialJobs?.filters.categories ?? [])].sort((a, b) => a.localeCompare(b)),
   );
-  const [employmentTypes, setEmploymentTypes] = useState<string[]>(initialJobs?.filters.employmentTypes ?? []);
   const [total, setTotal] = useState(initialJobs?.total ?? 0);
   const [pageCount, setPageCount] = useState(Math.max(initialJobs?.pageCount ?? 1, 1));
   const [matchAvailable, setMatchAvailable] = useState(Boolean(initialJobs?.matchAvailable));
-  const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [readiness, setReadiness] = useState<ReadinessScore | null>(null);
+  const [recommended, setRecommended] = useState<Opportunity[]>([]);
   const [reloadKey, setReloadKey] = useState(0);
   const skipPageReset = useRef(true);
   const itemsRef = useRef(seededItems);
   itemsRef.current = items;
+
+  const hasBrowseFilters = Boolean(
+    query ||
+      filters.category ||
+      filters.remote ||
+      filters.experience ||
+      filters.pay ||
+      filters.platform ||
+      filters.postedWithin,
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => setQuery(searchInput.trim()), 250);
@@ -127,16 +117,17 @@ export default function OpportunitiesBoard({
       return;
     }
     setPage(1);
-  }, [query, platform, category, experience, employmentType, remote, sort]);
+  }, [query, filters.category, filters.remote, filters.experience, filters.pay, filters.platform, filters.postedWithin, sort]);
 
   useEffect(() => {
     const params = new URLSearchParams();
     if (query) params.set('q', query);
-    if (platform) params.set('platform', platform);
-    if (category) params.set('category', category);
-    if (experience) params.set('experience', experience);
-    if (employmentType) params.set('employmentType', employmentType);
-    if (remote) params.set('remote', '1');
+    if (filters.platform) params.set('platform', filters.platform);
+    if (filters.category) params.set('category', filters.category);
+    if (filters.experience) params.set('experience', filters.experience);
+    if (filters.pay) params.set('pay', filters.pay);
+    if (filters.remote) params.set('remote', filters.remote === 'remote' ? '1' : filters.remote);
+    if (filters.postedWithin) params.set('postedWithin', filters.postedWithin);
     if (sort !== 'newest') params.set('sort', sort);
     if (page > 1) params.set('page', String(page));
     const next = params.toString();
@@ -144,11 +135,10 @@ export default function OpportunitiesBoard({
     if (next !== current) {
       router.replace(next ? `/opportunities?${next}` : '/opportunities', { scroll: false });
     }
-  }, [query, platform, category, experience, employmentType, remote, sort, page, router, searchParams]);
+  }, [query, filters, sort, page, router, searchParams]);
 
   useEffect(() => {
     if (!user) {
-      setProfile(null);
       setReadiness(null);
       return;
     }
@@ -156,12 +146,10 @@ export default function OpportunitiesBoard({
     void getAccountProfile()
       .then((result) => {
         if (cancelled) return;
-        setProfile(result.profile);
         setReadiness(result.readiness);
       })
       .catch(() => {
         if (!cancelled) {
-          setProfile(null);
           setReadiness(null);
         }
       });
@@ -170,31 +158,37 @@ export default function OpportunitiesBoard({
     };
   }, [user]);
 
+  const listFilters = useMemo<JobListFilters>(
+    () => ({
+      q: query,
+      remote: filters.remote || undefined,
+      category: filters.category,
+      platform: filters.platform || undefined,
+      experience: filters.experience || undefined,
+      pay: filters.pay || undefined,
+      postedWithin: filters.postedWithin || undefined,
+      sort,
+      page,
+      pageSize: PAGE_SIZE,
+    }),
+    [query, filters, sort, page],
+  );
+
   useEffect(() => {
     let cancelled = false;
     if (itemsRef.current.length === 0) {
       setLoading(true);
     }
 
-    void listPublicJobs({
-      q: query,
-      remote: remote || undefined,
-      category,
-      employmentType: employmentType || undefined,
-      company: platform || undefined,
-      sort,
-      page,
-      pageSize: PAGE_SIZE,
-    })
+    void listPublicJobs(listFilters)
       .then((result) => {
         if (cancelled) return;
-        const jobItems = filterByExperience(result.jobs.map(jobToOpportunity), experience);
+        const jobItems = result.jobs.map(jobToOpportunity);
         setItems(jobItems);
         setPlatforms([...new Set(result.filters.companies)].sort((a, b) => a.localeCompare(b)));
         setCategories([...new Set(result.filters.categories)].sort((a, b) => a.localeCompare(b)));
-        setEmploymentTypes(result.filters.employmentTypes);
         setMatchAvailable(Boolean(result.matchAvailable));
-        setTotal(experience ? jobItems.length : result.total);
+        setTotal(result.total);
         setPageCount(Math.max(result.pageCount, 1));
         setError('');
         setLoading(false);
@@ -210,385 +204,239 @@ export default function OpportunitiesBoard({
     return () => {
       cancelled = true;
     };
-  }, [query, platform, category, experience, employmentType, remote, sort, page, reloadKey]);
+  }, [listFilters, reloadKey]);
 
-  const filterCount = useMemo(
-    () => [platform, category, experience, employmentType, remote].filter(Boolean).length,
-    [platform, category, experience, employmentType, remote],
-  );
+  useEffect(() => {
+    if (hasBrowseFilters || page > 1) {
+      setRecommended([]);
+      return;
+    }
+    let cancelled = false;
+    const recommendedSort: JobListFilters['sort'] = user && (matchAvailable || readiness?.completeEnough) ? 'match' : 'relevant';
+    void listPublicJobs({ sort: recommendedSort, page: 1, pageSize: 3 })
+      .then((featured) => {
+        if (cancelled) return;
+        setRecommended((featured.jobs ?? []).map(jobToOpportunity));
+      })
+      .catch(() => {
+        if (!cancelled) setRecommended([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hasBrowseFilters, page, user, matchAvailable, readiness?.completeEnough]);
 
   function clearFilters() {
     setSearchInput('');
     setQuery('');
-    setPlatform('');
-    setCategory('');
-    setExperience('');
-    setEmploymentType('');
-    setRemote(false);
+    setFilters({
+      category: '',
+      remote: '',
+      experience: '',
+      pay: '',
+      platform: '',
+      postedWithin: '',
+    });
     setSort('newest');
     setPage(1);
   }
 
-  function selectField(
-    label: string,
-    icon: ReactNode,
-    value: string,
-    onChange: (value: string) => void,
-    options: Array<{ value: string; label: string }>,
-  ) {
-    return (
-      <label className="filter-field">
-        <span className="filter-label">
-          {icon}
-          {label}
-        </span>
-        <span className="filter-select">
-          <select value={value} onChange={(event) => onChange(event.target.value)}>
-            {options.map((option) => (
-              <option key={option.value || option.label} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
-        </span>
-      </label>
-    );
+  function applyQuickFilter(id: string) {
+    if (id === 'all') {
+      setFilters((current) => ({ ...current, category: '', experience: '', remote: '' }));
+      return;
+    }
+    if (id === 'beginner') {
+      setFilters((current) => ({
+        ...current,
+        experience: current.experience === 'beginner' ? '' : 'beginner',
+      }));
+      return;
+    }
+    if (id === 'remote') {
+      setFilters((current) => ({
+        ...current,
+        remote: current.remote === 'remote' ? '' : 'remote',
+      }));
+      return;
+    }
+    setFilters((current) => ({
+      ...current,
+      category: current.category === id ? '' : id,
+    }));
   }
 
-  const searchField = (
-    <label className="filter-field is-search">
-      <span className="filter-label">
-        <Search size={16} strokeWidth={2} aria-hidden="true" />
-        Search
-      </span>
-      <div className="filter-search">
-        <Search size={18} strokeWidth={2} aria-hidden="true" />
-        <input
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Search roles, skills, or platforms..."
-          aria-label="Search roles, skills, or platforms"
-        />
-      </div>
-    </label>
-  );
-
-  const coreFilters = (
-    <>
-      {selectField(
-        'Platform',
-        <Layers3 size={16} strokeWidth={2} aria-hidden="true" />,
-        platform,
-        setPlatform,
-        [{ value: '', label: 'All platforms' }, ...platforms.map((name) => ({ value: name, label: name }))],
-      )}
-      {selectField(
-        'Category',
-        <Tags size={16} strokeWidth={2} aria-hidden="true" />,
-        category,
-        setCategory,
-        [{ value: '', label: 'All categories' }, ...categories.map((name) => ({ value: name, label: name }))],
-      )}
-      {selectField(
-        'Experience',
-        <GraduationCap size={16} strokeWidth={2} aria-hidden="true" />,
-        experience,
-        (value) => setExperience(value as ExperienceFilter),
-        [
-          { value: '', label: 'All experience levels' },
-          { value: 'beginner', label: 'Beginner-friendly' },
-          { value: 'experienced', label: 'Experienced' },
-        ],
-      )}
-      {selectField(
-        'Remote',
-        <Laptop size={16} strokeWidth={2} aria-hidden="true" />,
-        remote ? '1' : '',
-        (value) => setRemote(value === '1'),
-        [
-          { value: '', label: 'Any location' },
-          { value: '1', label: 'Remote only' },
-        ],
-      )}
-      {selectField(
-        'Sort',
-        <ArrowUpDown size={16} strokeWidth={2} aria-hidden="true" />,
-        sort,
-        (value) => setSort(value as SortFilter),
-        [
-          { value: 'newest', label: 'Newest' },
-          ...(user ? [{ value: 'match', label: 'Best Match' }] : []),
-        ],
-      )}
-    </>
-  );
-
-  const typeFilter =
-    employmentTypes.length > 0
-      ? selectField(
-          'Type',
-          <BriefcaseBusiness size={16} strokeWidth={2} aria-hidden="true" />,
-          employmentType,
-          setEmploymentType,
-          [
-            { value: '', label: 'All types' },
-            ...employmentTypes.map((name) => ({ value: name, label: name.replace(/-/g, ' ') })),
-          ],
-        )
-      : null;
-
-  const rangeFrom = total === 0 || items.length === 0 ? 0 : page === 1 ? 1 : (page - 1) * PAGE_SIZE + 1;
+  const rangeFrom = total === 0 || items.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const rangeTo = rangeFrom === 0 ? 0 : rangeFrom + items.length - 1;
-  const topCategories = [...new Set(items.map((item) => item.category).filter(Boolean))].slice(0, 3);
-  const pages = paginationItems(page, pageCount);
+  const showRecommended = !hasBrowseFilters && recommended.length >= 3;
+  const recommendedPersonalized = Boolean(user && matchAvailable && recommended.some((item) => item.match && item.match.score > 0));
+  const beforeCta = items.slice(0, 6);
+  const afterCta = items.slice(6);
 
   return (
-    <div className="opportunities-board">
-      <div className="opportunity-board-head">
-        <div>
-          <h2>Browse opportunities</h2>
-          {items.length > 0 || !loading ? (
-            <p className="opportunity-count">
-              {total === 0
-                ? 'No opportunities to show'
-                : `Showing ${rangeFrom}–${rangeTo} of ${total} opportunities`}
-            </p>
-          ) : (
-            <p className="opportunity-count">Loading opportunities…</p>
-          )}
-        </div>
+    <>
+      <div className="journal-hero-wrap">
+        <SiteHeader current="opportunities" />
+        <OpportunitiesHero
+          searchInput={searchInput}
+          onSearch={setSearchInput}
+          category={filters.category}
+          experience={filters.experience}
+          remote={filters.remote}
+          onQuickFilter={applyQuickFilter}
+        />
       </div>
-
-      <form className="opportunity-filters" onSubmit={(event) => event.preventDefault()}>
-        {searchField}
-        {coreFilters}
-        {filterCount ? (
-          <button type="button" className="filter-clear" onClick={clearFilters}>
-            <X size={16} strokeWidth={2} />
-            Clear
-          </button>
-        ) : null}
-      </form>
-
-      <div className="opportunity-toolbar">
-        <div className="filter-search">
-          <Search size={18} strokeWidth={2} aria-hidden="true" />
-          <input
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search opportunities..."
-            aria-label="Search opportunities"
+      <div className="journal-light" id="listings">
+        <div className="shell journal-main opportunities-page-main">
+          <PopularCategoryStrip
+            category={filters.category}
+            onSelect={(value) => setFilters((current) => ({ ...current, category: value }))}
           />
-        </div>
-        <button
-          type="button"
-          className="filter-toggle secondary-button on-light"
-          onClick={() => setFiltersOpen(true)}
-        >
-          <SlidersHorizontal size={16} strokeWidth={2} />
-          Filters{filterCount ? ` (${filterCount})` : ''}
-        </button>
-      </div>
 
-      <div className="opportunities-layout">
-        <div className="opportunity-results">
-          {error ? (
-            <p className="opportunity-error">
-              {error}{' '}
-              <button type="button" className="filter-clear" onClick={() => setReloadKey((value) => value + 1)}>
-                Try again
-              </button>
-            </p>
-          ) : null}
-          {loading && items.length === 0 ? (
-            <div className="opportunity-skeleton-list" aria-hidden="true">
-              <div className="opportunity-card is-skeleton" />
-              <div className="opportunity-card is-skeleton" />
-              <div className="opportunity-card is-skeleton" />
+          <div className="opportunity-board-head">
+            <div>
+              <h2>Browse opportunities</h2>
+              <p className="opportunity-count">
+                {loading && items.length === 0
+                  ? 'Loading opportunities…'
+                  : total === 0
+                    ? 'No opportunities to show'
+                    : `${total} opportunities`}
+              </p>
             </div>
-          ) : null}
-          {!loading && !error && items.length === 0 ? (
-            <div className="opportunity-empty">
-              <img src="/illustrations/opportunities-empty-state.svg" alt="" />
-              <h3>No opportunities match these filters.</h3>
-              <p>Try removing a filter or searching for a broader skill.</p>
-              <button type="button" className="primary-button" onClick={clearFilters}>
-                Clear Filters
-              </button>
-            </div>
-          ) : null}
-          {items.length > 0 && sort === 'match' && matchAvailable
-            ? (() => {
-                const matched = items.filter((item) => item.match && item.match.score > 0);
-                const rest = items.filter((item) => !item.match || item.match.score <= 0);
-                return (
-                  <>
-                    {matched.length > 0 ? (
-                      <div className="match-group">
-                        <h3 className="match-group-heading">
-                          <Target size={18} strokeWidth={2} aria-hidden="true" />
-                          Your Matches
-                        </h3>
-                        {matched.map((item) => (
-                          <OpportunityCard key={`job-${item.id}`} opportunity={item} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="opportunity-empty">
-                        <h3>No matches for your profile yet.</h3>
-                        <p>Complete your profile to unlock personalized matches, or browse all opportunities below.</p>
-                      </div>
-                    )}
-                    {rest.length > 0 ? (
-                      <div className="match-group">
-                        <h3 className="match-group-heading is-secondary">Other Opportunities</h3>
-                        {rest.map((item) => (
-                          <OpportunityCard key={`job-${item.id}`} opportunity={item} />
-                        ))}
-                      </div>
-                    ) : null}
-                  </>
-                );
-              })()
-            : items.length > 0
-              ? items.map((item) => (
-                  <OpportunityCard key={`job-${item.id}`} opportunity={item} />
-                ))
-              : null}
-          {!loading && items.length > 0 && pageCount > 1 ? (
-            <nav className="opportunity-pagination" aria-label="Opportunity pages">
-              <button
-                type="button"
-                className="page-nav secondary-button on-light"
-                disabled={page <= 1}
-                onClick={() => setPage((value) => Math.max(1, value - 1))}
-              >
-                <ChevronLeft size={16} strokeWidth={2} aria-hidden="true" />
-                Previous
-              </button>
-              <div className="page-numbers">
-                {pages.map((item, index) =>
-                  item === 'ellipsis' ? (
-                    <span key={`ellipsis-${index}`} className="page-ellipsis">
-                      …
-                    </span>
-                  ) : (
-                    <button
-                      key={item}
-                      type="button"
-                      className={`page-num${item === page ? ' is-current' : ''}`}
-                      onClick={() => setPage(item)}
-                      aria-current={item === page ? 'page' : undefined}
-                      aria-label={`Page ${item}`}
-                    >
-                      {item}
-                    </button>
-                  ),
-                )}
-              </div>
-              <span className="page-status">
-                Page {page} of {pageCount}
+            <label className="sort-field">
+              <span className="filter-label">
+                <ArrowUpDown size={14} strokeWidth={2} aria-hidden="true" />
+                Sort
               </span>
-              <button
-                type="button"
-                className="page-nav secondary-button on-light"
-                disabled={page >= pageCount}
-                onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
-              >
-                Next
-                <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
-              </button>
-            </nav>
+              <span className="filter-select">
+                <select value={sort} onChange={(event) => setSort(event.target.value as SortFilter)}>
+                  <option value="relevant">Recommended</option>
+                  <option value="newest">Newest</option>
+                  <option value="salary">Highest Pay</option>
+                  {user ? <option value="match">Most Relevant</option> : null}
+                </select>
+                <ArrowUpDown size={14} strokeWidth={2} aria-hidden="true" />
+              </span>
+            </label>
+          </div>
+
+          <OpportunityFilters
+            state={filters}
+            categories={categories}
+            companies={platforms}
+            onChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
+            onClear={clearFilters}
+            open={filtersOpen}
+            onOpen={() => setFiltersOpen(true)}
+            onClose={() => setFiltersOpen(false)}
+          />
+
+          {showRecommended ? (
+            <section className="opportunity-section" aria-labelledby="recommended-heading">
+              <div className="opportunity-section-head">
+                <h3 id="recommended-heading">
+                  {recommendedPersonalized ? 'Recommended for you' : 'Recommended opportunities'}
+                </h3>
+                <p>
+                  {recommendedPersonalized
+                    ? 'Opportunities aligned with your background and skills.'
+                    : 'Featured roles from our current ranking of AI training work.'}
+                </p>
+              </div>
+              <div className="opportunity-results is-featured">
+                {recommended.slice(0, 3).map((item) => (
+                  <OpportunityCard key={`rec-${item.id}`} opportunity={item} compact />
+                ))}
+              </div>
+            </section>
           ) : null}
-          <p className="opportunity-disclosure">
-            AI Trainers curates external opportunities for discovery and is not the employer. Employer listings are
-            collected from public career pages. Always verify requirements and apply on the original platform.
-          </p>
-        </div>
 
-        <aside className="opportunity-rail">
-          <section className="opportunity-rail-card">
-            <h3>
-              <Target size={18} strokeWidth={2} aria-hidden="true" />
-              Find Your Best Fit
-            </h3>
-            {!user ? (
-              <>
-                <p>Create a profile to see how well opportunities match your experience and skills.</p>
-                <a className="primary-button opportunity-view" href={`/login?returnTo=${encodeURIComponent('/opportunities')}`}>
-                  <UserPlus size={16} strokeWidth={2} />
-                  Create Your Profile
-                </a>
-              </>
-            ) : !(matchAvailable || readiness?.completeEnough) ? (
-              <>
-                <p>Complete your profile to unlock personalized matches.</p>
-                <a className="primary-button opportunity-view" href="/profile/edit">
-                  Complete Profile
-                </a>
-              </>
-            ) : (
-              <>
-                <p>Your AI Training Readiness</p>
-                {readiness ? <p className="fit-score">{Math.min(100, readiness.score)}%</p> : null}
-                {topCategories.length ? (
-                  <>
-                    <p>Top matching areas</p>
-                    <ul className="fit-categories">
-                      {topCategories.map((name) => (
-                        <li key={name}>{name}</li>
-                      ))}
-                    </ul>
-                  </>
-                ) : null}
-                {profile ? (
-                  <a className="secondary-button on-light opportunity-view" href="/profile">
-                    View Profile
-                  </a>
-                ) : null}
-              </>
-            )}
-          </section>
-          <section className="opportunity-rail-card">
-            <h3>
-              <PhoneCall size={18} strokeWidth={2} aria-hidden="true" />
-              Need guidance?
-            </h3>
-            <p>Not sure which opportunities fit you?</p>
-            <p>Our coaching team can help you understand where your background fits and what to focus on next.</p>
-            <a className="secondary-button on-light opportunity-view" href="/#apply">
-              <PhoneCall size={16} strokeWidth={2} />
-              Book a Free Intro Call
-            </a>
-          </section>
-        </aside>
-      </div>
-
-      {filtersOpen ? (
-        <div className="filter-drawer is-sheet" role="dialog" aria-label="Filters">
-          <button type="button" className="filter-drawer-backdrop" onClick={() => setFiltersOpen(false)} aria-label="Close filters" />
-          <div className="filter-drawer-panel">
-            <div className="filter-sheet-handle" aria-hidden="true" />
-            <div className="filter-drawer-head">
-              <h2>Filters</h2>
-              <button type="button" className="filter-drawer-close" onClick={() => setFiltersOpen(false)} aria-label="Close filters">
-                Done
-              </button>
-            </div>
-            <form className="opportunity-filters is-drawer" onSubmit={(event) => event.preventDefault()}>
-              {coreFilters}
-              {typeFilter}
-              {filterCount ? (
-                <button type="button" className="filter-clear" onClick={clearFilters}>
-                  <X size={16} strokeWidth={2} />
+          <div className="opportunity-results">
+            {error ? (
+              <p className="opportunity-error">
+                {error}{' '}
+                <button type="button" className="filter-clear" onClick={() => setReloadKey((value) => value + 1)}>
+                  Try again
+                </button>
+              </p>
+            ) : null}
+            {loading && items.length === 0 ? (
+              <div className="opportunity-skeleton-list" aria-hidden="true">
+                <div className="opportunity-card is-skeleton" />
+                <div className="opportunity-card is-skeleton" />
+                <div className="opportunity-card is-skeleton" />
+              </div>
+            ) : null}
+            {!loading && !error && items.length === 0 ? (
+              <div className="opportunity-empty">
+                <img src="/illustrations/opportunities-empty-state.svg" alt="" />
+                <h3>No opportunities match these filters.</h3>
+                <p>Try removing a filter or searching for a broader skill.</p>
+                <button type="button" className="primary-button" onClick={clearFilters}>
                   Clear Filters
                 </button>
-              ) : null}
-            </form>
+              </div>
+            ) : null}
+            {items.length > 0 && sort === 'match' && matchAvailable ? (
+              <>
+                {items.filter((item) => item.match && item.match.score > 0).length ? (
+                  <div className="match-group">
+                    <h3 className="match-group-heading">
+                      <Target size={18} strokeWidth={2} aria-hidden="true" />
+                      Your Matches
+                    </h3>
+                    {items
+                      .filter((item) => item.match && item.match.score > 0)
+                      .map((item) => (
+                        <OpportunityCard key={`job-${item.id}`} opportunity={item} />
+                      ))}
+                  </div>
+                ) : (
+                  <div className="opportunity-empty">
+                    <h3>No matches for your profile yet.</h3>
+                    <p>Complete your profile to unlock personalized matches, or browse all opportunities below.</p>
+                  </div>
+                )}
+                {items.filter((item) => !item.match || item.match.score <= 0).length ? (
+                  <div className="match-group">
+                    <h3 className="match-group-heading is-secondary">Other Opportunities</h3>
+                    {items
+                      .filter((item) => !item.match || item.match.score <= 0)
+                      .map((item) => (
+                        <OpportunityCard key={`job-${item.id}`} opportunity={item} />
+                      ))}
+                  </div>
+                ) : null}
+              </>
+            ) : items.length > 0 ? (
+              <>
+                {beforeCta.map((item) => (
+                  <OpportunityCard key={`job-${item.id}`} opportunity={item} />
+                ))}
+                {items.length >= 6 ? <CoachingCTA /> : null}
+                {afterCta.map((item) => (
+                  <OpportunityCard key={`job-${item.id}`} opportunity={item} />
+                ))}
+                {items.length < 6 ? <CoachingCTA /> : null}
+              </>
+            ) : null}
+            <OpportunitiesPagination
+              page={page}
+              pageCount={pageCount}
+              rangeFrom={rangeFrom}
+              rangeTo={rangeTo}
+              total={total}
+              onPage={setPage}
+            />
+            <p className="opportunity-disclosure">
+              AI Trainers curates external opportunities for discovery and is not the employer. Employer listings are
+              collected from public career pages. Always verify requirements and apply on the original platform.
+            </p>
           </div>
         </div>
-      ) : null}
-    </div>
+      </div>
+      <SiteFooter />
+    </>
   );
 }
