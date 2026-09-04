@@ -83,10 +83,6 @@ export default function Home() {
               <BookIntroCallButton className="primary-button hero-primary-cta" href="#apply" />
               <p className="hero-cta-note">No experience required to start the conversation.</p>
             </div>
-            <div className="social-proof">
-              <div className="avatar-stack" aria-hidden="true"><img src="/people/priya.jpg" alt="" /><img src="/people/daniel.jpg" alt="" /><img src="/people/maria.jpg" alt="" /><img src="/people/noah.jpg" alt="" /></div>
-              <div><strong>★★★★★</strong><p>Trusted by 2,500+ aspiring AI trainers<br />who are building rewarding careers.</p></div>
-            </div>
           </div>
           <PayrollPreview />
         </div>
