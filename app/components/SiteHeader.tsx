@@ -1,10 +1,12 @@
 import { ArrowUpRight } from 'lucide-react';
+import AccountNav from './AccountNav';
 import Brand from './Brand';
 
-export type NavCurrent = 'home' | 'how' | 'stories' | 'blog' | 'faq';
+export type NavCurrent = 'home' | 'how' | 'stories' | 'blog' | 'faq' | 'opportunities' | 'profile';
 
 const links: Array<{ id: NavCurrent; label: string; homeHref: string; href: string; offPage?: boolean }> = [
   { id: 'home', label: 'Home', homeHref: '#top', href: '/' },
+  { id: 'opportunities', label: 'Opportunities', homeHref: '/opportunities', href: '/opportunities', offPage: true },
   { id: 'how', label: 'How It Works', homeHref: '#how', href: '/#how' },
   { id: 'faq', label: 'FAQ', homeHref: '#faq', href: '/#faq' },
   { id: 'stories', label: 'Stories', homeHref: '/stories', href: '/stories', offPage: true },
@@ -25,6 +27,7 @@ export default function SiteHeader({
           <a
             key={link.id}
             className={current === link.id ? 'current' : undefined}
+            aria-current={current === link.id ? 'page' : undefined}
             href={home ? link.homeHref : link.href}
           >
             {link.label}
@@ -34,7 +37,10 @@ export default function SiteHeader({
           </a>
         ))}
       </nav>
-      <a className="mini-cta" href={home ? '#apply' : '/#apply'}>Book a Free Intro Call</a>
+      <div className="header-actions">
+        <AccountNav />
+        <a className="mini-cta" href={home ? '#apply' : '/#apply'}>Book a Free Intro Call</a>
+      </div>
     </header>
   );
 }

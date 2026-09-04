@@ -12,7 +12,7 @@ export default function SiteFooter() {
           <h3>Quick Links</h3>
           <a href="/">Home</a>
           <a href="/#how">How It Works</a>
-          <a href="/#stories">Testimonials</a>
+          <a href="/opportunities">Opportunities</a>
           <a href="/#apply">Book a Free Intro Call</a>
         </div>
         <div>

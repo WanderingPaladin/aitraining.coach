@@ -1,0 +1,16 @@
+<svg width="720" height="520" viewBox="0 0 720 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g opacity="0.34">
+  <ellipse cx="610" cy="250" rx="300" ry="175" stroke="url(#g1)" stroke-width="1"/>
+  <ellipse cx="610" cy="250" rx="250" ry="145" stroke="url(#g1)" stroke-width="1"/>
+  <ellipse cx="610" cy="250" rx="200" ry="115" stroke="url(#g1)" stroke-width="1"/>
+  <ellipse cx="610" cy="250" rx="150" ry="85" stroke="url(#g1)" stroke-width="1"/>
+  <ellipse cx="610" cy="250" rx="100" ry="55" stroke="url(#g1)" stroke-width="1"/>
+</g>
+<defs>
+  <linearGradient id="g1" x1="310" y1="250" x2="910" y2="250" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#12C7FF" stop-opacity="0"/>
+    <stop offset="0.46" stop-color="#3B82F6" stop-opacity="0.55"/>
+    <stop offset="1" stop-color="#9B2CFF" stop-opacity="0.85"/>
+  </linearGradient>
+</defs>
+</svg>
