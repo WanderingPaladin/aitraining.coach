@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { submitFeedback } from '../../lib/api';
+import { ApiError, submitFeedback } from '../../lib/api';
 import { DETAIL_COPY, TOPIC_QUESTIONS, deviceTypeFromWidth } from '../../lib/feedback-context';
 import {
   clearFeedbackDraft,
@@ -10,7 +10,8 @@ import {
 } from '../../lib/feedback-storage';
 import type { FeedbackCategory, FeedbackDraft, FeedbackStep } from '../../lib/feedback-types';
 import { emptyFeedbackDraft, FEEDBACK_MAX_MESSAGE } from '../../lib/feedback-types';
-import { isNonEmptyFeedback, isValidFeedbackEmail, trimFeedbackMessage } from '../../lib/feedback-validation';
+import { isNonEmptyFeedback, isValidFeedbackEmail, trimFeedbackMessage, feedbackClientIssue } from '../../lib/feedback-validation';
+import { trackingIds } from '../../lib/tracking';
 import { useAuth } from '../components/AuthProvider';
 import { useFeedbackContext } from './useFeedbackContext';
 
@@ -54,7 +55,7 @@ function nextAfterDetails(category: FeedbackCategory): Exclude<FeedbackStep, 'cl
 export function useFeedback() {
   const { user } = useAuth();
   const { pathname, pageUrl, context } = useFeedbackContext();
-  const launcherRef = useRef<HTMLButtonElement>(null);
+  const honeypotRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<FeedbackDraft>(() => emptyFeedbackDraft(pathname));
@@ -133,10 +134,24 @@ export function useFeedback() {
 
   const selectContext = useCallback(
     (answer: string) => {
-      if (!draft.category) return;
-      update({ contextAnswer: answer, step: nextAfterContext(draft.category) });
+      if (!draft.category || !context) return;
+      const option = context.options.find((item) => item.label === answer || item.id === answer);
+      const followUp = option && !draft.contextFollowUpId ? context.followUp?.[option.id] : null;
+      if (followUp) {
+        update({
+          contextAnswer: option?.label ?? answer,
+          contextFollowUpId: option?.id ?? answer,
+          step: 'context',
+        });
+        return;
+      }
+      const followOption = context.followUp?.[draft.contextFollowUpId ?? '']?.options.find(
+        (item) => item.label === answer || item.id === answer,
+      );
+      const composed = [draft.contextAnswer, followOption?.label ?? answer].filter(Boolean).join(' · ');
+      update({ contextAnswer: composed, step: nextAfterContext(draft.category) });
     },
-    [draft.category, update],
+    [context, draft.category, draft.contextAnswer, draft.contextFollowUpId, update],
   );
 
   const selectTopic = useCallback((subcategory: string) => {
@@ -157,8 +172,9 @@ export function useFeedback() {
       setError('Please add a short comment before continuing.');
       return;
     }
-    if (draft.category === 'general' && !isNonEmptyFeedback(draft.message) && draft.rating == null) {
-      setError('Please add a short comment or go back to choose a rating.');
+    const quality = feedbackClientIssue(draft.message, draft.rating != null);
+    if (quality && draft.category !== 'general') {
+      setError(quality);
       return;
     }
     setError('');
@@ -183,6 +199,9 @@ export function useFeedback() {
       }
       if (current.step === 'rating') return { ...current, step: context ? 'context' : 'welcome' };
       if (current.step === 'topic') return { ...current, step: context ? 'context' : 'welcome' };
+      if (current.step === 'context' && current.contextFollowUpId) {
+        return { ...current, contextFollowUpId: null, step: 'context' };
+      }
       if (current.step === 'context') return { ...current, step: 'welcome' };
       if (current.step === 'error') return { ...current, step: 'follow_up' };
       return current;
@@ -193,6 +212,11 @@ export function useFeedback() {
     if (!next.category) return null;
     const message = composedMessage(next);
     if (!message && next.rating == null) return null;
+    const quality = feedbackClientIssue(message, next.rating != null);
+    if (quality) {
+      setError(quality);
+      return null;
+    }
     return {
       category: next.category,
       subcategory: next.subcategory,
@@ -201,6 +225,8 @@ export function useFeedback() {
       pagePath: pathname,
       pageUrl,
       email: next.wantFollowUp && next.email.trim() ? next.email.trim().toLowerCase() : null,
+      ...trackingIds(),
+      companyWebsite: honeypotRef.current?.value ?? '',
       metadata: {
         deviceType: deviceTypeFromWidth(window.innerWidth),
         screenWidth: window.innerWidth,
@@ -214,7 +240,7 @@ export function useFeedback() {
     const next = { ...draft, ...overrides };
     const payload = buildPayload(next);
     if (!payload) {
-      setError('Please add a short comment before sending.');
+      setError((current) => current || 'Please add a short comment before sending.');
       update({ ...overrides, step: 'details' });
       return;
     }
@@ -229,8 +255,9 @@ export function useFeedback() {
       await submitFeedback(payload);
       clearFeedbackDraft();
       update({ ...overrides, step: 'success' });
-    } catch {
-      setError('Something went wrong while sending your feedback.');
+    } catch (err) {
+      const detail = err instanceof ApiError ? err.details?.find((item) => item.path === 'message')?.message : null;
+      setError(detail || (err instanceof Error ? err.message : 'Something went wrong while sending your feedback.'));
       update({ ...overrides, step: 'error' });
     }
   }, [buildPayload, draft, update]);
@@ -241,6 +268,8 @@ export function useFeedback() {
       rating,
       pagePath,
       pageUrl: window.location.href,
+      ...trackingIds(),
+      companyWebsite: honeypotRef.current?.value ?? '',
       metadata: {
         deviceType: deviceTypeFromWidth(window.innerWidth),
         screenWidth: window.innerWidth,
@@ -277,7 +306,10 @@ export function useFeedback() {
   }, [draft.category, draft.message, draft.rating]);
 
   const question = useMemo(() => {
-    if (draft.step === 'context') return context?.question ?? '';
+    if (draft.step === 'context') {
+      const follow = draft.contextFollowUpId ? context?.followUp?.[draft.contextFollowUpId] : null;
+      return follow?.question ?? context?.question ?? '';
+    }
     if (draft.step === 'topic' && draft.category) return TOPIC_QUESTIONS[draft.category] ?? '';
     if (draft.step === 'details' && draft.category) return DETAIL_COPY[draft.category].question;
     if (draft.step === 'clarify') return 'What would have made this clearer?';
@@ -306,6 +338,7 @@ export function useFeedback() {
     context,
     pathname,
     launcherRef,
+    honeypotRef,
     panelRef,
     question,
     canSendDetails,

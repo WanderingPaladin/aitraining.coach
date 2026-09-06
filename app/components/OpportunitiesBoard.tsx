@@ -307,11 +307,13 @@ export default function OpportunitiesBoard({
                 {loading && items.length === 0
                   ? 'Loading opportunities…'
                   : total === 0
-                    ? 'No opportunities to show'
-                    : `${total} opportunities`}
+                    ? 'No opportunities found'
+                    : rangeFrom > 0 && total > items.length
+                      ? `Showing ${rangeFrom}–${rangeTo} of ${total} opportunities`
+                      : `${total} ${total === 1 ? 'opportunity' : 'opportunities'} found`}
               </p>
             </div>
-            <label className="sort-field">
+            <label className="sort-field is-desktop">
               <span className="filter-label">
                 <ArrowUpDown size={14} strokeWidth={2} aria-hidden="true" />
                 Sort
@@ -337,6 +339,24 @@ export default function OpportunitiesBoard({
             open={filtersOpen}
             onOpen={() => setFiltersOpen(true)}
             onClose={() => setFiltersOpen(false)}
+            resultCount={total}
+            sortControl={
+              <label className="sort-field is-mobile">
+                <span className="filter-label">
+                  <ArrowUpDown size={14} strokeWidth={2} aria-hidden="true" />
+                  Sort
+                </span>
+                <span className="filter-select">
+                  <select value={sort} onChange={(event) => setSort(event.target.value as SortFilter)}>
+                    <option value="relevant">Recommended</option>
+                    <option value="newest">Newest</option>
+                    <option value="salary">Highest Pay</option>
+                    {user ? <option value="match">Most Relevant</option> : null}
+                  </select>
+                  <ArrowUpDown size={14} strokeWidth={2} aria-hidden="true" />
+                </span>
+              </label>
+            }
           />
 
           {showRecommended ? (
@@ -379,9 +399,9 @@ export default function OpportunitiesBoard({
               <div className="opportunity-empty">
                 <img src="/illustrations/opportunities-empty-state.svg" alt="" />
                 <h3>No opportunities match these filters.</h3>
-                <p>Try removing a filter or searching for a broader skill.</p>
+                <p>Try removing one or more filters.</p>
                 <button type="button" className="primary-button" onClick={clearFilters}>
-                  Clear Filters
+                  Clear filters
                 </button>
               </div>
             ) : null}

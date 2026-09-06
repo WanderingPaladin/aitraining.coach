@@ -35,6 +35,7 @@ export type RouteContextPrompt = {
   key: string;
   question: string;
   options: FeedbackChip[];
+  followUp?: Partial<Record<string, { question: string; options: FeedbackChip[] }>>;
 };
 
 export type FeedbackDraft = {
@@ -42,6 +43,7 @@ export type FeedbackDraft = {
   category: FeedbackCategory | null;
   subcategory: string | null;
   contextAnswer: string | null;
+  contextFollowUpId: string | null;
   message: string;
   clarify: string;
   blocker: boolean | null;
@@ -60,6 +62,7 @@ export const emptyFeedbackDraft = (pagePath = '/'): FeedbackDraft => ({
   category: null,
   subcategory: null,
   contextAnswer: null,
+  contextFollowUpId: null,
   message: '',
   clarify: '',
   blocker: null,

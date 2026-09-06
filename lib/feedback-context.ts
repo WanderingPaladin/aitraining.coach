@@ -87,23 +87,55 @@ const HOMEPAGE_CONTEXT: RouteContextPrompt = {
 
 const OPPORTUNITIES_CONTEXT: RouteContextPrompt = {
   key: 'opportunities',
-  question: 'How was your experience finding relevant opportunities?',
+  question: 'How easy is it to find relevant opportunities?',
   options: [
-    { id: 'found_what_i_needed', label: 'Found what I needed' },
-    { id: 'hard_to_find', label: 'Hard to find the right roles' },
-    { id: 'filters', label: 'Filters could be better' },
-    { id: 'other', label: 'Something else' },
+    { id: 'easy', label: 'Easy' },
+    { id: 'somewhat_difficult', label: 'Somewhat difficult' },
+    { id: 'difficult', label: 'Difficult' },
   ],
+  followUp: {
+    somewhat_difficult: {
+      question: 'What is making it harder?',
+      options: [
+        { id: 'filters', label: 'Filters are unclear' },
+        { id: 'irrelevant', label: 'Too many irrelevant roles' },
+        { id: 'search', label: 'Search results' },
+        { id: 'details', label: 'Opportunity details' },
+        { id: 'other', label: 'Something else' },
+      ],
+    },
+    difficult: {
+      question: 'What is making it harder?',
+      options: [
+        { id: 'filters', label: 'Filters are unclear' },
+        { id: 'irrelevant', label: 'Too many irrelevant roles' },
+        { id: 'search', label: 'Search results' },
+        { id: 'details', label: 'Opportunity details' },
+        { id: 'other', label: 'Something else' },
+      ],
+    },
+  },
 };
 
 const PROFILE_CONTEXT: RouteContextPrompt = {
   key: 'profile',
-  question: 'Was your AI Training Readiness information easy to understand?',
+  question: 'Is your Profile Match easy to understand?',
   options: [
     { id: 'yes', label: 'Yes' },
     { id: 'somewhat', label: 'Somewhat' },
     { id: 'no', label: 'No' },
   ],
+  followUp: {
+    no: {
+      question: 'What feels unclear?',
+      options: [
+        { id: 'why_number', label: 'Why the score is this number' },
+        { id: 'what_affects', label: 'What affects the score' },
+        { id: 'how_improve', label: 'How to improve it' },
+        { id: 'other', label: 'Something else' },
+      ],
+    },
+  },
 };
 
 const MATCH_CONTEXT: RouteContextPrompt = {

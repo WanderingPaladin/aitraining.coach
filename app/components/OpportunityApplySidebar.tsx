@@ -1,8 +1,9 @@
 'use client';
 
+import MatchBadge from './MatchBadge';
 import { Bookmark, ExternalLink, PhoneCall } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { OpportunityMatch, PublicJob } from '../../lib/api';
+import { getPublicJob, type OpportunityMatch, type PublicJob } from '../../lib/api';
 import {
   formatCompensation,
   formatEmploymentType,
@@ -20,6 +21,7 @@ export default function OpportunityApplySidebar({
   match?: OpportunityMatch | null;
 }) {
   const [saved, setSaved] = useState(false);
+  const [liveMatch, setLiveMatch] = useState<OpportunityMatch | null>(match ?? null);
   const location = formatJobLocation(job);
   const compensation = formatCompensation(job);
   const employment = formatEmploymentType(job.employmentType);
@@ -34,6 +36,15 @@ export default function OpportunityApplySidebar({
     window.addEventListener(SAVED_JOBS_EVENT, sync);
     return () => window.removeEventListener(SAVED_JOBS_EVENT, sync);
   }, [job.id]);
+
+  useEffect(() => {
+    setLiveMatch(match ?? null);
+    void getPublicJob(job.slug)
+      .then((result) => {
+        if (result.job.match) setLiveMatch(result.job.match);
+      })
+      .catch(() => {});
+  }, [job.id, job.slug, match]);
 
   useEffect(() => {
     trackEvent({
@@ -95,12 +106,7 @@ export default function OpportunityApplySidebar({
             <dd>{job.companyName}</dd>
           </div>
         </dl>
-        {match && match.score > 0 ? (
-          <p className="match-pill" data-band={match.score >= 80 ? 'strong' : match.score >= 70 ? 'good' : 'possible'}>
-            <strong>{match.score}% match</strong>
-            <span>{match.label}</span>
-          </p>
-        ) : null}
+        {liveMatch && liveMatch.score > 0 ? <MatchBadge match={liveMatch} returnTo={`/opportunities/${job.slug}`} /> : null}
         <button
           type="button"
           className={`secondary-button on-light opportunity-view${saved ? ' is-saved' : ''}`}

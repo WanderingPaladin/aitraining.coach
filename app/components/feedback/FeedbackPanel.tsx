@@ -43,12 +43,16 @@ export default function FeedbackPanel({
     retry,
     keepMessage,
     resetAndClose,
+    honeypotRef,
   } = controller;
 
   const showBack = !['welcome', 'success', 'submitting'].includes(draft.step);
   const details = draft.category ? DETAIL_COPY[draft.category] : null;
   const topics = draft.category ? TOPIC_OPTIONS[draft.category] : null;
   const emailStep = draft.step === 'email';
+  const contextFollowUp = draft.contextFollowUpId ? context?.followUp?.[draft.contextFollowUpId] : null;
+  const contextOptions = contextFollowUp?.options ?? context?.options ?? [];
+  const contextQuestion = contextFollowUp?.question ?? context?.question;
 
   return (
     <section
@@ -69,15 +73,26 @@ export default function FeedbackPanel({
         onClose={closePanel}
       />
       <div className="feedback-body">
+        <label className="feedback-honeypot">
+          Company website
+          <input
+            ref={honeypotRef}
+            type="text"
+            name="companyWebsite"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+          />
+        </label>
         {draft.step === 'welcome' ? <FeedbackWelcome onSelect={selectCategory} /> : null}
 
         {draft.step === 'context' && context ? (
           <>
-            <FeedbackMessage>{context.question}</FeedbackMessage>
+            <FeedbackMessage>{contextQuestion}</FeedbackMessage>
             <FeedbackChips
-              options={context.options}
-              selected={context.options.find((option) => option.label === draft.contextAnswer)?.id ?? draft.contextAnswer}
-              onSelect={(id) => selectContext(context.options.find((option) => option.id === id)?.label ?? id)}
+              options={contextOptions}
+              selected={contextOptions.find((option) => option.label === draft.contextAnswer)?.id ?? draft.contextAnswer}
+              onSelect={(id) => selectContext(contextOptions.find((option) => option.id === id)?.label ?? id)}
             />
           </>
         ) : null}

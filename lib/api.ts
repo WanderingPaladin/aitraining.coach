@@ -123,6 +123,9 @@ export type FeedbackSubmission = {
   pagePath: string;
   pageUrl?: string | null;
   email?: string | null;
+  visitorId?: string | null;
+  sessionId?: string | null;
+  companyWebsite?: string;
   metadata?: {
     browser?: string | null;
     deviceType?: 'desktop' | 'tablet' | 'mobile' | null;
@@ -181,11 +184,21 @@ export type MatchReason = {
   text: string;
 };
 
+export type MatchFactor = {
+  key: string;
+  label: string;
+  status: 'matched' | 'partial' | 'missing';
+  description: string;
+};
+
 export type OpportunityMatch = {
   score: number;
   label: string;
   reasons: MatchReason[];
   hardMismatches: string[];
+  matchedFactors?: MatchFactor[];
+  partialFactors?: MatchFactor[];
+  missingFactors?: MatchFactor[];
 };
 
 export type Opportunity = {

@@ -2272,7 +2272,16 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
 .opportunity-card, .profile-main-card, .profile-side section, .profile-edit-card, .opportunity-rail-card {
   background: #fff; border: 1px solid #e4eaf8; border-radius: 16px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
 }
-.opportunity-toolbar { display: none; margin-bottom: 16px; }
+.filter-field.is-active .filter-select select {
+  border-color: #b7c9ff;
+  background: #f1f5ff;
+}
+.opportunity-toolbar { display: none; margin-bottom: 16px; gap: 10px; align-items: end; }
+.sort-field.is-mobile { display: none; }
+.filter-drawer-actions {
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;
+  padding: 12px 0 4px; border-top: 1px solid #e8eef8; margin-top: 8px;
+}
 .opportunity-results { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .opportunity-results.is-featured { margin-top: 4px; }
 .opportunity-card {
@@ -2357,7 +2366,26 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
 .match-badge {
   min-height: 42px; padding: 8px 12px; border-radius: 12px; border: 1px solid #d7deee;
   background: #fff; color: #1e293b; font: inherit; font-size: 13px; font-weight: 600;
-  display: inline-flex; align-items: center; gap: 6px; text-align: left; position: relative; max-width: 100%;
+  display: inline-flex; align-items: flex-start; gap: 6px; text-align: left; position: relative; max-width: 100%;
+  z-index: 4;
+}
+.match-badge-kicker { display: block; color: #66708b; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }
+.match-badge-hint { display: block; color: #66708b; font-size: 11px; font-weight: 500; }
+.match-factor-group { margin: 10px 0 0; }
+.match-factor-group p { margin: 0 0 6px; font-size: 12px; font-weight: 700; color: #334155; }
+.match-factor-group li strong { display: block; font-size: 13px; color: #0f172a; }
+.match-factor-group li span { color: #475569; font-size: 12px; font-weight: 500; }
+.match-factor-group li[data-status='matched'] svg { color: #0f766e; }
+.match-calc-title { margin: 12px 0 4px !important; font-size: 12px !important; font-weight: 700 !important; }
+.readiness-summary { margin: 8px 0 0; color: #334155; font-size: 14px; font-weight: 600; }
+.improve-list.is-done li::before { content: none; }
+.improve-list li { display: flex; gap: 8px; align-items: flex-start; }
+.readiness-details { margin-top: 14px; }
+.readiness-details summary {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: #2455df; font-size: 13px; font-weight: 700;
+}
+.feedback-honeypot {
+  position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;
 }
 .match-badge.is-prompt { color: #2455df; text-decoration: none; }
 .match-badge.is-skeleton {
@@ -2535,8 +2563,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
 .readiness-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #14C7E5, #7C3AED); }
 .improve-block p { font-weight: 600; color: #0f172a; }
 .improve-list { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
-.improve-list li { color: #0f172a; font-size: 14px; font-weight: 600; }
-.improve-list li::before { content: "+ "; color: #2455df; }
+.improve-list li { display: flex; gap: 8px; align-items: flex-start; color: #0f172a; font-size: 14px; font-weight: 600; }
+.improve-list li::before { content: none; }
 .score-help { margin-top: 8px; }
 .score-help summary {
   display: inline-flex; align-items: center; gap: 6px; color: #2455df; font-size: 13px; font-weight: 600;
@@ -2627,6 +2655,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
   .opportunity-rail { position: static; }
   .opportunity-filters:not(.is-drawer) { display: none; }
   .opportunity-toolbar { display: flex; }
+  .sort-field.is-desktop { display: none; }
+  .sort-field.is-mobile { display: block; min-width: 140px; }
   .opportunity-card { grid-template-columns: 48px minmax(0, 1fr); }
   .opportunity-detail-card { grid-template-columns: 1fr; }
   .opportunity-detail-hero h1 { font-size: 36px; }
