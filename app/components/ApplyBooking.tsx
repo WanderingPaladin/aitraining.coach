@@ -42,6 +42,7 @@ import {
   type ApplicantStage,
   type ApplyFieldErrors,
 } from '../../lib/apply-fields';
+import { requestFeedbackPrompt } from '../../lib/feedback-storage';
 import ApplicantStageSelector from './ApplicantStageSelector';
 import BookingScheduler from './BookingScheduler';
 
@@ -425,6 +426,7 @@ export default function ApplyBooking() {
       });
       setApplication(result.application);
       setStep('book');
+      requestFeedbackPrompt('application');
       await loadSlots(form.timezone);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not submit your application.');
@@ -448,6 +450,7 @@ export default function ApplyBooking() {
       });
       setBooking(result.booking);
       setStep('done');
+      requestFeedbackPrompt('booking');
     } catch (err) {
       if (err instanceof ApiError && err.code === 'SLOT_UNAVAILABLE') {
         setError('That time was just booked by someone else. Please choose another available time.');

@@ -15,6 +15,7 @@ import {
   type ApplicantStage,
 } from '../../lib/apply-fields';
 import { trainingPlatforms } from '../../lib/platforms';
+import { setPendingFeedbackPrompt } from '../../lib/feedback-storage';
 import ApplicantStageSelector from './ApplicantStageSelector';
 import { useAuth } from './AuthProvider';
 
@@ -77,6 +78,7 @@ export default function ProfileEditForm() {
         desiredCategories: splitList(desired),
         languages: splitList(languages),
       });
+      setPendingFeedbackPrompt('profile');
       router.push('/profile');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not save your profile.');

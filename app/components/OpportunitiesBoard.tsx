@@ -22,6 +22,7 @@ import OpportunityFilters, {
 } from './OpportunityFilters';
 import SiteFooter from './SiteFooter';
 import SiteHeader from './SiteHeader';
+import { requestFeedbackPrompt } from '../../lib/feedback-storage';
 
 const PAGE_SIZE = 20;
 
@@ -95,6 +96,12 @@ export default function OpportunitiesBoard({
   const skipPageReset = useRef(true);
   const itemsRef = useRef(seededItems);
   itemsRef.current = items;
+
+  useEffect(() => {
+    if (items.length < 6) return;
+    const timer = window.setTimeout(() => requestFeedbackPrompt('opportunities'), 8000);
+    return () => window.clearTimeout(timer);
+  }, [items.length]);
 
   const hasBrowseFilters = Boolean(
     query ||

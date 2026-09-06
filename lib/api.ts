@@ -113,6 +113,30 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
+export type FeedbackSubmission = {
+  category: 'confusing' | 'improvement' | 'problem' | 'general' | 'question';
+  subcategory?: string | null;
+  message?: string;
+  rating?: number | null;
+  pagePath: string;
+  pageUrl?: string | null;
+  email?: string | null;
+  metadata?: {
+    browser?: string | null;
+    deviceType?: 'desktop' | 'tablet' | 'mobile' | null;
+    screenWidth?: number | null;
+    screenHeight?: number | null;
+    referrer?: string | null;
+  };
+};
+
+export function submitFeedback(input: FeedbackSubmission) {
+  return request<{ feedback: { id: string; status: string } }>('/v1/feedback', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
 export function createApplication(input: CreateApplicationInput) {
   return request<{ application: Application }>('/v1/applications', {
     method: 'POST',
