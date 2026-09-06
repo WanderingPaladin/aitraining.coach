@@ -139,7 +139,7 @@ export function ensureTrackingSession(): Promise<void> {
     if ('requestIdleCallback' in window) {
       window.requestIdleCallback(() => run(), { timeout: 1500 });
     } else {
-      window.setTimeout(run, 0);
+      setTimeout(run, 0);
     }
   });
   return sessionReady;

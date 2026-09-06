@@ -48,6 +48,7 @@ export default function MatchBadge({
   compact?: boolean;
 }) {
   const { user, loading } = useAuth();
+  const [open, setOpen] = useState(false);
 
   if (loading) {
     return <span className="match-badge is-skeleton" aria-hidden="true" />;
@@ -75,7 +76,6 @@ export default function MatchBadge({
   const partial = match.partialFactors ?? [];
   const missing = match.missingFactors ?? [];
   const fallbackReasons = !matched.length && !partial.length && !missing.length;
-  const [open, setOpen] = useState(false);
 
   return (
     <details
