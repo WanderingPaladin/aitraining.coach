@@ -145,6 +145,7 @@ type BookingSchedulerProps = {
   timezone: string;
   selectedSlot: string;
   onSelectSlot: (startsAt: string) => void;
+  onSelectDate?: (date: string) => void;
 };
 
 export default function BookingScheduler({
@@ -152,6 +153,7 @@ export default function BookingScheduler({
   timezone,
   selectedSlot,
   onSelectSlot,
+  onSelectDate,
 }: BookingSchedulerProps) {
   const today = formatDateKeyInZone(new Date(), timezone);
   const slotsByDate = useMemo(() => {
@@ -219,6 +221,7 @@ export default function BookingScheduler({
     setSelectedDate(cell.key);
     const parsed = parseDateKey(cell.key);
     setView({ year: parsed.year, month: parsed.month });
+    onSelectDate?.(cell.key);
     if (selectedSlot) {
       const stillOnDay = (slotsByDate.get(cell.key) ?? []).some((slot) => slot.startsAt === selectedSlot);
       if (!stillOnDay) {

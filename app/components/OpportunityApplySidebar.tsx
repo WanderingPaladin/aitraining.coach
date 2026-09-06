@@ -1,8 +1,9 @@
 'use client';
 
+import MatchBadge from './MatchBadge';
 import { Bookmark, ExternalLink, PhoneCall } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { OpportunityMatch, PublicJob } from '../../lib/api';
+import { getPublicJob, type OpportunityMatch, type PublicJob } from '../../lib/api';
 import {
   formatCompensation,
   formatEmploymentType,
@@ -10,6 +11,7 @@ import {
   formatPostedDate,
 } from '../../lib/opportunityDisplay';
 import { isJobSaved, SAVED_JOBS_EVENT, toggleSavedJob } from '../../lib/savedJobs';
+import { trackEvent } from '../../lib/tracking';
 
 export default function OpportunityApplySidebar({
   job,
@@ -19,6 +21,7 @@ export default function OpportunityApplySidebar({
   match?: OpportunityMatch | null;
 }) {
   const [saved, setSaved] = useState(false);
+  const [liveMatch, setLiveMatch] = useState<OpportunityMatch | null>(match ?? null);
   const location = formatJobLocation(job);
   const compensation = formatCompensation(job);
   const employment = formatEmploymentType(job.employmentType);
@@ -34,13 +37,42 @@ export default function OpportunityApplySidebar({
     return () => window.removeEventListener(SAVED_JOBS_EVENT, sync);
   }, [job.id]);
 
+  useEffect(() => {
+    setLiveMatch(match ?? null);
+    void getPublicJob(job.slug)
+      .then((result) => {
+        if (result.job.match) setLiveMatch(result.job.match);
+      })
+      .catch(() => {});
+  }, [job.id, job.slug, match]);
+
+  useEffect(() => {
+    trackEvent({
+      eventType: 'opportunity_viewed',
+      opportunityId: job.id,
+      platform: job.companyName,
+    });
+  }, [job.id, job.companyName]);
+
   return (
     <aside className="opportunity-rail">
       <section className="opportunity-rail-card opportunity-apply-card">
         <p className="origin-badge">{origin}</p>
         <h2>Apply on employer site</h2>
         <p>Application is completed on the employer’s website. AI Trainers is not the employer for this listing.</p>
-        <a className="primary-button opportunity-view" href={job.applyUrl} target="_blank" rel="noopener noreferrer">
+        <a
+          className="primary-button opportunity-view"
+          href={job.applyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() =>
+            trackEvent({
+              eventType: 'opportunity_external_clicked',
+              opportunityId: job.id,
+              platform: job.companyName,
+            })
+          }
+        >
           Apply on employer site
           <ExternalLink className="btn-icon" size={16} strokeWidth={2} />
         </a>
@@ -74,17 +106,22 @@ export default function OpportunityApplySidebar({
             <dd>{job.companyName}</dd>
           </div>
         </dl>
-        {match && match.score > 0 ? (
-          <p className="match-pill" data-band={match.score >= 80 ? 'strong' : match.score >= 70 ? 'good' : 'possible'}>
-            <strong>{match.score}% match</strong>
-            <span>{match.label}</span>
-          </p>
-        ) : null}
+        {liveMatch && liveMatch.score > 0 ? <MatchBadge match={liveMatch} returnTo={`/opportunities/${job.slug}`} /> : null}
         <button
           type="button"
           className={`secondary-button on-light opportunity-view${saved ? ' is-saved' : ''}`}
           aria-pressed={saved}
-          onClick={() => setSaved(toggleSavedJob(job.id))}
+          onClick={() => {
+            const next = toggleSavedJob(job.id);
+            setSaved(next);
+            if (next) {
+              trackEvent({
+                eventType: 'opportunity_saved',
+                opportunityId: job.id,
+                platform: job.companyName,
+              });
+            }
+          }}
         >
           <Bookmark size={16} strokeWidth={2} fill={saved ? 'currentColor' : 'none'} aria-hidden="true" />
           {saved ? 'Saved' : 'Save job'}

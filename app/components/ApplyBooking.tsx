@@ -42,8 +42,10 @@ import {
   type ApplicantStage,
   type ApplyFieldErrors,
 } from '../../lib/apply-fields';
+import { requestFeedbackPrompt } from '../../lib/feedback-storage';
 import ApplicantStageSelector from './ApplicantStageSelector';
 import BookingScheduler from './BookingScheduler';
+import { trackEvent, trackingIds } from '../../lib/tracking';
 
 type IpGeo = {
   ip: string;
@@ -235,6 +237,8 @@ export default function ApplyBooking() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<ApplyFieldErrors>({});
   const skipStepScroll = useRef(true);
+  const applicationStarted = useRef(false);
+  const bookingStarted = useRef(false);
 
   useEffect(() => {
     setForm((current) => ({ ...current, timezone: detectTimezone() }));
@@ -269,6 +273,28 @@ export default function ApplyBooking() {
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+    if (
+      !applicationStarted.current &&
+      (key === 'applicant_stage' ||
+        key === 'firstName' ||
+        key === 'lastName' ||
+        key === 'email' ||
+        key === 'phone' ||
+        key === 'city' ||
+        key === 'state' ||
+        key === 'profession' ||
+        key === 'yearsOfExperience' ||
+        key === 'referral_source')
+    ) {
+      applicationStarted.current = true;
+      trackEvent({ eventType: 'application_started' });
+    }
+    if (key === 'applicant_stage' && value) {
+      trackEvent({
+        eventType: 'application_stage_selected',
+        metadata: { stage: String(value) },
+      });
+    }
     const field: keyof ApplyFieldErrors | undefined =
       key === 'phoneCountry'
         ? 'phone'
@@ -407,6 +433,7 @@ export default function ApplyBooking() {
       if (geo && !ipGeo) {
         setIpGeo(geo);
       }
+      const ids = trackingIds();
       const result = await createApplication({
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
@@ -422,9 +449,19 @@ export default function ApplyBooking() {
         us_eligibility_confirmed: form.us_eligibility_confirmed,
         ipAddress: geo?.ip,
         ipLocation: geo?.label,
+        visitorId: ids.visitorId || undefined,
+        sessionId: ids.sessionId || undefined,
       });
       setApplication(result.application);
       setStep('book');
+      if (!bookingStarted.current) {
+        bookingStarted.current = true;
+        trackEvent({
+          eventType: 'booking_started',
+          applicationId: result.application.id,
+        });
+      }
+      requestFeedbackPrompt('application');
       await loadSlots(form.timezone);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not submit your application.');
@@ -442,12 +479,16 @@ export default function ApplyBooking() {
     setSubmitting(true);
     setError(null);
     try {
+      const ids = trackingIds();
       const result = await createBooking({
         applicationId: application.id,
         startsAt: selectedSlot,
+        visitorId: ids.visitorId || undefined,
+        sessionId: ids.sessionId || undefined,
       });
       setBooking(result.booking);
       setStep('done');
+      requestFeedbackPrompt('booking');
     } catch (err) {
       if (err instanceof ApiError && err.code === 'SLOT_UNAVAILABLE') {
         setError('That time was just booked by someone else. Please choose another available time.');
@@ -474,6 +515,10 @@ export default function ApplyBooking() {
       setBooking(null);
       setSelectedSlot('');
       setStep('book');
+      if (application && !bookingStarted.current) {
+        bookingStarted.current = true;
+        trackEvent({ eventType: 'booking_started', applicationId: application.id });
+      }
       await loadSlots(form.timezone);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not open rescheduling. Try again, or use the link in your email.');
@@ -855,7 +900,23 @@ export default function ApplyBooking() {
                   slots={slots}
                   timezone={form.timezone}
                   selectedSlot={selectedSlot}
-                  onSelectSlot={setSelectedSlot}
+                  onSelectDate={(date) =>
+                    trackEvent({
+                      eventType: 'booking_date_selected',
+                      applicationId: application?.id,
+                      metadata: { date },
+                    })
+                  }
+                  onSelectSlot={(startsAt) => {
+                    setSelectedSlot(startsAt);
+                    if (startsAt) {
+                      trackEvent({
+                        eventType: 'booking_time_selected',
+                        applicationId: application?.id,
+                        metadata: { startsAt },
+                      });
+                    }
+                  }}
                 />
               )}
 

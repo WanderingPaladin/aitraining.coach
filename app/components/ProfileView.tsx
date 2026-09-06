@@ -267,16 +267,66 @@ export default function ProfileView() {
             <i style={{ width: `${Math.min(100, readiness.score)}%` }} />
           </div>
         </div>
+        <p className="readiness-summary">
+          {readiness.score >= 80
+            ? 'Your profile is ready.'
+            : readiness.score >= 60
+              ? 'Your profile is mostly ready.'
+              : 'Your profile still needs a few details.'}
+        </p>
+        {readiness.components.filter((item) => !item.hint).length ? (
+          <div className="improve-block">
+            <p>What's helping:</p>
+            <ul className="improve-list is-done">
+              {readiness.components
+                .filter((item) => !item.hint)
+                .map((item) => (
+                  <li key={item.key}>
+                    <CheckCircle2 size={14} strokeWidth={2} aria-hidden="true" />
+                    {item.label} added
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ) : null}
         {hints.length ? (
           <div className="improve-block">
-            <p>Improve your profile:</p>
+            <p>Next steps:</p>
             <ul className="improve-list">
               {hints.slice(0, 3).map((hint) => (
-                <li key={hint}>{hint}</li>
+                <li key={hint}>
+                  <Circle size={14} strokeWidth={2} aria-hidden="true" />
+                  {hint}
+                </li>
               ))}
             </ul>
           </div>
         ) : null}
+        <details className="readiness-details">
+          <summary>
+            <Sparkles size={14} strokeWidth={2} aria-hidden="true" />
+            What affects this score?
+          </summary>
+          <p className="match-disclaimer">
+            AI Training Readiness reflects how complete and prepared your AI Trainers profile is. It does not represent
+            your chance of being hired.
+          </p>
+          <ul className="readiness-bars">
+            {readiness.components.map((item) => (
+              <li key={item.key}>
+                <span>
+                  {item.label}
+                  <small>
+                    {item.score}/{item.max}
+                  </small>
+                </span>
+                <b>
+                  <i style={{ width: `${Math.round((item.score / item.max) * 100)}%` }} />
+                </b>
+              </li>
+            ))}
+          </ul>
+        </details>
       </section>
 
       <section className="profile-panel matches-panel">

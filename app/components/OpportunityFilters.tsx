@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown, SlidersHorizontal, X } from 'lucide-react';
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { platformOptions } from '../../lib/opportunityDisplay';
 
 export type OpportunityFilterState = {
@@ -20,11 +20,11 @@ const REMOTE_LABELS: Record<string, string> = {
 };
 
 const EXPERIENCE_LABELS: Record<string, string> = {
-  beginner: 'Beginner',
-  entry: 'Entry Level',
-  mid: 'Mid Level',
+  beginner: 'Beginner / internship',
+  entry: 'Entry level',
+  mid: 'Mid-level',
   senior: 'Senior',
-  lead: 'Lead',
+  lead: 'Lead / specialist',
 };
 
 const PAY_LABELS: Record<string, string> = {
@@ -52,8 +52,9 @@ function Field({
   options: Array<{ value: string; label: string }>;
 }) {
   const id = useId();
+  const selected = Boolean(value);
   return (
-    <label className="filter-field" htmlFor={id}>
+    <label className={`filter-field${selected ? ' is-active' : ''}`} htmlFor={id}>
       <span className="filter-label">{label}</span>
       <span className="filter-select">
         <select id={id} value={value} onChange={(event) => onChange(event.target.value)}>
@@ -89,6 +90,8 @@ export default function OpportunityFilters({
   open,
   onOpen,
   onClose,
+  resultCount = 0,
+  sortControl,
 }: {
   state: OpportunityFilterState;
   categories: string[];
@@ -98,6 +101,8 @@ export default function OpportunityFilters({
   open: boolean;
   onOpen: () => void;
   onClose: () => void;
+  resultCount?: number;
+  sortControl?: ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -105,21 +110,16 @@ export default function OpportunityFilters({
   const fields = (
     <>
       <Field
+        label="Platform"
+        value={state.platform}
+        onChange={(value) => onChange({ platform: value })}
+        options={platformOptions(companies)}
+      />
+      <Field
         label="Category"
         value={state.category}
         onChange={(value) => onChange({ category: value })}
         options={[{ value: '', label: 'All categories' }, ...categories.map((name) => ({ value: name, label: name }))]}
-      />
-      <Field
-        label="Remote"
-        value={state.remote}
-        onChange={(value) => onChange({ remote: value as OpportunityFilterState['remote'] })}
-        options={[
-          { value: '', label: 'Any location' },
-          { value: 'remote', label: 'Remote' },
-          { value: 'hybrid', label: 'Hybrid' },
-          { value: 'onsite', label: 'On-site' },
-        ]}
       />
       <Field
         label="Experience"
@@ -127,11 +127,22 @@ export default function OpportunityFilters({
         onChange={(value) => onChange({ experience: value as OpportunityFilterState['experience'] })}
         options={[
           { value: '', label: 'All experience levels' },
-          { value: 'beginner', label: 'Beginner' },
-          { value: 'entry', label: 'Entry Level' },
-          { value: 'mid', label: 'Mid Level' },
+          { value: 'beginner', label: 'Beginner / internship' },
+          { value: 'entry', label: 'Entry level' },
+          { value: 'mid', label: 'Mid-level' },
           { value: 'senior', label: 'Senior' },
-          { value: 'lead', label: 'Lead' },
+          { value: 'lead', label: 'Lead / specialist' },
+        ]}
+      />
+      <Field
+        label="Work type"
+        value={state.remote}
+        onChange={(value) => onChange({ remote: value as OpportunityFilterState['remote'] })}
+        options={[
+          { value: '', label: 'Any work type' },
+          { value: 'remote', label: 'Remote' },
+          { value: 'hybrid', label: 'Hybrid' },
+          { value: 'onsite', label: 'On-site' },
         ]}
       />
       <Field
@@ -146,13 +157,7 @@ export default function OpportunityFilters({
         ]}
       />
       <Field
-        label="Platform"
-        value={state.platform}
-        onChange={(value) => onChange({ platform: value })}
-        options={platformOptions(companies)}
-      />
-      <Field
-        label="Date Posted"
+        label="Date posted"
         value={state.postedWithin}
         onChange={(value) => onChange({ postedWithin: value as OpportunityFilterState['postedWithin'] })}
         options={[
@@ -214,6 +219,7 @@ export default function OpportunityFilters({
           <SlidersHorizontal size={16} strokeWidth={2} />
           Filters{chips.length ? ` (${chips.length})` : ''}
         </button>
+        {sortControl}
       </div>
       {chips.length ? (
         <div className="active-filter-row">
@@ -247,13 +253,16 @@ export default function OpportunityFilters({
             </div>
             <form className="opportunity-filters is-drawer" onSubmit={(event) => event.preventDefault()}>
               {fields}
-              {chips.length ? (
-                <button type="button" className="filter-clear" onClick={onClear}>
-                  <X size={16} strokeWidth={2} />
-                  Clear all
-                </button>
-              ) : null}
             </form>
+            <div className="filter-drawer-actions">
+              <button type="button" className="filter-clear" onClick={onClear} disabled={!chips.length}>
+                <X size={16} strokeWidth={2} />
+                Clear all
+              </button>
+              <button type="button" className="primary-button" onClick={onClose}>
+                Show {resultCount} {resultCount === 1 ? 'opportunity' : 'opportunities'}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

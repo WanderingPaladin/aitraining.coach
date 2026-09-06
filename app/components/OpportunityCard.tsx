@@ -10,7 +10,7 @@ import {
   matchChips,
 } from '../../lib/opportunityDisplay';
 import CompanyAvatar from './CompanyAvatar';
-import SavedJobButton from './SavedJobButton';
+import MatchBadge from './MatchBadge';
 
 export default function OpportunityCard({
   opportunity,
@@ -64,10 +64,7 @@ export default function OpportunityCard({
             <p className="opportunity-platform">{opportunity.sourcePlatform}</p>
           </div>
           {match ? (
-            <p className="match-pill" data-band={match.score >= 80 ? 'strong' : match.score >= 70 ? 'good' : 'possible'}>
-              <strong>{match.score}% match</strong>
-              <span>{match.label}</span>
-            </p>
+            <MatchBadge match={match} compact returnTo={href.startsWith('/') ? href : '/opportunities'} />
           ) : null}
         </div>
         {visibleChips.length ? (
