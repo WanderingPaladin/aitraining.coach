@@ -3,6 +3,7 @@
 import { Bookmark } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { isJobSaved, SAVED_JOBS_EVENT, toggleSavedJob } from '../../lib/savedJobs';
+import { trackEvent } from '../../lib/tracking';
 
 export default function SavedJobButton({
   jobId,
@@ -35,7 +36,11 @@ export default function SavedJobButton({
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        setSaved(toggleSavedJob(jobId));
+        const next = toggleSavedJob(jobId);
+        setSaved(next);
+        if (next) {
+          trackEvent({ eventType: 'opportunity_saved', opportunityId: jobId });
+        }
       }}
     >
       <Bookmark size={18} strokeWidth={2} fill={saved ? 'currentColor' : 'none'} aria-hidden="true" />

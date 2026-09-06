@@ -16,6 +16,7 @@ import {
 } from '../../lib/apply-fields';
 import { trainingPlatforms } from '../../lib/platforms';
 import { setPendingFeedbackPrompt } from '../../lib/feedback-storage';
+import { trackEvent } from '../../lib/tracking';
 import ApplicantStageSelector from './ApplicantStageSelector';
 import { useAuth } from './AuthProvider';
 
@@ -77,6 +78,9 @@ export default function ProfileEditForm() {
         skills: splitList(skills),
         desiredCategories: splitList(desired),
         languages: splitList(languages),
+      });
+      trackEvent({
+        eventType: profile.firstName && profile.profession ? 'profile_completed' : 'profile_created',
       });
       setPendingFeedbackPrompt('profile');
       router.push('/profile');

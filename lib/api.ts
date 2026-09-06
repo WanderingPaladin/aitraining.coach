@@ -53,6 +53,8 @@ export type CreateApplicationInput = {
   applicant_stage: ApplicantStage;
   referral_source?: string;
   us_eligibility_confirmed: boolean;
+  visitorId?: string;
+  sessionId?: string;
 };
 
 export class ApiError extends Error {
@@ -149,7 +151,12 @@ export function listSlots(timezone: string) {
   return request<{ slots: TimeSlot[] }>(`/v1/slots?${params.toString()}`);
 }
 
-export function createBooking(input: { applicationId: string; startsAt: string }) {
+export function createBooking(input: {
+  applicationId: string;
+  startsAt: string;
+  visitorId?: string;
+  sessionId?: string;
+}) {
   return request<{ booking: Booking }>('/v1/bookings', {
     method: 'POST',
     body: JSON.stringify(input),
