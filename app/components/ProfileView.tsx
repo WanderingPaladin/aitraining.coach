@@ -276,7 +276,7 @@ export default function ProfileView() {
         </p>
         {readiness.components.filter((item) => !item.hint).length ? (
           <div className="improve-block">
-            <p>What's helping:</p>
+            <p>What is helping:</p>
             <ul className="improve-list is-done">
               {readiness.components
                 .filter((item) => !item.hint)

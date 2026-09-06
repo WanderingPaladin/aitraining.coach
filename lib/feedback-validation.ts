@@ -2,6 +2,10 @@ import { FEEDBACK_MAX_MESSAGE } from './feedback-types';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export function isValidFeedbackEmail(value: string): boolean {
+  return EMAIL_RE.test(value.trim());
+}
+
 export function trimFeedbackMessage(value: string): string {
   return value.replace(/\0/g, '').slice(0, FEEDBACK_MAX_MESSAGE);
 }

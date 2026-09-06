@@ -55,6 +55,7 @@ function nextAfterDetails(category: FeedbackCategory): Exclude<FeedbackStep, 'cl
 export function useFeedback() {
   const { user } = useAuth();
   const { pathname, pageUrl, context } = useFeedbackContext();
+  const launcherRef = useRef<HTMLButtonElement>(null);
   const honeypotRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const [open, setOpen] = useState(false);

@@ -11,6 +11,7 @@ import {
 } from '../../lib/opportunityDisplay';
 import CompanyAvatar from './CompanyAvatar';
 import MatchBadge from './MatchBadge';
+import SavedJobButton from './SavedJobButton';
 
 export default function OpportunityCard({
   opportunity,
