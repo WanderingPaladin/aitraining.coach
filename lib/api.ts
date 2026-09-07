@@ -136,7 +136,15 @@ export type FeedbackSubmission = {
 };
 
 export function submitFeedback(input: FeedbackSubmission) {
-  return request<{ feedback: { id: string; status: string } }>('/v1/feedback', {
+  return request<{
+    feedback: { id: string; status: string; conversationId?: string | null };
+    conversation: {
+      id: string;
+      status: string;
+      contactEmail: string | null;
+    } | null;
+    message: { id: string } | null;
+  }>('/v1/feedback', {
     method: 'POST',
     body: JSON.stringify(input),
   });

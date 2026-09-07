@@ -22,8 +22,9 @@ export default function FeedbackHeader({
     <header className="feedback-header">
       <div className="feedback-header-id">
         {showBack ? (
-          <button type="button" className="feedback-icon-btn" aria-label="Back" onClick={onBack}>
-            <ChevronLeft size={18} strokeWidth={2} />
+          <button type="button" className="feedback-back-btn" aria-label="Back" onClick={onBack}>
+            <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
+            Back
           </button>
         ) : (
           <BrandMark className="brand-mark feedback-mark" />

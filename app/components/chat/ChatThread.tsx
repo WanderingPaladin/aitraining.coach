@@ -1,15 +1,22 @@
-import { Send } from 'lucide-react';
-import { useEffect, useRef, type KeyboardEvent } from 'react';
+import { Plus, Send } from 'lucide-react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { CHAT_MAX_MESSAGE, CHAT_TOPICS, type ChatTopic } from '../../../lib/chat';
 import type { ChatController } from '../../hooks/useChat';
 import FeedbackChips from '../feedback/FeedbackChips';
 import FeedbackMessage from '../feedback/FeedbackMessage';
+import FeedbackCard from './FeedbackCard';
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
 }
 
-export default function ChatThread({ chat }: { chat: ChatController }) {
+export default function ChatThread({
+  chat,
+  onGiveFeedback,
+}: {
+  chat: ChatController;
+  onGiveFeedback?: (kind?: 'problem' | 'improvement') => void;
+}) {
   const {
     messages,
     teamOnline,
@@ -34,6 +41,7 @@ export default function ChatThread({ chat }: { chat: ChatController }) {
     saveEmail,
   } = chat;
   const endRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const showIntro = messages.length === 0;
 
   useEffect(() => {
@@ -70,6 +78,23 @@ export default function ChatThread({ chat }: { chat: ChatController }) {
         ) : null}
         {messages.map((message) => {
           const mine = message.senderType === 'visitor' || message.senderType === 'candidate';
+          if (message.messageType === 'feedback') {
+            const card = message.feedback;
+            return (
+              <div key={message.id} className="chat-feedback-wrap">
+                <p className="chat-bubble-label">You shared feedback</p>
+                <FeedbackCard
+                  categoryLabel={card?.categoryLabel ?? 'Feedback'}
+                  subcategoryLabel={card?.subcategoryLabel}
+                  message={card?.message || message.body}
+                />
+                <p className="chat-bubble-meta">
+                  {message.pending ? 'Sending…' : formatTime(message.createdAt)}
+                  {mine && !message.pending ? ' · Sent' : ''}
+                </p>
+              </div>
+            );
+          }
           return (
             <article key={message.id} className={`chat-bubble ${mine ? 'is-mine' : 'is-team'}`}>
               <p className="chat-bubble-label">{mine ? 'You' : 'AI Trainers Team'}</p>
@@ -119,6 +144,53 @@ export default function ChatThread({ chat }: { chat: ChatController }) {
           Company website
           <input ref={honeypotRef} type="text" name="companyWebsite" tabIndex={-1} autoComplete="off" aria-hidden="true" />
         </label>
+        {onGiveFeedback ? (
+          <div className="chat-plus-wrap">
+            <button
+              type="button"
+              className="chat-plus-btn"
+              aria-label="More actions"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <Plus size={18} strokeWidth={2} />
+            </button>
+            {menuOpen ? (
+              <div className="chat-plus-menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onGiveFeedback();
+                  }}
+                >
+                  Give Feedback
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onGiveFeedback('problem');
+                  }}
+                >
+                  Report a Problem
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onGiveFeedback('improvement');
+                  }}
+                >
+                  Suggest Improvement
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <label htmlFor="chat-composer-input" className="sr-only">
           Type a message
         </label>
@@ -127,7 +199,7 @@ export default function ChatThread({ chat }: { chat: ChatController }) {
           rows={2}
           value={draft}
           maxLength={CHAT_MAX_MESSAGE}
-          placeholder="Type your message..."
+          placeholder="Type a message..."
           onChange={(event) => updateDraft(event.target.value)}
           onKeyDown={onKeyDown}
         />

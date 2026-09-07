@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { isValidFeedbackEmail } from '../../../lib/feedback-validation';
 import {
   FEEDBACK_PROMPT_EVENT,
   consumePendingFeedbackPrompt,
@@ -8,7 +9,7 @@ import {
   requestFeedbackPrompt,
   wasPromptSeen,
 } from '../../../lib/feedback-storage';
-import type { FeedbackPromptKind } from '../../../lib/feedback-types';
+import type { FeedbackCategory, FeedbackPromptKind } from '../../../lib/feedback-types';
 import { ASSISTANT_OPEN_EVENT, type AssistantOpenDetail, type AssistantView } from '../../../lib/assistant';
 import { useFeedback } from '../../hooks/useFeedback';
 import { useChat } from '../../hooks/useChat';
@@ -27,7 +28,9 @@ export default function FeedbackWidget() {
   const controller = useFeedback();
   const chat = useChat();
   const [view, setView] = useState<AssistantView>('home');
+  const [entryPoint, setEntryPoint] = useState<'home' | 'chat'>('home');
   const [prompt, setPrompt] = useState<FeedbackPromptKind | null>(null);
+  const [notifyDismissed, setNotifyDismissed] = useState(false);
 
   const dismissPrompt = useCallback((kind: FeedbackPromptKind) => {
     markPromptSeen(kind);
@@ -36,6 +39,7 @@ export default function FeedbackWidget() {
 
   const openHome = useCallback(() => {
     setView('home');
+    setEntryPoint('home');
     controller.openPanel();
   }, [controller]);
 
@@ -54,10 +58,29 @@ export default function FeedbackWidget() {
     [chat, controller],
   );
 
-  const openFeedback = useCallback(() => {
-    setView('feedback');
-    controller.openPanel();
-  }, [controller]);
+  const openFeedback = useCallback(
+    (from: 'home' | 'chat' = 'home', category?: FeedbackCategory) => {
+      setEntryPoint(from);
+      setView('feedback');
+      setNotifyDismissed(false);
+      controller.openPanel(category ? { category, step: 'welcome' } : undefined);
+      if (category) controller.selectCategory(category);
+    },
+    [controller],
+  );
+
+  const handleBack = useCallback(() => {
+    if (view === 'chat') {
+      setView('home');
+      return;
+    }
+    if (view === 'feedback') {
+      const exited = controller.goBack();
+      if (exited) {
+        setView(entryPoint === 'chat' ? 'chat' : 'home');
+      }
+    }
+  }, [controller, entryPoint, view]);
 
   useEffect(() => {
     function onPrompt(event: Event) {
@@ -89,13 +112,23 @@ export default function FeedbackWidget() {
   useEffect(() => {
     function onOpen(event: Event) {
       const detail = (event as CustomEvent<AssistantOpenDetail>).detail ?? {};
-      if (detail.view === 'feedback') openFeedback();
+      if (detail.view === 'feedback') openFeedback('home');
       else if (detail.view === 'home') openHome();
       else openChat(detail);
     }
     window.addEventListener(ASSISTANT_OPEN_EVENT, onOpen);
     return () => window.removeEventListener(ASSISTANT_OPEN_EVENT, onOpen);
   }, [openChat, openFeedback, openHome]);
+
+  useEffect(() => {
+    if (entryPoint !== 'chat' || controller.draft.step !== 'success') return;
+    void chat.openChat().then(() => {
+      setView('chat');
+      if (!controller.userEmail && !chat.conversation?.contactEmail) {
+        chat.setAskEmail(true);
+      }
+    });
+  }, [chat.openChat, chat.setAskEmail, chat.conversation?.contactEmail, controller.draft.step, controller.userEmail, entryPoint]);
 
   async function handlePromptRating(rating: number) {
     if (!prompt) return;
@@ -106,8 +139,27 @@ export default function FeedbackWidget() {
     } catch {
       // still let them add comments in the assistant
     }
+    setEntryPoint('home');
     setView('feedback');
     controller.openPanel({ category: 'general', rating, step: 'details' });
+  }
+
+  const askNotify =
+    view === 'feedback' &&
+    controller.draft.step === 'success' &&
+    !notifyDismissed &&
+    !controller.userEmail &&
+    !controller.submission?.contactEmail;
+
+  async function handleNotify() {
+    const conversationId = controller.submission?.conversationId ?? chat.conversation?.id;
+    if (!conversationId || !isValidFeedbackEmail(controller.draft.email)) return;
+    try {
+      await chat.saveEmailFor(conversationId, controller.draft.email);
+      setNotifyDismissed(true);
+    } catch {
+      // keep the form visible
+    }
   }
 
   return (
@@ -124,8 +176,13 @@ export default function FeedbackWidget() {
         chat={chat}
         view={view}
         onChat={() => openChat()}
-        onFeedback={openFeedback}
+        onFeedback={(kind) => openFeedback(view === 'chat' ? 'chat' : 'home', kind)}
         onHome={() => setView('home')}
+        onBack={handleBack}
+        onContinueChat={() => openChat()}
+        askNotify={askNotify}
+        onNotify={() => void handleNotify()}
+        onSkipNotify={() => setNotifyDismissed(true)}
       />
       <FeedbackLauncher
         open={controller.open}

@@ -20,6 +20,19 @@ export type ChatMessage = {
   senderLabel: string;
   body: string;
   messageType: string;
+  feedbackId?: string | null;
+  feedback?: {
+    id: string;
+    category: string;
+    categoryLabel: string;
+    subcategory: string | null;
+    subcategoryLabel: string | null;
+    message: string;
+    rating: number | null;
+    pagePath: string;
+    createdAt: string;
+    status?: string;
+  } | null;
   createdAt: string;
   readAt: string | null;
   pending?: boolean;

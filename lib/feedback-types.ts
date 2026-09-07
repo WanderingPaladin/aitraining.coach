@@ -40,6 +40,7 @@ export type RouteContextPrompt = {
 
 export type FeedbackDraft = {
   step: Exclude<FeedbackStep, 'closed'>;
+  history: Array<Exclude<FeedbackStep, 'closed'>>;
   category: FeedbackCategory | null;
   subcategory: string | null;
   contextAnswer: string | null;
@@ -59,6 +60,7 @@ export const FEEDBACK_MAX_MESSAGE = 500;
 
 export const emptyFeedbackDraft = (pagePath = '/'): FeedbackDraft => ({
   step: 'welcome',
+  history: ['welcome'],
   category: null,
   subcategory: null,
   contextAnswer: null,

@@ -272,6 +272,13 @@ export function useChat() {
     setAskEmail(false);
   }, [conversation, email]);
 
+  const saveEmailFor = useCallback(async (conversationId: string, value: string) => {
+    const result = await saveChatContactEmail(conversationId, value.trim());
+    setConversation(result.conversation);
+    setAskEmail(false);
+    return result.conversation;
+  }, []);
+
   const lastVisitor = useMemo(
     () => [...messages].reverse().find((item) => item.senderType === 'visitor' || item.senderType === 'candidate'),
     [messages],
@@ -310,6 +317,7 @@ export function useChat() {
     send,
     retry,
     saveEmail,
+    saveEmailFor,
     setActive,
     setContext: (context: ChatContext) => {
       contextRef.current = { ...contextRef.current, ...context };
