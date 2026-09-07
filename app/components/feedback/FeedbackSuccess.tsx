@@ -4,10 +4,12 @@ export default function FeedbackSuccess({
   questionHint,
   onDone,
   onMore,
+  onChat,
 }: {
   questionHint?: boolean;
   onDone: () => void;
   onMore: () => void;
+  onChat?: () => void;
 }) {
   return (
     <div className="feedback-success">
@@ -29,6 +31,11 @@ export default function FeedbackSuccess({
         <button type="button" className="feedback-secondary" onClick={onMore}>
           Share more feedback
         </button>
+        {onChat ? (
+          <button type="button" className="feedback-secondary" onClick={onChat}>
+            Need a response from us? Chat with Team
+          </button>
+        ) : null}
       </div>
     </div>
   );

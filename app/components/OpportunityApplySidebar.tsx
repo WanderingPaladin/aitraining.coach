@@ -12,6 +12,7 @@ import {
 } from '../../lib/opportunityDisplay';
 import { isJobSaved, SAVED_JOBS_EVENT, toggleSavedJob } from '../../lib/savedJobs';
 import { trackEvent } from '../../lib/tracking';
+import { openAssistant } from '../../lib/assistant';
 
 export default function OpportunityApplySidebar({
   job,
@@ -130,6 +131,22 @@ export default function OpportunityApplySidebar({
       <section className="opportunity-rail-card">
         <h3>Need guidance?</h3>
         <p>Our coaching team can help you understand where your background fits and what to focus on next.</p>
+        <button
+          type="button"
+          className="secondary-button on-light opportunity-view"
+          onClick={() =>
+            openAssistant({
+              view: 'chat',
+              topic: 'opportunities',
+              contextType: 'opportunity',
+              opportunityId: job.id,
+              opportunityTitle: job.title,
+              opportunityPlatform: job.companyName,
+            })
+          }
+        >
+          Need help with this opportunity? Chat with Team
+        </button>
         <a className="secondary-button on-light opportunity-view" href="/#apply">
           <PhoneCall size={16} strokeWidth={2} />
           Book a Free Intro Call
