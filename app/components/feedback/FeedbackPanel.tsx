@@ -1,7 +1,14 @@
 import { Send } from 'lucide-react';
 import { DETAIL_COPY, TOPIC_OPTIONS } from '../../../lib/feedback-context';
+import { coerceRenderableDraft } from '../../../lib/feedback-state';
+import type { FeedbackCategory, FeedbackDraft, RouteContextPrompt } from '../../../lib/feedback-types';
 import { isValidFeedbackEmail } from '../../../lib/feedback-validation';
+import type { AssistantView } from '../../../lib/assistant';
 import type { FeedbackController } from '../../hooks/useFeedback';
+import type { ChatController } from '../../hooks/useChat';
+import ChatThread from '../chat/ChatThread';
+import AssistantErrorBoundary from './AssistantErrorBoundary';
+import AssistantHome from './AssistantHome';
 import FeedbackChips from './FeedbackChips';
 import FeedbackError from './FeedbackError';
 import FeedbackFollowUp from './FeedbackFollowUp';
@@ -11,10 +18,6 @@ import FeedbackRating from './FeedbackRating';
 import FeedbackSuccess from './FeedbackSuccess';
 import FeedbackTextarea from './FeedbackTextarea';
 import FeedbackWelcome from './FeedbackWelcome';
-import AssistantHome from './AssistantHome';
-import type { AssistantView } from '../../../lib/assistant';
-import ChatThread from '../chat/ChatThread';
-import type { ChatController } from '../../hooks/useChat';
 
 export default function FeedbackPanel({
   controller,
@@ -69,15 +72,11 @@ export default function FeedbackPanel({
     honeypotRef,
   } = controller;
 
+  const renderDraft = coerceRenderableDraft(draft, context);
   const showBack =
     view === 'chat' ||
-    (view === 'feedback' && draft.step !== 'success' && draft.step !== 'submitting');
-  const details = draft.category ? DETAIL_COPY[draft.category] : null;
-  const topics = draft.category ? TOPIC_OPTIONS[draft.category] : null;
-  const emailStep = draft.step === 'email';
-  const contextFollowUp = draft.contextFollowUpId ? context?.followUp?.[draft.contextFollowUpId] : null;
-  const contextOptions = contextFollowUp?.options ?? context?.options ?? [];
-  const contextQuestion = contextFollowUp?.question ?? context?.question;
+    (view === 'feedback' && renderDraft.step !== 'success' && renderDraft.step !== 'submitting');
+  const emailStep = renderDraft.step === 'email';
   const hasConversation = Boolean(chat.conversation && chat.messages.length);
 
   return (
@@ -91,6 +90,8 @@ export default function FeedbackPanel({
       tabIndex={-1}
       aria-hidden={!open}
       inert={!open || undefined}
+      data-assistant-view={view}
+      data-feedback-step={view === 'feedback' ? renderDraft.step : view}
     >
       <FeedbackHeader
         showBack={showBack}
@@ -105,146 +106,239 @@ export default function FeedbackPanel({
         <ChatThread chat={chat} onGiveFeedback={onFeedback} />
       ) : (
         <>
-      <div className="feedback-body">
-        <label className="feedback-honeypot">
-          Company website
-          <input
-            ref={honeypotRef}
-            type="text"
-            name="companyWebsite"
-            tabIndex={-1}
-            autoComplete="off"
-            aria-hidden="true"
-          />
-        </label>
-        {view === 'home' ? (
-          <AssistantHome onChat={onChat} onFeedback={onFeedback} hasConversation={hasConversation} />
-        ) : null}
-        {view === 'feedback' && draft.step === 'welcome' ? <FeedbackWelcome onSelect={selectCategory} /> : null}
+          <div className="feedback-body">
+            <label className="feedback-honeypot">
+              Company website
+              <input
+                ref={honeypotRef}
+                type="text"
+                name="companyWebsite"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+              />
+            </label>
+            <AssistantErrorBoundary
+              onReset={view === 'feedback' ? startOver : onHome}
+              onBack={onHome}
+            >
+              {view === 'home' ? (
+                <AssistantHome onChat={onChat} onFeedback={onFeedback} hasConversation={hasConversation} />
+              ) : (
+                <FeedbackStepBody
+                  draft={renderDraft}
+                  context={context}
+                  question={question}
+                  error={error}
+                  askNotify={askNotify}
+                  onSelectCategory={selectCategory}
+                  onSelectContext={selectContext}
+                  onSelectTopic={selectTopic}
+                  onMessage={setMessage}
+                  onClarify={setClarify}
+                  onRating={setRating}
+                  onBlocker={setBlocker}
+                  onChooseFollowUp={chooseFollowUp}
+                  onEmail={setEmail}
+                  onNotify={onNotify}
+                  onSkipNotify={onSkipNotify}
+                  onDone={resetAndClose}
+                  onChat={onContinueChat}
+                  onRetry={retry}
+                  onKeep={keepMessage}
+                />
+              )}
+            </AssistantErrorBoundary>
+          </div>
 
-        {view === 'feedback' && draft.step === 'context' && context ? (
+          {view === 'feedback' && (renderDraft.step === 'details' || renderDraft.step === 'clarify' || emailStep) ? (
+            <footer className="feedback-footer">
+              {renderDraft.step === 'clarify' ? (
+                <button type="button" className="feedback-secondary" onClick={skipClarify}>
+                  Skip
+                </button>
+              ) : (
+                <span />
+              )}
+              {renderDraft.step === 'details' ? (
+                <button type="button" className="feedback-primary" disabled={!canSendDetails} onClick={continueFromDetails}>
+                  Continue
+                </button>
+              ) : null}
+              {renderDraft.step === 'clarify' ? (
+                <button type="button" className="feedback-primary" onClick={skipClarify}>
+                  Continue
+                </button>
+              ) : null}
+              {emailStep ? (
+                <button
+                  type="button"
+                  className="feedback-primary"
+                  disabled={!isValidFeedbackEmail(renderDraft.email)}
+                  onClick={() => void submit()}
+                >
+                  Send Feedback
+                  <Send size={16} strokeWidth={2} aria-hidden="true" />
+                </button>
+              ) : null}
+            </footer>
+          ) : null}
+        </>
+      )}
+    </section>
+  );
+}
+
+function FeedbackStepBody({
+  draft,
+  context,
+  question,
+  error,
+  askNotify,
+  onSelectCategory,
+  onSelectContext,
+  onSelectTopic,
+  onMessage,
+  onClarify,
+  onRating,
+  onBlocker,
+  onChooseFollowUp,
+  onEmail,
+  onNotify,
+  onSkipNotify,
+  onDone,
+  onChat,
+  onRetry,
+  onKeep,
+}: {
+  draft: FeedbackDraft;
+  context: RouteContextPrompt | null;
+  question: string;
+  error: string;
+  askNotify: boolean;
+  onSelectCategory: (category: FeedbackCategory) => void;
+  onSelectContext: (answer: string) => void;
+  onSelectTopic: (subcategory: string) => void;
+  onMessage: (message: string) => void;
+  onClarify: (value: string) => void;
+  onRating: (rating: number) => void;
+  onBlocker: (blocked: boolean) => void;
+  onChooseFollowUp: (wantFollowUp: boolean) => void;
+  onEmail: (email: string) => void;
+  onNotify: () => void;
+  onSkipNotify: () => void;
+  onDone: () => void;
+  onChat: () => void;
+  onRetry: () => void;
+  onKeep: () => void;
+}) {
+  const details = draft.category ? DETAIL_COPY[draft.category] : null;
+  const topics = draft.category ? TOPIC_OPTIONS[draft.category] : null;
+  const contextFollowUp = draft.contextFollowUpId ? context?.followUp?.[draft.contextFollowUpId] : null;
+  const contextOptions = contextFollowUp?.options ?? context?.options ?? [];
+  const contextQuestion = contextFollowUp?.question ?? context?.question;
+
+  switch (draft.step) {
+    case 'context':
+      if (context) {
+        return (
           <>
             <FeedbackMessage>{contextQuestion}</FeedbackMessage>
             <FeedbackChips
               options={contextOptions}
               selected={contextOptions.find((option) => option.label === draft.contextAnswer)?.id ?? draft.contextAnswer}
-              onSelect={(id) => selectContext(contextOptions.find((option) => option.id === id)?.label ?? id)}
+              onSelect={(id) => onSelectContext(contextOptions.find((option) => option.id === id)?.label ?? id)}
             />
           </>
-        ) : null}
-
-        {view === 'feedback' && draft.step === 'topic' && topics ? (
+        );
+      }
+      return <FeedbackWelcome onSelect={onSelectCategory} />;
+    case 'topic':
+      if (topics) {
+        return (
           <>
             <FeedbackMessage>{question}</FeedbackMessage>
-            <FeedbackChips options={topics} selected={draft.subcategory} onSelect={selectTopic} />
+            <FeedbackChips options={topics} selected={draft.subcategory} onSelect={onSelectTopic} />
           </>
-        ) : null}
-
-        {view === 'feedback' && draft.step === 'rating' ? (
-          <>
-            <FeedbackMessage>{question}</FeedbackMessage>
-            <FeedbackRating value={draft.rating} onSelect={setRating} />
-          </>
-        ) : null}
-
-        {view === 'feedback' && draft.step === 'details' && details ? (
+        );
+      }
+      return <FeedbackWelcome onSelect={onSelectCategory} />;
+    case 'rating':
+      return (
+        <>
+          <FeedbackMessage>{question}</FeedbackMessage>
+          <FeedbackRating value={draft.rating} onSelect={onRating} />
+        </>
+      );
+    case 'details':
+      if (details) {
+        return (
           <FeedbackTextarea
             id="feedback-details"
             label={details.question}
             placeholder={details.placeholder}
             value={draft.message}
             error={error}
-            onChange={setMessage}
+            onChange={onMessage}
           />
-        ) : null}
-
-        {view === 'feedback' && draft.step === 'clarify' ? (
-          <FeedbackTextarea
-            id="feedback-clarify"
-            label="What would have made this clearer?"
-            placeholder="What could we explain better?"
-            value={draft.clarify}
-            onChange={setClarify}
+        );
+      }
+      return <FeedbackWelcome onSelect={onSelectCategory} />;
+    case 'clarify':
+      return (
+        <FeedbackTextarea
+          id="feedback-clarify"
+          label="What would have made this clearer?"
+          placeholder="What could we explain better?"
+          value={draft.clarify}
+          onChange={onClarify}
+        />
+      );
+    case 'blocker':
+      return (
+        <>
+          <FeedbackMessage>{question}</FeedbackMessage>
+          <FeedbackChips
+            selected={draft.blocker == null ? null : draft.blocker ? 'yes' : 'no'}
+            onSelect={(id) => onBlocker(id === 'yes')}
+            options={[
+              { id: 'yes', label: 'Yes' },
+              { id: 'no', label: 'No' },
+            ]}
           />
-        ) : null}
-
-        {view === 'feedback' && draft.step === 'blocker' ? (
-          <>
-            <FeedbackMessage>{question}</FeedbackMessage>
-            <FeedbackChips
-              selected={draft.blocker == null ? null : draft.blocker ? 'yes' : 'no'}
-              onSelect={(id) => setBlocker(id === 'yes')}
-              options={[
-                { id: 'yes', label: 'Yes' },
-                { id: 'no', label: 'No' },
-              ]}
-            />
-          </>
-        ) : null}
-
-        {view === 'feedback' && (draft.step === 'follow_up' || emailStep) ? (
-          <FeedbackFollowUp
-            wantFollowUp={draft.wantFollowUp}
-            email={draft.email}
-            error={emailStep ? error : undefined}
-            onChoose={chooseFollowUp}
-            onEmail={setEmail}
-          />
-        ) : null}
-
-        {view === 'feedback' && draft.step === 'submitting' ? <p className="feedback-status">Sending your feedback…</p> : null}
-
-        {view === 'feedback' && draft.step === 'success' ? (
-          <FeedbackSuccess
-            questionHint={draft.category === 'question'}
-            askNotify={askNotify}
-            email={draft.email}
-            emailError={error}
-            onEmail={setEmail}
-            onNotify={onNotify}
-            onSkipNotify={onSkipNotify}
-            onDone={resetAndClose}
-            onChat={onContinueChat}
-          />
-        ) : null}
-
-        {view === 'feedback' && draft.step === 'error' ? <FeedbackError onRetry={retry} onKeep={keepMessage} /> : null}
-      </div>
-
-      {view === 'feedback' && (draft.step === 'details' || draft.step === 'clarify' || emailStep) ? (
-        <footer className="feedback-footer">
-          {draft.step === 'clarify' ? (
-            <button type="button" className="feedback-secondary" onClick={skipClarify}>
-              Skip
-            </button>
-          ) : (
-            <span />
-          )}
-          {draft.step === 'details' ? (
-            <button type="button" className="feedback-primary" disabled={!canSendDetails} onClick={continueFromDetails}>
-              Continue
-            </button>
-          ) : null}
-          {draft.step === 'clarify' ? (
-            <button type="button" className="feedback-primary" onClick={skipClarify}>
-              Continue
-            </button>
-          ) : null}
-          {emailStep ? (
-            <button
-              type="button"
-              className="feedback-primary"
-              disabled={!isValidFeedbackEmail(draft.email)}
-              onClick={() => void submit()}
-            >
-              Send Feedback
-              <Send size={16} strokeWidth={2} aria-hidden="true" />
-            </button>
-          ) : null}
-        </footer>
-      ) : null}
         </>
-      )}
-    </section>
-  );
+      );
+    case 'follow_up':
+    case 'email':
+      return (
+        <FeedbackFollowUp
+          wantFollowUp={draft.wantFollowUp}
+          email={draft.email}
+          error={draft.step === 'email' ? error : undefined}
+          onChoose={onChooseFollowUp}
+          onEmail={onEmail}
+        />
+      );
+    case 'submitting':
+      return <p className="feedback-status">Sending your feedback…</p>;
+    case 'success':
+      return (
+        <FeedbackSuccess
+          questionHint={draft.category === 'question'}
+          askNotify={askNotify}
+          email={draft.email}
+          emailError={error}
+          onEmail={onEmail}
+          onNotify={onNotify}
+          onSkipNotify={onSkipNotify}
+          onDone={onDone}
+          onChat={onChat}
+        />
+      );
+    case 'error':
+      return <FeedbackError onRetry={onRetry} onKeep={onKeep} />;
+    case 'welcome':
+    default:
+      return <FeedbackWelcome onSelect={onSelectCategory} />;
+  }
 }

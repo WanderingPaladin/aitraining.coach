@@ -61,10 +61,9 @@ export default function FeedbackWidget() {
   const openFeedback = useCallback(
     (from: 'home' | 'chat' = 'home', category?: FeedbackCategory) => {
       setEntryPoint(from);
-      setView('feedback');
       setNotifyDismissed(false);
-      controller.openPanel({ step: 'welcome', ...(category ? { category } : {}) });
-      if (category) controller.selectCategory(category);
+      controller.openFeedback({ category });
+      setView('feedback');
     },
     [controller],
   );

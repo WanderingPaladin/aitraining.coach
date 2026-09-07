@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, submitFeedback } from '../../lib/api';
 import { DETAIL_COPY, TOPIC_QUESTIONS, deviceTypeFromWidth } from '../../lib/feedback-context';
 import {
@@ -11,6 +11,14 @@ import {
 import type { FeedbackCategory, FeedbackDraft, FeedbackStep } from '../../lib/feedback-types';
 import { emptyFeedbackDraft, FEEDBACK_MAX_MESSAGE } from '../../lib/feedback-types';
 import { popFeedbackStep, pushFeedbackStep } from '../../lib/feedback-nav';
+import {
+  buildOpenFeedbackDraft,
+  coerceRenderableDraft,
+  nextAfterCategory,
+  nextAfterContext,
+  nextAfterDetails,
+  warnInvalidFeedbackState,
+} from '../../lib/feedback-state';
 import { isNonEmptyFeedback, isValidFeedbackEmail, trimFeedbackMessage, feedbackClientIssue } from '../../lib/feedback-validation';
 import { trackingIds } from '../../lib/tracking';
 import { useAuth } from '../components/AuthProvider';
@@ -22,6 +30,13 @@ type OpenOptions = {
   step?: Exclude<FeedbackStep, 'closed'>;
 };
 
+let feedbackUserActionEpoch = 0;
+
+function markFeedbackUserAction(local: { current: number }) {
+  feedbackUserActionEpoch += 1;
+  local.current = feedbackUserActionEpoch;
+}
+
 function composedMessage(draft: FeedbackDraft): string {
   const parts: string[] = [];
   if (draft.contextAnswer) parts.push(`Context: ${draft.contextAnswer}`);
@@ -29,28 +44,6 @@ function composedMessage(draft: FeedbackDraft): string {
   if (draft.blocker != null) parts.push(`Blocked progress: ${draft.blocker ? 'yes' : 'no'}`);
   if (draft.message.trim()) parts.push(draft.message.trim());
   return parts.join('\n\n').slice(0, FEEDBACK_MAX_MESSAGE);
-}
-
-function nextAfterCategory(
-  category: FeedbackCategory,
-  hasContext: boolean,
-): Exclude<FeedbackStep, 'closed' | 'submitting'> {
-  if (hasContext) return 'context';
-  if (category === 'general') return 'rating';
-  if (category === 'question') return 'details';
-  return 'topic';
-}
-
-function nextAfterContext(category: FeedbackCategory): Exclude<FeedbackStep, 'closed' | 'submitting'> {
-  if (category === 'general') return 'rating';
-  if (category === 'question') return 'details';
-  return 'topic';
-}
-
-function nextAfterDetails(category: FeedbackCategory): Exclude<FeedbackStep, 'closed' | 'submitting'> {
-  if (category === 'confusing') return 'clarify';
-  if (category === 'problem') return 'blocker';
-  return 'follow_up';
 }
 
 export function useFeedback() {
@@ -67,13 +60,26 @@ export function useFeedback() {
     contactEmail: string | null;
   } | null>(null);
   const restored = useRef(false);
+  const userActionEpoch = useRef(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (restored.current) return;
     restored.current = true;
+    if (userActionEpoch.current !== 0 || feedbackUserActionEpoch !== 0) return;
     const saved = readFeedbackDraft();
-    if (saved) setDraft(saved);
-  }, []);
+    if (saved) setDraft(coerceRenderableDraft(saved, context));
+  }, [context]);
+
+  useEffect(() => {
+    setDraft((current) => {
+      const next = coerceRenderableDraft(current, context);
+      return next.step === current.step && next.category === current.category ? current : next;
+    });
+  }, [context, pathname]);
+
+  useEffect(() => {
+    warnInvalidFeedbackState(draft, context);
+  }, [context, draft]);
 
   useEffect(() => {
     if (!open) return;
@@ -88,27 +94,29 @@ export function useFeedback() {
     (step: Exclude<FeedbackStep, 'closed'>, patch: Partial<FeedbackDraft> = {}) => {
       setDraft((current) => {
         const skipHistory = step === 'submitting' || step === 'success' || step === 'error';
-        return {
+        const history: FeedbackDraft['history'] =
+          step === 'success' || step === 'error'
+            ? ['welcome']
+            : skipHistory
+              ? current.history.length
+                ? current.history
+                : [current.step]
+              : pushFeedbackStep(current.history, current.step, step);
+        const next: FeedbackDraft = {
           ...current,
           ...patch,
           step,
-          history:
-            step === 'success' || step === 'error'
-              ? ['welcome']
-              : skipHistory
-                ? current.history.length
-                  ? current.history
-                  : [current.step]
-                : pushFeedbackStep(current.history, current.step, step),
+          history,
         };
+        return coerceRenderableDraft(next, context);
       });
     },
-    [],
+    [context],
   );
 
   const update = useCallback((patch: Partial<FeedbackDraft>) => {
-    setDraft((current) => ({ ...current, ...patch }));
-  }, []);
+    setDraft((current) => coerceRenderableDraft({ ...current, ...patch }, context));
+  }, [context]);
 
   const focusPanel = useCallback(() => {
     requestAnimationFrame(() => panelRef.current?.focus());
@@ -123,6 +131,11 @@ export function useFeedback() {
       setError('');
       setOpen(true);
       setDraft((current) => {
+        if (options?.step === 'welcome' && !options.category) {
+          const next = buildOpenFeedbackDraft(current, { pathname, context });
+          if (options.rating != null) next.rating = options.rating;
+          return next;
+        }
         if (current.step === 'success' || current.step === 'error') {
           const fresh = emptyFeedbackDraft(pathname);
           if (options?.category) fresh.category = options.category;
@@ -131,7 +144,7 @@ export function useFeedback() {
             fresh.step = options.step;
             fresh.history = pushFeedbackStep(['welcome'], 'welcome', options.step);
           }
-          return fresh;
+          return coerceRenderableDraft(fresh, context);
         }
         const next = { ...current, pagePath: pathname };
         if (options?.category) next.category = options.category;
@@ -139,15 +152,28 @@ export function useFeedback() {
         if (options?.step) {
           next.step = options.step;
           if (options.step === 'welcome') next.history = ['welcome'];
-        } else if (!current.category) {
-          next.step = 'welcome';
-          if (!next.history.length) next.history = ['welcome'];
+          else next.history = pushFeedbackStep(current.history.length ? current.history : ['welcome'], current.step, options.step);
         }
-        return next;
+        return coerceRenderableDraft(next, context);
       });
       focusPanel();
     },
-    [focusPanel, pathname],
+    [context, focusPanel, pathname],
+  );
+
+  const openFeedback = useCallback(
+    (options?: { category?: FeedbackCategory }) => {
+      markFeedbackUserAction(userActionEpoch);
+      setError('');
+      setOpen(true);
+      setDraft((current) => buildOpenFeedbackDraft(current, {
+        pathname,
+        context,
+        category: options?.category,
+      }));
+      focusPanel();
+    },
+    [context, focusPanel, pathname],
   );
 
   const closePanel = useCallback(() => {
@@ -169,7 +195,7 @@ export function useFeedback() {
       setDraft((current) => {
         const same = current.category === category;
         const step = nextAfterCategory(category, Boolean(context));
-        return {
+        return coerceRenderableDraft({
           ...current,
           category,
           subcategory: same ? current.subcategory : null,
@@ -177,7 +203,7 @@ export function useFeedback() {
           contextAnswer: same ? current.contextAnswer : null,
           step,
           history: pushFeedbackStep(current.history, current.step, step),
-        };
+        }, context);
       });
     },
     [context],
@@ -236,22 +262,23 @@ export function useFeedback() {
     setError('');
     let exited = false;
     setDraft((current) => {
+      const live = coerceRenderableDraft(current, context);
       const result = popFeedbackStep({
-        step: current.step,
-        history: current.history,
-        contextFollowUpId: current.contextFollowUpId,
+        step: live.step,
+        history: live.history,
+        contextFollowUpId: live.contextFollowUpId,
       });
       exited = result.exited;
-      if (result.exited) return current;
-      return {
-        ...current,
+      if (result.exited) return live;
+      return coerceRenderableDraft({
+        ...live,
         step: result.step,
         history: result.history,
         contextFollowUpId: result.contextFollowUpId,
-      };
+      }, context);
     });
     return exited;
-  }, []);
+  }, [context]);
 
   const buildPayload = useCallback((next: FeedbackDraft) => {
     if (!next.category) return null;
@@ -286,7 +313,7 @@ export function useFeedback() {
     const payload = buildPayload(next);
     if (!payload) {
       setError((current) => current || 'Please add a short comment before sending.');
-      update({ ...overrides, step: 'details' });
+      update({ ...overrides, step: draft.category ? 'details' : 'welcome' });
       return null;
     }
     if (next.wantFollowUp && !isValidFeedbackEmail(next.email)) {
@@ -311,7 +338,7 @@ export function useFeedback() {
       goToStep('error', overrides);
       return null;
     }
-  }, [buildPayload, draft, goToStep]);
+  }, [buildPayload, draft, goToStep, update]);
 
   const submitRatingOnly = useCallback(async (rating: number, pagePath = pathname) => {
     await submitFeedback({
@@ -343,10 +370,11 @@ export function useFeedback() {
         history: pushFeedbackStep(draft.history, draft.step, 'email'),
       });
     },
-    [draft.email, submit, update, user?.email],
+    [draft.email, draft.history, draft.step, submit, update, user?.email],
   );
 
   const startOver = useCallback(() => {
+    markFeedbackUserAction(userActionEpoch);
     clearFeedbackDraft();
     setError('');
     setSubmission(null);
@@ -358,19 +386,21 @@ export function useFeedback() {
     return isNonEmptyFeedback(draft.message);
   }, [draft.category, draft.message, draft.rating]);
 
+  const renderDraft = useMemo(() => coerceRenderableDraft(draft, context), [context, draft]);
+
   const question = useMemo(() => {
-    if (draft.step === 'context') {
-      const follow = draft.contextFollowUpId ? context?.followUp?.[draft.contextFollowUpId] : null;
+    if (renderDraft.step === 'context') {
+      const follow = renderDraft.contextFollowUpId ? context?.followUp?.[renderDraft.contextFollowUpId] : null;
       return follow?.question ?? context?.question ?? '';
     }
-    if (draft.step === 'topic' && draft.category) return TOPIC_QUESTIONS[draft.category] ?? '';
-    if (draft.step === 'details' && draft.category) return DETAIL_COPY[draft.category].question;
-    if (draft.step === 'clarify') return 'What would have made this clearer?';
-    if (draft.step === 'blocker') return 'Did this stop you from completing what you were trying to do?';
-    if (draft.step === 'rating') return 'How has your experience with AI Trainers been so far?';
-    if (draft.step === 'follow_up') return 'Would you like us to follow up?';
+    if (renderDraft.step === 'topic' && renderDraft.category) return TOPIC_QUESTIONS[renderDraft.category] ?? '';
+    if (renderDraft.step === 'details' && renderDraft.category) return DETAIL_COPY[renderDraft.category].question;
+    if (renderDraft.step === 'clarify') return 'What would have made this clearer?';
+    if (renderDraft.step === 'blocker') return 'Did this stop you from completing what you were trying to do?';
+    if (renderDraft.step === 'rating') return 'How has your experience with AI Trainers been so far?';
+    if (renderDraft.step === 'follow_up') return 'Would you like us to follow up?';
     return '';
-  }, [context?.question, draft.category, draft.step]);
+  }, [context, renderDraft]);
 
   useEffect(() => {
     if (!open) return;
@@ -386,7 +416,7 @@ export function useFeedback() {
 
   return {
     open,
-    draft,
+    draft: renderDraft,
     error,
     context,
     pathname,
@@ -397,6 +427,7 @@ export function useFeedback() {
     canSendDetails,
     userEmail: user?.email ?? '',
     openPanel,
+    openFeedback,
     closePanel,
     resetAndClose,
     selectCategory,
@@ -421,7 +452,7 @@ export function useFeedback() {
     },
     keepMessage: () => {
       setError('');
-      goToStep('details');
+      goToStep(draft.category ? 'details' : 'welcome');
     },
   };
 }
