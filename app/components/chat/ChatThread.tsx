@@ -41,12 +41,20 @@ export default function ChatThread({
     saveEmail,
   } = chat;
   const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const showIntro = messages.length === 0;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' });
   }, [messages, teamTyping]);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.style.height = '0px';
+    input.style.height = `${Math.min(Math.max(input.scrollHeight, 40), 120)}px`;
+  }, [draft]);
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -144,69 +152,74 @@ export default function ChatThread({
           Company website
           <input ref={honeypotRef} type="text" name="companyWebsite" tabIndex={-1} autoComplete="off" aria-hidden="true" />
         </label>
-        {onGiveFeedback ? (
-          <div className="chat-plus-wrap">
-            <button
-              type="button"
-              className="chat-plus-btn"
-              aria-label="More actions"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              <Plus size={18} strokeWidth={2} />
-            </button>
-            {menuOpen ? (
-              <div className="chat-plus-menu" role="menu">
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onGiveFeedback();
-                  }}
-                >
-                  Give Feedback
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onGiveFeedback('problem');
-                  }}
-                >
-                  Report a Problem
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onGiveFeedback('improvement');
-                  }}
-                >
-                  Suggest Improvement
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-        <label htmlFor="chat-composer-input" className="sr-only">
-          Type a message
-        </label>
-        <textarea
-          id="chat-composer-input"
-          rows={2}
-          value={draft}
-          maxLength={CHAT_MAX_MESSAGE}
-          placeholder="Type a message..."
-          onChange={(event) => updateDraft(event.target.value)}
-          onKeyDown={onKeyDown}
-        />
-        <button type="button" className="feedback-primary" disabled={!draft.trim() || sending} onClick={() => void send()}>
-          Send
-          <Send size={16} strokeWidth={2} aria-hidden="true" />
-        </button>
+        <div className="chat-composer-bar">
+          {onGiveFeedback ? (
+            <div className="chat-plus-wrap">
+              <button
+                type="button"
+                className="chat-plus-btn"
+                aria-label="More actions"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                <Plus size={18} strokeWidth={2} />
+              </button>
+              {menuOpen ? (
+                <div className="chat-plus-menu" role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onGiveFeedback();
+                    }}
+                  >
+                    Give Feedback
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onGiveFeedback('problem');
+                    }}
+                  >
+                    Report a Problem
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onGiveFeedback('improvement');
+                    }}
+                  >
+                    Suggest Improvement
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          <label htmlFor="chat-composer-input" className="sr-only">
+            Type a message
+          </label>
+          <textarea
+            id="chat-composer-input"
+            ref={inputRef}
+            rows={1}
+            value={draft}
+            maxLength={CHAT_MAX_MESSAGE}
+            placeholder="Type a message"
+            autoComplete="off"
+            enterKeyHint="send"
+            onChange={(event) => updateDraft(event.target.value)}
+            onKeyDown={onKeyDown}
+          />
+          <button type="button" className="chat-send-btn" disabled={!draft.trim() || sending} onClick={() => void send()}>
+            Send
+            <Send size={15} strokeWidth={2} aria-hidden="true" />
+          </button>
+        </div>
         {error ? <p className="chat-error" role="alert">{error}</p> : null}
       </footer>
     </>
