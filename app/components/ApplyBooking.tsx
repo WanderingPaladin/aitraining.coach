@@ -25,6 +25,7 @@ import {
   type Booking,
   type TimeSlot,
 } from '../../lib/api';
+import { openAssistant } from '../../lib/assistant';
 import {
   findPhoneCountry,
   findPhoneCountryByName,
@@ -972,6 +973,9 @@ export default function ApplyBooking() {
               <Video className="btn-icon" size={16} strokeWidth={2} />
             </a>
           )}
+          <button className="apply-secondary" type="button" onClick={() => openAssistant({ view: 'chat', topic: 'booking', contextType: 'booking' })}>
+            Need help booking? Chat with Team
+          </button>
           <button className="apply-secondary" type="button" disabled={submitting} onClick={() => void handleReschedule()}>
             {submitting ? 'Opening times…' : 'Reschedule'}
             <RotateCcw className="btn-icon" size={16} strokeWidth={2} />

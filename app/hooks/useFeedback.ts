@@ -10,6 +10,7 @@ import {
 } from '../../lib/feedback-storage';
 import type { FeedbackCategory, FeedbackDraft, FeedbackStep } from '../../lib/feedback-types';
 import { emptyFeedbackDraft, FEEDBACK_MAX_MESSAGE } from '../../lib/feedback-types';
+import { popFeedbackStep, pushFeedbackStep } from '../../lib/feedback-nav';
 import { isNonEmptyFeedback, isValidFeedbackEmail, trimFeedbackMessage, feedbackClientIssue } from '../../lib/feedback-validation';
 import { trackingIds } from '../../lib/tracking';
 import { useAuth } from '../components/AuthProvider';
@@ -61,6 +62,10 @@ export function useFeedback() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<FeedbackDraft>(() => emptyFeedbackDraft(pathname));
   const [error, setError] = useState('');
+  const [submission, setSubmission] = useState<{
+    conversationId: string | null;
+    contactEmail: string | null;
+  } | null>(null);
   const restored = useRef(false);
 
   useEffect(() => {
@@ -79,6 +84,28 @@ export function useFeedback() {
     writeFeedbackDraft({ ...draft, pagePath: pathname });
   }, [draft, open, pathname]);
 
+  const goToStep = useCallback(
+    (step: Exclude<FeedbackStep, 'closed'>, patch: Partial<FeedbackDraft> = {}) => {
+      setDraft((current) => {
+        const skipHistory = step === 'submitting' || step === 'success' || step === 'error';
+        return {
+          ...current,
+          ...patch,
+          step,
+          history:
+            step === 'success' || step === 'error'
+              ? ['welcome']
+              : skipHistory
+                ? current.history.length
+                  ? current.history
+                  : [current.step]
+                : pushFeedbackStep(current.history, current.step, step),
+        };
+      });
+    },
+    [],
+  );
+
   const update = useCallback((patch: Partial<FeedbackDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
   }, []);
@@ -96,12 +123,26 @@ export function useFeedback() {
       setError('');
       setOpen(true);
       setDraft((current) => {
+        if (current.step === 'success' || current.step === 'error') {
+          const fresh = emptyFeedbackDraft(pathname);
+          if (options?.category) fresh.category = options.category;
+          if (options?.rating != null) fresh.rating = options.rating;
+          if (options?.step && options.step !== 'welcome') {
+            fresh.step = options.step;
+            fresh.history = pushFeedbackStep(['welcome'], 'welcome', options.step);
+          }
+          return fresh;
+        }
         const next = { ...current, pagePath: pathname };
         if (options?.category) next.category = options.category;
         if (options?.rating != null) next.rating = options.rating;
-        if (options?.step) next.step = options.step;
-        else if (current.step === 'success' || current.step === 'error') next.step = 'welcome';
-        else if (!current.category) next.step = 'welcome';
+        if (options?.step) {
+          next.step = options.step;
+          if (options.step === 'welcome') next.history = ['welcome'];
+        } else if (!current.category) {
+          next.step = 'welcome';
+          if (!next.history.length) next.history = ['welcome'];
+        }
         return next;
       });
       focusPanel();
@@ -118,19 +159,28 @@ export function useFeedback() {
     clearFeedbackDraft();
     setDraft(emptyFeedbackDraft(pathname));
     setError('');
+    setSubmission(null);
     setOpen(false);
     focusLauncher();
   }, [focusLauncher, pathname]);
 
   const selectCategory = useCallback(
     (category: FeedbackCategory) => {
-      update({
-        category,
-        subcategory: null,
-        step: nextAfterCategory(category, Boolean(context)),
+      setDraft((current) => {
+        const same = current.category === category;
+        const step = nextAfterCategory(category, Boolean(context));
+        return {
+          ...current,
+          category,
+          subcategory: same ? current.subcategory : null,
+          contextFollowUpId: same ? current.contextFollowUpId : null,
+          contextAnswer: same ? current.contextAnswer : null,
+          step,
+          history: pushFeedbackStep(current.history, current.step, step),
+        };
       });
     },
-    [context, update],
+    [context],
   );
 
   const selectContext = useCallback(
@@ -150,14 +200,14 @@ export function useFeedback() {
         (item) => item.label === answer || item.id === answer,
       );
       const composed = [draft.contextAnswer, followOption?.label ?? answer].filter(Boolean).join(' · ');
-      update({ contextAnswer: composed, step: nextAfterContext(draft.category) });
+      goToStep(nextAfterContext(draft.category), { contextAnswer: composed });
     },
-    [context, draft.category, draft.contextAnswer, draft.contextFollowUpId, update],
+    [context, draft.category, draft.contextAnswer, draft.contextFollowUpId, goToStep, update],
   );
 
   const selectTopic = useCallback((subcategory: string) => {
-    update({ subcategory, step: 'details' });
-  }, [update]);
+    goToStep('details', { subcategory });
+  }, [goToStep]);
 
   const setMessage = useCallback((message: string) => {
     update({ message: trimFeedbackMessage(message) });
@@ -179,35 +229,29 @@ export function useFeedback() {
       return;
     }
     setError('');
-    update({ step: nextAfterDetails(draft.category) });
-  }, [draft.category, draft.message, draft.rating, update]);
+    goToStep(nextAfterDetails(draft.category));
+  }, [draft.category, draft.message, draft.rating, goToStep]);
 
   const goBack = useCallback(() => {
     setError('');
+    let exited = false;
     setDraft((current) => {
-      const category = current.category;
-      if (current.step === 'email') return { ...current, step: 'follow_up' };
-      if (current.step === 'follow_up') {
-        if (category === 'confusing') return { ...current, step: 'clarify' };
-        if (category === 'problem') return { ...current, step: 'blocker' };
-        return { ...current, step: 'details' };
-      }
-      if (current.step === 'clarify' || current.step === 'blocker') return { ...current, step: 'details' };
-      if (current.step === 'details') {
-        if (category === 'question') return { ...current, step: context ? 'context' : 'welcome' };
-        if (category === 'general') return { ...current, step: 'rating' };
-        return { ...current, step: 'topic' };
-      }
-      if (current.step === 'rating') return { ...current, step: context ? 'context' : 'welcome' };
-      if (current.step === 'topic') return { ...current, step: context ? 'context' : 'welcome' };
-      if (current.step === 'context' && current.contextFollowUpId) {
-        return { ...current, contextFollowUpId: null, step: 'context' };
-      }
-      if (current.step === 'context') return { ...current, step: 'welcome' };
-      if (current.step === 'error') return { ...current, step: 'follow_up' };
-      return current;
+      const result = popFeedbackStep({
+        step: current.step,
+        history: current.history,
+        contextFollowUpId: current.contextFollowUpId,
+      });
+      exited = result.exited;
+      if (result.exited) return current;
+      return {
+        ...current,
+        step: result.step,
+        history: result.history,
+        contextFollowUpId: result.contextFollowUpId,
+      };
     });
-  }, [context]);
+    return exited;
+  }, []);
 
   const buildPayload = useCallback((next: FeedbackDraft) => {
     if (!next.category) return null;
@@ -243,25 +287,31 @@ export function useFeedback() {
     if (!payload) {
       setError((current) => current || 'Please add a short comment before sending.');
       update({ ...overrides, step: 'details' });
-      return;
+      return null;
     }
     if (next.wantFollowUp && !isValidFeedbackEmail(next.email)) {
       setError('Enter a valid email, like you@example.com.');
       update({ ...overrides, step: 'email' });
-      return;
+      return null;
     }
     setError('');
-    update({ ...overrides, step: 'submitting' });
+    goToStep('submitting', overrides);
     try {
-      await submitFeedback(payload);
+      const result = await submitFeedback(payload);
       clearFeedbackDraft();
-      update({ ...overrides, step: 'success' });
+      setSubmission({
+        conversationId: result.conversation?.id ?? result.feedback.conversationId ?? null,
+        contactEmail: result.conversation?.contactEmail ?? payload.email ?? null,
+      });
+      goToStep('success', overrides);
+      return result;
     } catch (err) {
       const detail = err instanceof ApiError ? err.details?.find((item) => item.path === 'message')?.message : null;
       setError(detail || (err instanceof Error ? err.message : 'Something went wrong while sending your feedback.'));
-      update({ ...overrides, step: 'error' });
+      goToStep('error', overrides);
+      return null;
     }
-  }, [buildPayload, draft, update]);
+  }, [buildPayload, draft, goToStep]);
 
   const submitRatingOnly = useCallback(async (rating: number, pagePath = pathname) => {
     await submitFeedback({
@@ -290,6 +340,7 @@ export function useFeedback() {
         wantFollowUp: true,
         email: draft.email || user?.email || '',
         step: 'email',
+        history: pushFeedbackStep(draft.history, draft.step, 'email'),
       });
     },
     [draft.email, submit, update, user?.email],
@@ -298,6 +349,7 @@ export function useFeedback() {
   const startOver = useCallback(() => {
     clearFeedbackDraft();
     setError('');
+    setSubmission(null);
     setDraft(emptyFeedbackDraft(pathname));
   }, [pathname]);
 
@@ -356,19 +408,20 @@ export function useFeedback() {
     goBack,
     chooseFollowUp,
     setEmail: (email: string) => update({ email }),
-    setRating: (rating: number) => update({ rating, step: 'details' }),
-    setBlocker: (blocker: boolean) => update({ blocker, step: 'follow_up' }),
-    skipClarify: () => update({ step: 'follow_up' }),
+    setRating: (rating: number) => goToStep('details', { rating }),
+    setBlocker: (blocker: boolean) => goToStep('follow_up', { blocker }),
+    skipClarify: () => goToStep('follow_up'),
     submit,
     submitRatingOnly,
     startOver,
+    submission,
     retry: () => {
       setError('');
-      update({ step: 'follow_up' });
+      goToStep('follow_up');
     },
     keepMessage: () => {
       setError('');
-      update({ step: 'details' });
+      goToStep('details');
     },
   };
 }

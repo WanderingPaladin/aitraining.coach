@@ -25,6 +25,7 @@ import {
 import { useAuth } from './AuthProvider';
 import BookIntroCallButton from './BookIntroCallButton';
 import OpportunityCard from './OpportunityCard';
+import { openAssistant } from '../../lib/assistant';
 
 const STAGE_LABELS: Record<string, string> = {
   new_no_account: 'Beginner',
@@ -483,7 +484,16 @@ export default function ProfileView() {
 
       <section className="profile-panel coaching-panel">
         <p>Want help turning this profile into a focused AI-training plan?</p>
-        <BookIntroCallButton className="secondary-button on-light" href="/#apply" />
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="secondary-button on-light"
+            onClick={() => openAssistant({ view: 'chat', topic: 'profile_match', contextType: 'profile_match' })}
+          >
+            Questions about your match? Ask the Team
+          </button>
+          <BookIntroCallButton className="secondary-button on-light" href="/#apply" />
+        </div>
       </section>
 
       {activity.length ? (

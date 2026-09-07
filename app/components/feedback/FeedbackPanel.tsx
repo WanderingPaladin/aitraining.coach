@@ -11,11 +11,35 @@ import FeedbackRating from './FeedbackRating';
 import FeedbackSuccess from './FeedbackSuccess';
 import FeedbackTextarea from './FeedbackTextarea';
 import FeedbackWelcome from './FeedbackWelcome';
+import AssistantHome from './AssistantHome';
+import type { AssistantView } from '../../../lib/assistant';
+import ChatThread from '../chat/ChatThread';
+import type { ChatController } from '../../hooks/useChat';
 
 export default function FeedbackPanel({
   controller,
+  chat,
+  view,
+  onChat,
+  onFeedback,
+  onHome,
+  onBack,
+  onContinueChat,
+  askNotify,
+  onNotify,
+  onSkipNotify,
 }: {
   controller: FeedbackController;
+  chat: ChatController;
+  view: AssistantView;
+  onChat: () => void;
+  onFeedback: (kind?: 'problem' | 'improvement') => void;
+  onHome: () => void;
+  onBack: () => void;
+  onContinueChat: () => void;
+  askNotify: boolean;
+  onNotify: () => void;
+  onSkipNotify: () => void;
 }) {
   const {
     open,
@@ -32,7 +56,6 @@ export default function FeedbackPanel({
     setMessage,
     setClarify,
     continueFromDetails,
-    goBack,
     chooseFollowUp,
     setEmail,
     setRating,
@@ -46,13 +69,16 @@ export default function FeedbackPanel({
     honeypotRef,
   } = controller;
 
-  const showBack = !['welcome', 'success', 'submitting'].includes(draft.step);
+  const showBack =
+    view === 'chat' ||
+    (view === 'feedback' && draft.step !== 'success' && draft.step !== 'submitting');
   const details = draft.category ? DETAIL_COPY[draft.category] : null;
   const topics = draft.category ? TOPIC_OPTIONS[draft.category] : null;
   const emailStep = draft.step === 'email';
   const contextFollowUp = draft.contextFollowUpId ? context?.followUp?.[draft.contextFollowUpId] : null;
   const contextOptions = contextFollowUp?.options ?? context?.options ?? [];
   const contextQuestion = contextFollowUp?.question ?? context?.question;
+  const hasConversation = Boolean(chat.conversation && chat.messages.length);
 
   return (
     <section
@@ -68,10 +94,17 @@ export default function FeedbackPanel({
     >
       <FeedbackHeader
         showBack={showBack}
-        onBack={goBack}
+        title={view === 'chat' ? 'AI Trainers Team' : 'AI Trainers Assistant'}
+        subtitle={view === 'home' ? 'How can we help?' : 'Help us improve your experience'}
+        presence={view === 'chat' ? (chat.teamOnline ? 'online' : 'offline') : null}
+        onBack={onBack}
         onMinimize={closePanel}
         onClose={closePanel}
       />
+      {view === 'chat' ? (
+        <ChatThread chat={chat} onGiveFeedback={onFeedback} />
+      ) : (
+        <>
       <div className="feedback-body">
         <label className="feedback-honeypot">
           Company website
@@ -84,9 +117,12 @@ export default function FeedbackPanel({
             aria-hidden="true"
           />
         </label>
-        {draft.step === 'welcome' ? <FeedbackWelcome onSelect={selectCategory} /> : null}
+        {view === 'home' ? (
+          <AssistantHome onChat={onChat} onFeedback={onFeedback} hasConversation={hasConversation} />
+        ) : null}
+        {view === 'feedback' && draft.step === 'welcome' ? <FeedbackWelcome onSelect={selectCategory} /> : null}
 
-        {draft.step === 'context' && context ? (
+        {view === 'feedback' && draft.step === 'context' && context ? (
           <>
             <FeedbackMessage>{contextQuestion}</FeedbackMessage>
             <FeedbackChips
@@ -97,21 +133,21 @@ export default function FeedbackPanel({
           </>
         ) : null}
 
-        {draft.step === 'topic' && topics ? (
+        {view === 'feedback' && draft.step === 'topic' && topics ? (
           <>
             <FeedbackMessage>{question}</FeedbackMessage>
             <FeedbackChips options={topics} selected={draft.subcategory} onSelect={selectTopic} />
           </>
         ) : null}
 
-        {draft.step === 'rating' ? (
+        {view === 'feedback' && draft.step === 'rating' ? (
           <>
             <FeedbackMessage>{question}</FeedbackMessage>
             <FeedbackRating value={draft.rating} onSelect={setRating} />
           </>
         ) : null}
 
-        {draft.step === 'details' && details ? (
+        {view === 'feedback' && draft.step === 'details' && details ? (
           <FeedbackTextarea
             id="feedback-details"
             label={details.question}
@@ -122,7 +158,7 @@ export default function FeedbackPanel({
           />
         ) : null}
 
-        {draft.step === 'clarify' ? (
+        {view === 'feedback' && draft.step === 'clarify' ? (
           <FeedbackTextarea
             id="feedback-clarify"
             label="What would have made this clearer?"
@@ -132,7 +168,7 @@ export default function FeedbackPanel({
           />
         ) : null}
 
-        {draft.step === 'blocker' ? (
+        {view === 'feedback' && draft.step === 'blocker' ? (
           <>
             <FeedbackMessage>{question}</FeedbackMessage>
             <FeedbackChips
@@ -146,7 +182,7 @@ export default function FeedbackPanel({
           </>
         ) : null}
 
-        {draft.step === 'follow_up' || emailStep ? (
+        {view === 'feedback' && (draft.step === 'follow_up' || emailStep) ? (
           <FeedbackFollowUp
             wantFollowUp={draft.wantFollowUp}
             email={draft.email}
@@ -156,20 +192,26 @@ export default function FeedbackPanel({
           />
         ) : null}
 
-        {draft.step === 'submitting' ? <p className="feedback-status">Sending your feedback…</p> : null}
+        {view === 'feedback' && draft.step === 'submitting' ? <p className="feedback-status">Sending your feedback…</p> : null}
 
-        {draft.step === 'success' ? (
+        {view === 'feedback' && draft.step === 'success' ? (
           <FeedbackSuccess
             questionHint={draft.category === 'question'}
+            askNotify={askNotify}
+            email={draft.email}
+            emailError={error}
+            onEmail={setEmail}
+            onNotify={onNotify}
+            onSkipNotify={onSkipNotify}
             onDone={resetAndClose}
-            onMore={startOver}
+            onChat={onContinueChat}
           />
         ) : null}
 
-        {draft.step === 'error' ? <FeedbackError onRetry={retry} onKeep={keepMessage} /> : null}
+        {view === 'feedback' && draft.step === 'error' ? <FeedbackError onRetry={retry} onKeep={keepMessage} /> : null}
       </div>
 
-      {draft.step === 'details' || draft.step === 'clarify' || emailStep ? (
+      {view === 'feedback' && (draft.step === 'details' || draft.step === 'clarify' || emailStep) ? (
         <footer className="feedback-footer">
           {draft.step === 'clarify' ? (
             <button type="button" className="feedback-secondary" onClick={skipClarify}>
@@ -201,6 +243,8 @@ export default function FeedbackPanel({
           ) : null}
         </footer>
       ) : null}
+        </>
+      )}
     </section>
   );
 }

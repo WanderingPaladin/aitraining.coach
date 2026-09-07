@@ -56,7 +56,13 @@ export function readFeedbackDraft(): FeedbackDraft | null {
     const raw = sessionStorage.getItem(FEEDBACK_DRAFT_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<FeedbackDraft>;
-    return { ...emptyFeedbackDraft(parsed.pagePath || '/'), ...parsed };
+    const merged = { ...emptyFeedbackDraft(parsed.pagePath || '/'), ...parsed };
+    const history = parsed.history?.length
+      ? parsed.history
+      : merged.step !== 'welcome'
+        ? ['welcome', merged.step]
+        : [merged.step];
+    return { ...merged, history };
   } catch {
     return null;
   }
