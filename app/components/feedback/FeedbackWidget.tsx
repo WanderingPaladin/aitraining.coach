@@ -63,7 +63,7 @@ export default function FeedbackWidget() {
       setEntryPoint(from);
       setView('feedback');
       setNotifyDismissed(false);
-      controller.openPanel(category ? { category, step: 'welcome' } : undefined);
+      controller.openPanel({ step: 'welcome', ...(category ? { category } : {}) });
       if (category) controller.selectCategory(category);
     },
     [controller],

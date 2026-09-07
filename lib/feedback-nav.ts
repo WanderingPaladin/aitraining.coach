@@ -30,15 +30,33 @@ export function popFeedbackStep(input: {
       contextFollowUpId: null,
     };
   }
-  const history = input.history.length > 0 ? input.history : [input.step];
+
+  if (input.step === 'welcome') {
+    return {
+      exited: true,
+      step: 'welcome',
+      history: ['welcome'],
+      contextFollowUpId: null,
+    };
+  }
+
+  let history = input.history.length > 0 ? input.history : [input.step];
+  const idx = history.lastIndexOf(input.step);
+  if (idx >= 0) {
+    history = history.slice(0, idx + 1);
+  } else {
+    history = pushFeedbackStep(history, history[history.length - 1] ?? input.step, input.step);
+  }
+
   if (history.length <= 1) {
     return {
       exited: true,
       step: history[0] ?? 'welcome',
-      history,
+      history: history.length > 0 ? history : ['welcome'],
       contextFollowUpId: null,
     };
   }
+
   const next = history.slice(0, -1);
   return {
     exited: false,

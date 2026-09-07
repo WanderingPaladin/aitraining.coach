@@ -92,11 +92,14 @@ export function useFeedback() {
           ...current,
           ...patch,
           step,
-          history: skipHistory
-            ? current.history.length
-              ? current.history
-              : [current.step]
-            : pushFeedbackStep(current.history, current.step, step),
+          history:
+            step === 'success' || step === 'error'
+              ? ['welcome']
+              : skipHistory
+                ? current.history.length
+                  ? current.history
+                  : [current.step]
+                : pushFeedbackStep(current.history, current.step, step),
         };
       });
     },
@@ -120,15 +123,26 @@ export function useFeedback() {
       setError('');
       setOpen(true);
       setDraft((current) => {
+        if (current.step === 'success' || current.step === 'error') {
+          const fresh = emptyFeedbackDraft(pathname);
+          if (options?.category) fresh.category = options.category;
+          if (options?.rating != null) fresh.rating = options.rating;
+          if (options?.step && options.step !== 'welcome') {
+            fresh.step = options.step;
+            fresh.history = pushFeedbackStep(['welcome'], 'welcome', options.step);
+          }
+          return fresh;
+        }
         const next = { ...current, pagePath: pathname };
         if (options?.category) next.category = options.category;
         if (options?.rating != null) next.rating = options.rating;
         if (options?.step) {
           next.step = options.step;
           if (options.step === 'welcome') next.history = ['welcome'];
+        } else if (!current.category) {
+          next.step = 'welcome';
+          if (!next.history.length) next.history = ['welcome'];
         }
-        else if (current.step === 'success' || current.step === 'error') next.step = 'welcome';
-        else if (!current.category) next.step = 'welcome';
         return next;
       });
       focusPanel();
