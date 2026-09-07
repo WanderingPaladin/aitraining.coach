@@ -1,4 +1,5 @@
 import type { RefObject } from 'react';
+import { pressProps } from '../../../lib/press';
 import BrandMark from './BrandMark';
 
 export default function FeedbackLauncher({
@@ -22,7 +23,7 @@ export default function FeedbackLauncher({
         aria-label={unreadCount ? `Chat with us, ${unreadCount} unread` : 'Chat with us'}
         aria-expanded={open}
         aria-controls="feedback-assistant-panel"
-        onClick={onToggle}
+        {...pressProps(onToggle)}
       >
         <BrandMark className="brand-mark feedback-launcher-mark" />
         {unreadCount > 0 ? <span className="chat-unread-badge">{unreadCount > 9 ? '9+' : unreadCount}</span> : null}

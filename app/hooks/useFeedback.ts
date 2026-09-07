@@ -121,11 +121,11 @@ export function useFeedback() {
   }, [context]);
 
   const focusPanel = useCallback(() => {
-    requestAnimationFrame(() => panelRef.current?.focus());
+    requestAnimationFrame(() => panelRef.current?.focus({ preventScroll: true }));
   }, []);
 
   const focusLauncher = useCallback(() => {
-    requestAnimationFrame(() => launcherRef.current?.focus());
+    requestAnimationFrame(() => launcherRef.current?.focus({ preventScroll: true }));
   }, []);
 
   const openPanel = useCallback(

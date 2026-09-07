@@ -1,4 +1,5 @@
 import type { FeedbackChip } from '../../../lib/feedback-types';
+import { pressProps } from '../../../lib/press';
 
 export default function FeedbackChips({
   options,
@@ -17,7 +18,7 @@ export default function FeedbackChips({
           type="button"
           className={selected === option.id ? 'feedback-chip is-selected' : 'feedback-chip'}
           aria-pressed={selected === option.id}
-          onClick={() => onSelect(option.id)}
+          {...pressProps(() => onSelect(option.id))}
         >
           {option.label}
         </button>

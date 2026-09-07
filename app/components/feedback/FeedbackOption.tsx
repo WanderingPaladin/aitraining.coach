@@ -1,4 +1,5 @@
 import { ChevronRight, type LucideIcon } from 'lucide-react';
+import { pressProps } from '../../../lib/press';
 
 export default function FeedbackOption({
   icon: Icon,
@@ -14,7 +15,7 @@ export default function FeedbackOption({
   onClick: () => void;
 }) {
   return (
-    <button type="button" className={`feedback-option${primary ? ' is-primary' : ''}`} onClick={onClick}>
+    <button type="button" className={`feedback-option${primary ? ' is-primary' : ''}`} {...pressProps(onClick)}>
       <span className="feedback-option-icon" aria-hidden="true">
         <Icon size={18} strokeWidth={2} />
       </span>

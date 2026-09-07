@@ -1,4 +1,5 @@
 import { ChevronLeft, Minus, X } from 'lucide-react';
+import { pressProps } from '../../../lib/press';
 import BrandMark from './BrandMark';
 
 export default function FeedbackHeader({
@@ -22,7 +23,7 @@ export default function FeedbackHeader({
     <header className="feedback-header">
       <div className="feedback-header-id">
         {showBack ? (
-          <button type="button" className="feedback-back-btn" aria-label="Back" onClick={onBack}>
+          <button type="button" className="feedback-back-btn" aria-label="Back" {...pressProps(onBack)}>
             <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
             Back
           </button>
@@ -44,10 +45,10 @@ export default function FeedbackHeader({
         </div>
       </div>
       <div className="feedback-header-actions">
-        <button type="button" className="feedback-icon-btn" aria-label="Minimize" onClick={onMinimize}>
+        <button type="button" className="feedback-icon-btn" aria-label="Minimize" {...pressProps(onMinimize)}>
           <Minus size={16} strokeWidth={2} />
         </button>
-        <button type="button" className="feedback-icon-btn" aria-label="Close assistant" onClick={onClose}>
+        <button type="button" className="feedback-icon-btn" aria-label="Close assistant" {...pressProps(onClose)}>
           <X size={16} strokeWidth={2} />
         </button>
       </div>
