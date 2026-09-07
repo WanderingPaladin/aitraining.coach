@@ -61,6 +61,8 @@ export function useFeedback() {
   } | null>(null);
   const restored = useRef(false);
   const userActionEpoch = useRef(0);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
 
   useLayoutEffect(() => {
     if (restored.current) return;
@@ -289,25 +291,23 @@ export function useFeedback() {
   }, [draft.category, draft.message, draft.rating, goToStep]);
 
   const goBack = useCallback(() => {
-    setError('');
-    let exited = false;
-    setDraft((current) => {
-      const live = coerceRenderableDraft(current, context);
-      const result = popFeedbackStep({
-        step: live.step,
-        history: live.history,
-        contextFollowUpId: live.contextFollowUpId,
-      });
-      exited = result.exited;
-      if (result.exited) return live;
-      return coerceRenderableDraft({
-        ...live,
-        step: result.step,
-        history: result.history,
-        contextFollowUpId: result.contextFollowUpId,
-      }, context);
+    setError((current) => (current ? '' : current));
+    const live = coerceRenderableDraft(draftRef.current, context);
+    const result = popFeedbackStep({
+      step: live.step,
+      history: live.history,
+      contextFollowUpId: live.contextFollowUpId,
     });
-    return exited;
+    if (result.exited) return true;
+    const next = coerceRenderableDraft({
+      ...live,
+      step: result.step,
+      history: result.history,
+      contextFollowUpId: result.contextFollowUpId,
+    }, context);
+    draftRef.current = next;
+    setDraft(next);
+    return false;
   }, [context]);
 
   const buildPayload = useCallback((next: FeedbackDraft) => {

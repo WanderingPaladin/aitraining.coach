@@ -73,11 +73,9 @@ export default function FeedbackWidget() {
       setView('home');
       return;
     }
-    if (view === 'feedback') {
-      const exited = controller.goBack();
-      if (exited) {
-        setView(entryPoint === 'chat' ? 'chat' : 'home');
-      }
+    if (view !== 'feedback') return;
+    if (controller.draft.step === 'welcome' || controller.goBack()) {
+      setView(entryPoint === 'chat' ? 'chat' : 'home');
     }
   }, [controller, entryPoint, view]);
 
