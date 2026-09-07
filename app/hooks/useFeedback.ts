@@ -67,8 +67,8 @@ export function useFeedback() {
     restored.current = true;
     if (userActionEpoch.current !== 0 || feedbackUserActionEpoch !== 0) return;
     const saved = readFeedbackDraft();
-    if (saved) setDraft(coerceRenderableDraft(saved, context));
-  }, [context]);
+    if (saved) setDraft(saved);
+  }, []);
 
   useEffect(() => {
     setDraft((current) => {
@@ -192,6 +192,7 @@ export function useFeedback() {
 
   const selectCategory = useCallback(
     (category: FeedbackCategory) => {
+      markFeedbackUserAction(userActionEpoch);
       setDraft((current) => {
         const same = current.category === category;
         const step = nextAfterCategory(category, Boolean(context));
@@ -211,24 +212,53 @@ export function useFeedback() {
 
   const selectContext = useCallback(
     (answer: string) => {
-      if (!draft.category || !context) return;
-      const option = context.options.find((item) => item.label === answer || item.id === answer);
-      const followUp = option && !draft.contextFollowUpId ? context.followUp?.[option.id] : null;
-      if (followUp) {
-        update({
-          contextAnswer: option?.label ?? answer,
-          contextFollowUpId: option?.id ?? answer,
-          step: 'context',
-        });
-        return;
-      }
-      const followOption = context.followUp?.[draft.contextFollowUpId ?? '']?.options.find(
-        (item) => item.label === answer || item.id === answer,
-      );
-      const composed = [draft.contextAnswer, followOption?.label ?? answer].filter(Boolean).join(' · ');
-      goToStep(nextAfterContext(draft.category), { contextAnswer: composed });
+      markFeedbackUserAction(userActionEpoch);
+      setDraft((current) => {
+        const live = coerceRenderableDraft(current, context);
+        if (!context) {
+          const step = live.category ? nextAfterContext(live.category) : 'welcome';
+          return coerceRenderableDraft({
+            ...live,
+            contextAnswer: answer,
+            step,
+            history: step === 'welcome' ? ['welcome'] : pushFeedbackStep(live.history, live.step, step),
+          }, context);
+        }
+        const option = context.options.find((item) => item.label === answer || item.id === answer);
+        const followUp = option && !live.contextFollowUpId ? context.followUp?.[option.id] : null;
+        if (followUp) {
+          return coerceRenderableDraft({
+            ...live,
+            contextAnswer: option?.label ?? answer,
+            contextFollowUpId: option?.id ?? answer,
+            step: 'context',
+          }, context);
+        }
+        const followOption = context.followUp?.[live.contextFollowUpId ?? '']?.options.find(
+          (item) => item.label === answer || item.id === answer,
+        );
+        const composed = [live.contextAnswer, followOption?.label ?? answer].filter(Boolean).join(' · ');
+        const category = live.category;
+        if (!category) {
+          return coerceRenderableDraft({
+            ...live,
+            contextAnswer: composed || answer,
+            contextFollowUpId: null,
+            step: 'welcome',
+            history: ['welcome'],
+          }, context);
+        }
+        const step = nextAfterContext(category);
+        return coerceRenderableDraft({
+          ...live,
+          contextAnswer: composed || answer,
+          contextFollowUpId: null,
+          step,
+          history: pushFeedbackStep(live.history, live.step, step),
+        }, context);
+      });
     },
-    [context, draft.category, draft.contextAnswer, draft.contextFollowUpId, goToStep, update],
+    [context],
   );
 
   const selectTopic = useCallback((subcategory: string) => {

@@ -72,7 +72,7 @@ export function coerceRenderableDraft(
   let step = normalizeFeedbackStep(draft.step);
   let history: NavigableFeedbackStep[] = (draft.history?.length ? draft.history : [step]).map(normalizeFeedbackStep);
 
-  if (step === 'context' && !context) {
+  if (step === 'context' && (!context || !category)) {
     step = category ? nextAfterContext(category) : 'welcome';
     history = replaceHistoryStep(history.length ? history : ['welcome'], step);
   }

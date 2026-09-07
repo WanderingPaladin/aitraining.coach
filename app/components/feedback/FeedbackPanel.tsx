@@ -88,8 +88,8 @@ export default function FeedbackPanel({
       aria-modal="false"
       aria-labelledby="feedback-assistant-title"
       tabIndex={-1}
-      aria-hidden={!open}
-      inert={!open || undefined}
+      aria-hidden={open ? undefined : true}
+      inert={open ? undefined : true}
       data-assistant-view={view}
       data-feedback-step={view === 'feedback' ? renderDraft.step : view}
     >
