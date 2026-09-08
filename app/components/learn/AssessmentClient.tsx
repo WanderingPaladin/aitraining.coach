@@ -43,7 +43,13 @@ export default function AssessmentClient() {
 
   useEffect(() => {
     let active = true;
-    const existing = readLearnState().attemptId || undefined;
+    const local = readLearnState();
+    if (local.completedModules.length < 6 && !local.attemptId) {
+      setError('Complete all six modules before starting the final assessment.');
+      setLoading(false);
+      return;
+    }
+    const existing = local.attemptId || undefined;
     startAssessment(existing)
       .then((result) => {
         if (!active) return;
@@ -98,7 +104,7 @@ export default function AssessmentClient() {
         shareScore: lead.shareScore,
         companyWebsite: honeypot || undefined,
       });
-      writeLearnState({ resultId: result.attemptId, attemptId });
+      writeLearnState({ resultId: result.attemptId, attemptId, passed: Boolean(result.passed) });
       trackEvent({
         eventType: result.passed ? 'assessment_passed' : 'assessment_failed',
         metadata: { score: result.finalScore ?? 0 },
@@ -113,7 +119,14 @@ export default function AssessmentClient() {
   }
 
   if (loading) return <p className="learn-status">Preparing your assessment…</p>;
-  if (error && !question) return <p className="learn-empty" role="alert">{error}</p>;
+  if (error && !question) {
+    return (
+      <p className="learn-empty" role="alert">
+        {error}{' '}
+        <a href="/learn/ai-training-foundations">Back to course</a>
+      </p>
+    );
+  }
   if (!question) return <p className="learn-empty">No questions available.</p>;
 
   if (confirming) {

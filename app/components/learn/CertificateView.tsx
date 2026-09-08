@@ -70,7 +70,7 @@ export default function CertificateView({ credentialId }: { credentialId: string
         </button>
       </div>
       <p className="learn-disclaimer">
-        This credential confirms completion of an AITrainers.coach educational program and does not guarantee third-party employment or platform acceptance.
+        This credential confirms that the learner completed the AITrainers.coach AI Training Foundations educational program and met its internal assessment requirement. It does not guarantee third-party employment or platform acceptance.
       </p>
     </article>
   );

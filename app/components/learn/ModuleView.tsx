@@ -59,7 +59,13 @@ export default function ModuleView({ n }: { n: number }) {
       </aside>
       <article className="learn-lesson">
         <header className="learn-lesson-head">
-          <p className="learn-kicker">Module {n} · {meta.minutes}</p>
+          <p className="learn-kicker">
+            <a href="/learn">Learn</a>
+            {' / '}
+            <a href="/learn/ai-training-foundations">AI Training Foundations</a>
+            {' / '}
+            Module {n}
+          </p>
           <h1>{meta.title}</h1>
           <p className="learn-lead">{lesson.intro}</p>
         </header>

@@ -75,6 +75,7 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
             </div>
             <b>{item.score} / 100</b>
             <span className="learn-meter"><i style={{ width: `${item.score}%` }} /></span>
+            {item.insight ? <p className="learn-hint">{item.insight}</p> : null}
           </li>
         ))}
       </ul>
@@ -114,7 +115,7 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
           href="/opportunities?experience=beginner"
           onClick={() => trackEvent({ eventType: 'opportunities_clicked_from_course' })}
         >
-          Explore AI training opportunities
+          View recommended opportunities
         </a>
         <a
           className="secondary-button on-light"

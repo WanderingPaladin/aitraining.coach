@@ -89,7 +89,7 @@ export type AssessmentResult = {
   passScore?: number;
   level?: string;
   levelCopy?: { title: string; body: string };
-  categories?: Array<{ key: string; label: string; score: number; band: string }>;
+  categories?: Array<{ key: string; label: string; score: number; band: string; insight?: string }>;
   strongest?: { label: string; score: number } | null;
   opportunity?: { label: string; score: number } | null;
   recommendations?: string[];

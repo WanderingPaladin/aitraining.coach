@@ -139,6 +139,13 @@ export default function Home() {
           <li>Personalized feedback</li>
           <li>Certificate</li>
         </ul>
+        <ol className="learn-home-path">
+          <li>Learn</li>
+          <li>Practice</li>
+          <li>Get your score</li>
+          <li>Earn a certificate</li>
+          <li>Explore opportunities</li>
+        </ol>
         <div className="hero-actions">
           <a className="primary-button" href="/learn">Start free course</a>
           <a className="secondary-button on-light" href="/learn/ai-training-foundations">See what you’ll learn</a>

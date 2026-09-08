@@ -23,6 +23,7 @@ export default function CourseDashboard() {
           <strong>{percent}%</strong>
           <span>Complete</span>
         </div>
+        <div className="learn-meter" aria-hidden="true"><i style={{ width: `${percent}%` }} /></div>
       </header>
       <p>
         <a className="primary-button" href={href}>
@@ -49,30 +50,40 @@ export default function CourseDashboard() {
             </li>
           );
         })}
-        <li className={`learn-module-card ${state.completedModules.length >= 6 ? 'is-in_progress' : ''}`}>
+        <li className={`learn-module-card ${state.completedModules.length >= 6 ? 'is-in_progress' : 'is-locked'}`}>
           <div>
             <span className="learn-module-num">07</span>
             <h2>Final Assessment</h2>
             <p>15 min</p>
           </div>
           <div className="learn-module-meta">
-            <span className="learn-status">{state.resultId ? 'Submitted' : 'Ready when modules are done'}</span>
-            <a className="primary-button" href="/learn/ai-training-foundations/assessment">
-              {state.resultId ? 'View assessment' : 'Start assessment'}
-            </a>
+            <span className="learn-status">
+              {state.resultId ? 'Submitted' : state.completedModules.length >= 6 ? 'Ready' : 'Locked'}
+            </span>
+            {state.completedModules.length >= 6 || state.attemptId ? (
+              <a className="primary-button" href="/learn/ai-training-foundations/assessment">
+                {state.resultId ? 'Retake assessment' : 'Start assessment'}
+              </a>
+            ) : (
+              <span className="secondary-button on-light is-disabled">Locked</span>
+            )}
           </div>
         </li>
-        <li className={`learn-module-card ${state.resultId ? 'is-in_progress' : 'is-locked'}`}>
+        <li className={`learn-module-card ${state.passed && state.resultId ? 'is-complete' : 'is-locked'}`}>
           <div>
             <span className="learn-module-num">08</span>
             <h2>Certificate</h2>
             <p>Unlocked after passing the assessment</p>
           </div>
           <div className="learn-module-meta">
-            <span className="learn-status">{state.resultId ? 'See results' : 'Locked'}</span>
-            {state.resultId ? (
+            <span className="learn-status">{state.passed ? 'Unlocked' : 'Locked'}</span>
+            {state.passed && state.resultId ? (
               <a className="secondary-button on-light" href={`/learn/ai-training-foundations/results/${state.resultId}`}>
                 Open
+              </a>
+            ) : state.resultId ? (
+              <a className="secondary-button on-light" href={`/learn/ai-training-foundations/results/${state.resultId}`}>
+                See results
               </a>
             ) : (
               <span className="secondary-button on-light is-disabled">Locked</span>

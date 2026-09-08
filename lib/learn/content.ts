@@ -20,7 +20,7 @@ export const MODULE_LESSONS: ModuleLesson[] = [
   {
     n: 1,
     intro:
-      'Artificial intelligence systems can generate increasingly sophisticated responses, but human judgment is still important. AI-training work often involves helping companies evaluate or improve AI-generated output.',
+      'AI systems improve through a combination of technology, data, testing, and human feedback. Human judgment still matters when evaluating whether an answer is accurate, useful, and consistent with the user’s instructions.',
     blocks: [
       {
         type: 'h',
@@ -199,6 +199,19 @@ export const MODULE_LESSONS: ModuleLesson[] = [
       {
         type: 'quiz',
         id: 'm3q1',
+        question: 'When a prompt has multiple constraints, what is the safest evaluation technique?',
+        options: [
+          { id: 'A', label: 'Judge the overall vibe' },
+          { id: 'B', label: 'Convert the prompt into a checklist' },
+          { id: 'C', label: 'Focus only on factuality' },
+          { id: 'D', label: 'Ignore formatting' },
+        ],
+        correct: 'B',
+        explanation: 'A checklist reduces missed constraints.',
+      },
+      {
+        type: 'quiz',
+        id: 'm3q2',
         question: 'If a response is helpful but breaks one explicit constraint, how should you treat it?',
         options: [
           { id: 'A', label: 'Ignore the constraint if the rest is strong' },
@@ -416,12 +429,25 @@ export const MODULE_LESSONS: ModuleLesson[] = [
         items: [
           'Guaranteed employment or guaranteed income',
           'Someone asking to take assessments for you',
+          'Selling verified accounts',
           'Requests for passwords',
           'Requests to misrepresent identity',
           'Fake information',
+          'Bypassing identity verification',
           'Unusual upfront payment',
           'Guaranteed platform acceptance',
         ],
+      },
+      {
+        type: 'quiz',
+        id: 'm6q1',
+        question: 'Which profile description is stronger?',
+        options: [
+          { id: 'A', label: 'I know Python.' },
+          { id: 'B', label: 'I have two years of experience using Python for backend APIs and automation scripts.' },
+        ],
+        correct: 'B',
+        explanation: 'Specific, accurate experience is more informative than a vague claim.',
       },
       {
         type: 'cta',

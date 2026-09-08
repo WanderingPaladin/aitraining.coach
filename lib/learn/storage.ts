@@ -11,6 +11,7 @@ export type LocalLearnState = {
   attemptId: string | null;
   answers: Record<string, string>;
   resultId: string | null;
+  passed: boolean;
 };
 
 export function emptyLearnState(): LocalLearnState {
@@ -23,6 +24,7 @@ export function emptyLearnState(): LocalLearnState {
     attemptId: null,
     answers: {},
     resultId: null,
+    passed: false,
   };
 }
 
