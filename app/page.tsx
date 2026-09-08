@@ -127,6 +127,26 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="section learn-home-section shell" id="learn">
+        <div className="section-heading">
+          <h2>Could you evaluate AI responses professionally?</h2>
+          <p>Find out in about an hour. Learn the foundations, practice on realistic examples, take the readiness assessment, and earn a certificate of completion.</p>
+        </div>
+        <ul className="learn-home-benefits">
+          <li>Free course</li>
+          <li>Interactive practice</li>
+          <li>Readiness score</li>
+          <li>Personalized feedback</li>
+          <li>Certificate</li>
+        </ul>
+        <div className="hero-actions">
+          <a className="primary-button" href="/learn">Start free course</a>
+          <a className="secondary-button on-light" href="/learn/ai-training-foundations">See what you’ll learn</a>
+        </div>
+        <p className="learn-home-note">No previous AI-training experience required.</p>
+        <p className="learn-disclaimer">Course completion does not guarantee employment, third-party platform acceptance, projects, or income.</p>
+      </section>
+
       <section className="section audience-section shell">
         <div className="section-heading compact">
           <h2>Who Can Join AI Trainers?</h2>

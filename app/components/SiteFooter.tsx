@@ -11,6 +11,7 @@ export default function SiteFooter() {
         <div>
           <h3>Quick Links</h3>
           <a href="/">Home</a>
+          <a href="/learn">Learn</a>
           <a href="/#how">How It Works</a>
           <a href="/opportunities">Opportunities</a>
           <a href="/#apply">Book a Free Intro Call</a>

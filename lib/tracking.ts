@@ -16,7 +16,19 @@ export type TrackingEventType =
   | 'profile_completed'
   | 'opportunity_viewed'
   | 'opportunity_saved'
-  | 'opportunity_external_clicked';
+  | 'opportunity_external_clicked'
+  | 'course_viewed'
+  | 'course_started'
+  | 'module_started'
+  | 'module_completed'
+  | 'assessment_started'
+  | 'assessment_submitted'
+  | 'assessment_passed'
+  | 'assessment_failed'
+  | 'certificate_generated'
+  | 'certificate_downloaded'
+  | 'opportunities_clicked_from_course'
+  | 'coaching_clicked_from_results';
 
 type TrackEventInput = {
   eventType: TrackingEventType;

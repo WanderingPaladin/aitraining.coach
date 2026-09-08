@@ -2,10 +2,11 @@ import { ArrowUpRight } from 'lucide-react';
 import AccountNav from './AccountNav';
 import Brand from './Brand';
 
-export type NavCurrent = 'home' | 'how' | 'stories' | 'blog' | 'faq' | 'opportunities' | 'profile';
+export type NavCurrent = 'home' | 'how' | 'stories' | 'blog' | 'faq' | 'opportunities' | 'profile' | 'learn';
 
 const links: Array<{ id: NavCurrent; label: string; homeHref: string; href: string; offPage?: boolean }> = [
   { id: 'home', label: 'Home', homeHref: '#top', href: '/' },
+  { id: 'learn', label: 'Learn', homeHref: '/learn', href: '/learn', offPage: true },
   { id: 'opportunities', label: 'Opportunities', homeHref: '/opportunities', href: '/opportunities', offPage: true },
   { id: 'how', label: 'How It Works', homeHref: '#how', href: '/#how' },
   { id: 'faq', label: 'FAQ', homeHref: '#faq', href: '/#faq' },
