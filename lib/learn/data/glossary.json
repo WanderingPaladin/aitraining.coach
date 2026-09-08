@@ -1,0 +1,58 @@
+[
+  {
+    "term": "AI evaluator",
+    "definition": "A human contributor who judges or improves AI-generated outputs using task-specific instructions or rubrics."
+  },
+  {
+    "term": "AI training",
+    "definition": "A broad informal term for data, feedback, evaluation, annotation, and related work used to improve or assess AI systems."
+  },
+  {
+    "term": "Annotation",
+    "definition": "Adding labels, categories, spans, ratings, or other structured information to data."
+  },
+  {
+    "term": "Calibration",
+    "definition": "Matching the confidence of a statement to the strength of the evidence."
+  },
+  {
+    "term": "Constraint",
+    "definition": "A requirement that limits the acceptable form or content of a response."
+  },
+  {
+    "term": "Factuality",
+    "definition": "Whether factual claims in a response are accurate and appropriately supported."
+  },
+  {
+    "term": "Hallucination",
+    "definition": "Generated content that is false, fabricated, or unsupported while being presented as if it were reliable."
+  },
+  {
+    "term": "Instruction following",
+    "definition": "How well a response satisfies explicit requirements in the prompt or rubric."
+  },
+  {
+    "term": "Pairwise comparison",
+    "definition": "Evaluating two responses against the same criteria and selecting the stronger one, or a tie when allowed."
+  },
+  {
+    "term": "Preference data",
+    "definition": "Human judgments that indicate which of multiple outputs is preferred under a specified rubric."
+  },
+  {
+    "term": "Relevance",
+    "definition": "How directly the response addresses the user's actual request."
+  },
+  {
+    "term": "Rubric",
+    "definition": "The criteria or rules used to evaluate a response consistently."
+  },
+  {
+    "term": "Task policy",
+    "definition": "Project-specific rules that control how an evaluator should handle particular cases."
+  },
+  {
+    "term": "Uncertainty",
+    "definition": "A state where evidence is incomplete, conflicting, or insufficient for a confident conclusion."
+  }
+]

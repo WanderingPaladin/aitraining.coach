@@ -1,19 +1,20 @@
 'use client';
 
 import { useEffect } from 'react';
+import course from '../../../lib/learn/data/course-v2.json';
 import { MODULES } from '../../../lib/learn/course';
-import { MODULE_LESSONS } from '../../../lib/learn/content';
 import { trackEvent } from '../../../lib/tracking';
 import { useLearnProgress } from '../../hooks/useLearnProgress';
-import LessonBlocks from './LessonBlocks';
+import LessonBlocks, { type V2QuickCheck, type V2Section } from './LessonBlocks';
 import SaveToast from './SaveToast';
 
 export default function ModuleView({ n }: { n: number }) {
-  const lesson = MODULE_LESSONS.find((item) => item.n === n);
+  const lesson = course.modules.find((item) => item.id === n);
   const meta = MODULES.find((item) => item.n === n);
   const { state, update, saved, ready } = useLearnProgress();
   const prev = n > 1 ? n - 1 : null;
-  const next = n < 6 ? n + 1 : null;
+  const next = n < MODULES.length ? n + 1 : null;
+  const total = MODULES.length;
 
   useEffect(() => {
     if (!lesson || !ready) return;
@@ -52,10 +53,17 @@ export default function ModuleView({ n }: { n: number }) {
             </li>
           ))}
         </ol>
-        <div className="learn-mini-progress" aria-label={`${state.completedModules.length} of 6 modules complete`}>
-          <b>{Math.round((state.completedModules.length / 6) * 100)}% complete</b>
-          <span className="learn-meter"><i style={{ width: `${(state.completedModules.length / 6) * 100}%` }} /></span>
+        <div className="learn-mini-progress" aria-label={`${state.completedModules.length} of ${total} modules complete`}>
+          <b>{Math.round((state.completedModules.length / total) * 100)}% complete</b>
+          <span className="learn-meter"><i style={{ width: `${(state.completedModules.length / total) * 100}%` }} /></span>
         </div>
+        {state.completedModules.includes(3) ? (
+          <p>
+            <a className="secondary-button on-light" href="/learn/ai-training-foundations/practice">
+              Practice labs
+            </a>
+          </p>
+        ) : null}
       </aside>
       <article className="learn-lesson">
         <header className="learn-lesson-head">
@@ -64,13 +72,13 @@ export default function ModuleView({ n }: { n: number }) {
             {' / '}
             <a href="/learn/ai-training-foundations">AI Training Foundations</a>
             {' / '}
-            Module {n}
+            Module {n} · {meta.minutes}
           </p>
           <h1>{meta.title}</h1>
-          <p className="learn-lead">{lesson.intro}</p>
         </header>
         <LessonBlocks
-          blocks={lesson.blocks}
+          sections={lesson.sections as V2Section[]}
+          quickChecks={lesson.quickChecks as V2QuickCheck[]}
           quizResults={state.quizResults}
           onQuiz={(id, ok) => update({ quizResults: { ...state.quizResults, [id]: ok } })}
         />

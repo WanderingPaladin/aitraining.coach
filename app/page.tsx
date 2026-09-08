@@ -130,14 +130,14 @@ export default function Home() {
       <section className="section learn-home-section shell" id="learn">
         <div className="section-heading">
           <h2>Could you evaluate AI responses professionally?</h2>
-          <p>Find out in about an hour. Learn the foundations, practice on realistic examples, take the readiness assessment, and earn a certificate of completion.</p>
+          <p>Find out in about 90 minutes. Learn the foundations, practice on realistic examples, take the readiness assessment, and earn a Certificate of Completion.</p>
         </div>
         <ul className="learn-home-benefits">
-          <li>Free course</li>
+          <li>8 focused modules</li>
           <li>Interactive practice</li>
           <li>Readiness score</li>
           <li>Personalized feedback</li>
-          <li>Certificate</li>
+          <li>Certificate of Completion</li>
         </ul>
         <ol className="learn-home-path">
           <li>Learn</li>

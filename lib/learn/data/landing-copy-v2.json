@@ -1,0 +1,59 @@
+{
+  "hero": {
+    "eyebrow": "FREE BEGINNER COURSE",
+    "title": "AI Training Foundations",
+    "body": "Learn how professional AI evaluation works, practice on realistic examples, test your readiness, and earn a Certificate of Completion.",
+    "badges": [
+      "~90 min core course",
+      "Beginner friendly",
+      "8 modules",
+      "Interactive practice",
+      "Readiness assessment",
+      "Certificate included"
+    ]
+  },
+  "audiences": [
+    {
+      "title": "I'm completely new",
+      "body": "Build the fundamentals before you spend hours applying blindly."
+    },
+    {
+      "title": "I created accounts but feel stuck",
+      "body": "Understand the skills behind common evaluation tasks and practice them systematically."
+    },
+    {
+      "title": "I passed onboarding but have little/no work",
+      "body": "Strengthen transferable evaluation skills while keeping expectations realistic about project availability."
+    },
+    {
+      "title": "I want a structured starting point",
+      "body": "Use one practical path instead of piecing together scattered videos and forum posts."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Do I need coding experience?",
+      "a": "No. The foundations course focuses on general evaluation skills. Some third-party opportunities may require specialist technical or professional expertise."
+    },
+    {
+      "q": "Does the certificate guarantee a job?",
+      "a": "No. It confirms completion of this AITrainers.coach educational program and its internal assessment requirement only."
+    },
+    {
+      "q": "How long does the course take?",
+      "a": "The core path is designed for roughly 80–90 minutes. Optional practice labs can take longer."
+    },
+    {
+      "q": "Can I retake the assessment?",
+      "a": "Yes, after additional practice. Use a reasonable cooldown or attempt policy so the score reflects learning rather than rapid answer memorization."
+    },
+    {
+      "q": "Is this connected to Outlier, DataAnnotation, Handshake, Micro1, or another platform?",
+      "a": "No endorsement or affiliation is implied. The course teaches general evaluation skills and uses original examples."
+    },
+    {
+      "q": "Can non-U.S. learners take it?",
+      "a": "The educational course can be open more broadly, while current coaching and opportunity recommendations may focus on U.S.-eligible participants."
+    }
+  ]
+}

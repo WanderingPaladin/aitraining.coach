@@ -44,8 +44,8 @@ export default function AssessmentClient() {
   useEffect(() => {
     let active = true;
     const local = readLearnState();
-    if (local.completedModules.length < 6 && !local.attemptId) {
-      setError('Complete all six modules before starting the final assessment.');
+    if (local.completedModules.length < 8 && !local.attemptId) {
+        setError('Complete all eight modules before starting the final assessment.');
       setLoading(false);
       return;
     }
@@ -109,6 +109,7 @@ export default function AssessmentClient() {
         eventType: result.passed ? 'assessment_passed' : 'assessment_failed',
         metadata: { score: result.finalScore ?? 0 },
       });
+      if (!result.passed) trackEvent({ eventType: 'assessment_not_passed', metadata: { score: result.finalScore ?? 0 } });
       trackEvent({ eventType: 'assessment_submitted', metadata: { score: result.finalScore ?? 0 } });
       if (result.certificate) trackEvent({ eventType: 'certificate_generated' });
       router.push(`/learn/ai-training-foundations/results/${result.attemptId}`);
@@ -221,7 +222,7 @@ export default function AssessmentClient() {
   return (
     <div className="learn-assessment">
       <header className="learn-assess-head">
-        <p className="learn-kicker">Final assessment · about 15 minutes</p>
+        <p className="learn-kicker">Final assessment · about 20–25 minutes</p>
         <h1 tabIndex={-1} id="learn-question-heading">Question {index + 1} of {questions.length}</h1>
         <div className="learn-meter" aria-valuemin={0} aria-valuemax={questions.length} aria-valuenow={index + 1} role="progressbar" aria-label="Assessment progress">
           <i style={{ width: `${((index + 1) / questions.length) * 100}%` }} />

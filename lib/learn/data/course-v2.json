@@ -1,0 +1,898 @@
+{
+  "slug": "ai-training-foundations",
+  "title": "AI Training Foundations",
+  "version": "2.0",
+  "coreMinutes": 86,
+  "positioning": "Free practical foundation course with optional practice labs, readiness assessment, and Certificate of Completion.",
+  "certificateThreshold": 75,
+  "modules": [
+    {
+      "id": 1,
+      "slug": "roles-tasks-expectations",
+      "title": "AI Training: Roles, Tasks & Expectations",
+      "minutes": 9,
+      "outcomes": [
+        "Explain what human AI evaluation contributes",
+        "Distinguish evaluator work from engineering",
+        "Recognize common task types",
+        "Set realistic expectations about project availability"
+      ],
+      "sections": [
+        {
+          "type": "intro",
+          "heading": "Why humans are still part of AI development",
+          "body": "AI systems can generate fluent text, code, summaries, images, and analyses, but fluency is not the same as quality. Human evaluators help determine whether outputs are useful, accurate, relevant, safe, and aligned with instructions."
+        },
+        {
+          "type": "bullet_list",
+          "heading": "Common human-feedback tasks",
+          "items": [
+            "Choose the stronger of two responses",
+            "Rate an answer against a rubric",
+            "Identify instruction violations",
+            "Flag factual or unsupported claims",
+            "Rewrite a weak answer",
+            "Label or categorize content",
+            "Evaluate specialist work such as coding, math, science, finance, or language"
+          ]
+        },
+        {
+          "type": "comparison",
+          "heading": "Evaluator vs. engineer",
+          "left": {
+            "title": "AI evaluator / trainer",
+            "items": [
+              "Judgment and comparison",
+              "Reading and writing",
+              "Research when permitted",
+              "Applying rubrics consistently",
+              "Explaining decisions"
+            ]
+          },
+          "right": {
+            "title": "AI engineer",
+            "items": [
+              "Software development",
+              "Model/API integration",
+              "Data or ML pipelines",
+              "Infrastructure and deployment",
+              "Experimentation and metrics"
+            ]
+          }
+        },
+        {
+          "type": "key_point",
+          "heading": "The task is usually narrower than the whole product",
+          "body": "An evaluator may be asked to judge one response using one rubric. The goal is not to redesign the AI system; it is to make a careful decision within the task instructions."
+        },
+        {
+          "type": "prompt_example",
+          "heading": "Worked example",
+          "prompt": "Give me three inexpensive vegetarian dinner ideas.",
+          "response": "1. Chicken tacos\\n2. Vegetable pasta\\n3. Lentil soup",
+          "analysis": "The response is well formatted, but chicken violates the vegetarian requirement. A polished response can still fail the task."
+        },
+        {
+          "type": "callout",
+          "heading": "Acceptance is not the same as active work",
+          "body": "Platform eligibility, onboarding, project matching, and actual task availability are different stages. Work can vary by skills, location, demand, and customer requirements."
+        },
+        {
+          "type": "module_summary",
+          "items": [
+            "Human evaluation focuses on output quality and instruction compliance.",
+            "Different projects require different expertise.",
+            "Strong writing does not guarantee factual or instructional correctness.",
+            "Project availability can change even after onboarding."
+          ]
+        }
+      ],
+      "quickChecks": [
+        {
+          "q": "Which is the best example of an AI-evaluation task?",
+          "options": [
+            "Installing a router",
+            "Comparing two model answers against a rubric",
+            "Building a mobile app",
+            "Replacing a hard drive"
+          ],
+          "answer": 1,
+          "why": "Evaluation work focuses on judging model outputs."
+        },
+        {
+          "q": "Does every AI-training project require programming?",
+          "options": [
+            "Yes",
+            "No"
+          ],
+          "answer": 1,
+          "why": "Many projects focus on writing, research, languages, or general reasoning."
+        },
+        {
+          "q": "If a platform accepts you, is continuous work guaranteed?",
+          "options": [
+            "Yes",
+            "No"
+          ],
+          "answer": 1,
+          "why": "Acceptance and project availability are separate."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "slug": "prompts-rubrics-constraints",
+      "title": "Reading Prompts, Rubrics & Constraints",
+      "minutes": 11,
+      "outcomes": [
+        "Break a prompt into testable requirements",
+        "Use a rubric without adding personal preferences",
+        "Distinguish hard constraints from optional preferences",
+        "Notice conflicts and ambiguity"
+      ],
+      "sections": [
+        {
+          "type": "intro",
+          "heading": "Good evaluation begins before reading the answer",
+          "body": "Before judging a response, understand what the user and the rubric actually require. Many mistakes happen because evaluators remember the topic but miss a constraint."
+        },
+        {
+          "type": "term_definition",
+          "term": "Hard constraint",
+          "definition": "A requirement that must be satisfied, such as an exact number of items, a forbidden topic, a maximum length, or a required format."
+        },
+        {
+          "type": "term_definition",
+          "term": "Preference",
+          "definition": "A quality that improves the answer but may not be mandatory unless the prompt or rubric makes it explicit."
+        },
+        {
+          "type": "checklist",
+          "heading": "Constraint decomposition method",
+          "items": [
+            "What is the main task?",
+            "How many outputs/items are required?",
+            "What format is required?",
+            "Who is the audience?",
+            "What content must be included?",
+            "What content must be excluded?",
+            "Are there length, tone, source, date, or language requirements?"
+          ]
+        },
+        {
+          "type": "prompt_example",
+          "heading": "Example: convert the prompt into a checklist",
+          "prompt": "Give exactly three benefits of exercise. Each benefit must be six words or fewer. Do not mention weight loss.",
+          "analysis": "Checklist: exactly 3 benefits; each ≤6 words; no weight-loss reference."
+        },
+        {
+          "type": "response_comparison",
+          "heading": "Compare",
+          "prompt": "Give exactly three benefits of exercise. Each benefit must be six words or fewer. Do not mention weight loss.",
+          "a": "Improves cardiovascular health\\nSupports better sleep quality\\nCan help people lose weight",
+          "b": "Improves cardiovascular health\\nSupports better sleep\\nMay improve mood",
+          "correct": "B",
+          "analysis": "A violates the explicit prohibition on weight loss. B satisfies the main constraints."
+        },
+        {
+          "type": "mini_scenario",
+          "heading": "When instructions conflict",
+          "body": "If a prompt asks for “exactly three sentences” and also “one bullet per idea” but requests five ideas, do not invent a solution silently. In real evaluation work, follow the task-specific policy for ambiguity; when allowed, flag the conflict or choose the interpretation supported by the rubric."
+        },
+        {
+          "type": "module_summary",
+          "items": [
+            "Turn prompts into checklists.",
+            "Prioritize explicit requirements over personal taste.",
+            "Separate hard constraints from preferences.",
+            "Treat ambiguity consistently rather than guessing differently each time."
+          ]
+        }
+      ],
+      "quickChecks": [
+        {
+          "q": "A prompt says “exactly two examples.” The answer gives three excellent examples. Is there an instruction-following issue?",
+          "options": [
+            "Yes",
+            "No"
+          ],
+          "answer": 0,
+          "why": "The count is an explicit constraint."
+        },
+        {
+          "q": "What should you do first with a complex prompt?",
+          "options": [
+            "Read the responses first",
+            "Convert the prompt into requirements",
+            "Choose the longer response",
+            "Focus only on grammar"
+          ],
+          "answer": 1,
+          "why": "Understanding requirements first reduces missed constraints."
+        },
+        {
+          "q": "Which is usually more important?",
+          "options": [
+            "Your personal writing preference",
+            "The explicit rubric"
+          ],
+          "answer": 1,
+          "why": "Evaluation should follow the task criteria, not personal taste."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "slug": "response-quality",
+      "title": "Evaluating Response Quality",
+      "minutes": 12,
+      "outcomes": [
+        "Evaluate instruction following, accuracy, relevance, clarity, completeness, and support",
+        "Distinguish major from minor issues",
+        "Avoid rewarding verbosity automatically",
+        "Recognize when a response is locally correct but globally poor"
+      ],
+      "sections": [
+        {
+          "type": "intro",
+          "heading": "Quality is multidimensional",
+          "body": "A response can be correct but irrelevant, relevant but incomplete, clear but factually wrong, or detailed but instruction-breaking. Strong evaluation considers the dimensions the task actually asks you to judge."
+        },
+        {
+          "type": "rubric",
+          "heading": "Six foundational dimensions",
+          "items": [
+            {
+              "name": "Instruction following",
+              "desc": "Did it do what was requested?"
+            },
+            {
+              "name": "Accuracy",
+              "desc": "Are factual claims correct?"
+            },
+            {
+              "name": "Relevance",
+              "desc": "Does it stay focused on the question?"
+            },
+            {
+              "name": "Clarity",
+              "desc": "Can the intended audience understand it?"
+            },
+            {
+              "name": "Completeness",
+              "desc": "Does it address all required parts?"
+            },
+            {
+              "name": "Support / calibration",
+              "desc": "Are uncertain or strong claims appropriately qualified?"
+            }
+          ]
+        },
+        {
+          "type": "response_comparison",
+          "heading": "Worked comparison",
+          "prompt": "Give me two advantages of remote work. Keep the entire answer under 30 words.",
+          "a": "Remote work can reduce commuting time and provide greater flexibility in where employees perform their work.",
+          "b": "Remote work has many advantages. It eliminates commuting, offers flexible schedules, lowers office expenses, helps employees relocate, and may improve productivity.",
+          "correct": "A",
+          "analysis": "A follows the requested count and stays concise. B contains useful ideas but violates the requested number."
+        },
+        {
+          "type": "key_point",
+          "heading": "Longer is not automatically better",
+          "body": "Extra detail can reduce relevance, violate length constraints, or introduce more opportunities for factual errors."
+        },
+        {
+          "type": "mini_scenario",
+          "heading": "Partial completion",
+          "body": "If a user asks to compare two laptops on price and battery life, and the answer discusses only battery life, the answer may be accurate but incomplete."
+        },
+        {
+          "type": "warning",
+          "heading": "Avoid “vibe scoring”",
+          "body": "Do not choose a response just because it sounds polished, uses sophisticated vocabulary, or agrees with your preferences. Point to observable criteria."
+        },
+        {
+          "type": "module_summary",
+          "items": [
+            "Evaluate the dimensions required by the task.",
+            "A single major instruction violation can outweigh polished writing.",
+            "Accuracy alone is not enough.",
+            "More words do not automatically mean higher quality."
+          ]
+        }
+      ],
+      "quickChecks": [
+        {
+          "q": "Which dimension asks whether the response stays focused on the user’s actual request?",
+          "options": [
+            "Relevance",
+            "Creativity",
+            "Length",
+            "Formatting"
+          ],
+          "answer": 0,
+          "why": "Relevance is about focus and usefulness to the requested task."
+        },
+        {
+          "q": "A response is factually accurate but fails half the requested comparison. What is the clearest issue?",
+          "options": [
+            "Completeness",
+            "Tone",
+            "Spelling",
+            "Creativity"
+          ],
+          "answer": 0,
+          "why": "It does not cover all requested parts."
+        },
+        {
+          "q": "Should a longer response automatically score higher?",
+          "options": [
+            "Yes",
+            "No"
+          ],
+          "answer": 1,
+          "why": "Length can add irrelevant or risky content."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "slug": "compare-rank-responses",
+      "title": "Comparing and Ranking AI Responses",
+      "minutes": 10,
+      "outcomes": [
+        "Make pairwise comparisons systematically",
+        "Explain ties or near-ties",
+        "Separate severity from number of issues",
+        "Write concise ranking justifications"
+      ],
+      "sections": [
+        {
+          "type": "intro",
+          "heading": "Pairwise evaluation is not a popularity contest",
+          "body": "When comparing two answers, judge both against the same requirements. Avoid deciding that one is “better” before checking each response independently."
+        },
+        {
+          "type": "numbered_steps",
+          "heading": "A reliable comparison workflow",
+          "items": [
+            "Extract prompt constraints",
+            "Evaluate Response A independently",
+            "Evaluate Response B independently",
+            "Identify the most important differences",
+            "Compare issue severity, not just issue count",
+            "Choose A, B, or tie if the rubric allows",
+            "Write a short evidence-based justification"
+          ]
+        },
+        {
+          "type": "key_point",
+          "heading": "One major error can matter more than several minor ones",
+          "body": "A response with perfect formatting but a critical factual error may be worse than a response with a small style issue."
+        },
+        {
+          "type": "response_comparison",
+          "heading": "Example",
+          "prompt": "Explain photosynthesis in one sentence for a 10-year-old.",
+          "a": "Photosynthesis is the biochemical process through which photoautotrophic organisms synthesize glucose using electromagnetic radiation.",
+          "b": "Photosynthesis is how plants use sunlight to make the food they need to grow.",
+          "correct": "B",
+          "analysis": "B better matches the requested audience while remaining broadly accurate and concise."
+        },
+        {
+          "type": "framework",
+          "heading": "Justification template",
+          "items": [
+            "Decision: Response B is stronger.",
+            "Evidence: It uses age-appropriate language while A relies on technical jargon.",
+            "Impact: It better satisfies the user's audience requirement."
+          ]
+        },
+        {
+          "type": "reflection",
+          "heading": "Tie discipline",
+          "body": "If both responses satisfy the rubric similarly, do not invent a difference just to avoid a tie. Use the task's tie policy."
+        },
+        {
+          "type": "module_summary",
+          "items": [
+            "Evaluate A and B independently first.",
+            "Compare issue severity.",
+            "Support rankings with specific evidence.",
+            "Use ties only when the rubric permits and the quality is genuinely similar."
+          ]
+        }
+      ],
+      "quickChecks": [
+        {
+          "q": "Which is the best first step in pairwise evaluation?",
+          "options": [
+            "Pick the more fluent answer",
+            "Extract the prompt constraints",
+            "Count the words",
+            "Choose the shorter answer"
+          ],
+          "answer": 1,
+          "why": "The constraints define what success means."
+        },
+        {
+          "q": "A has one major factual error. B has two minor style issues. Which can reasonably be better?",
+          "options": [
+            "A because it has fewer issues",
+            "B because severity matters",
+            "Always tie"
+          ],
+          "answer": 1,
+          "why": "Issue severity matters more than raw issue count."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "slug": "factuality-research",
+      "title": "Factuality, Research & Hallucinations",
+      "minutes": 13,
+      "outcomes": [
+        "Identify verifiable claims",
+        "Distinguish fact, opinion, and prediction",
+        "Recognize unsupported certainty",
+        "Use source quality appropriately when research is permitted"
+      ],
+      "sections": [
+        {
+          "type": "intro",
+          "heading": "Fluent language can hide weak factual grounding",
+          "body": "AI can generate plausible names, dates, quotations, statistics, citations, or explanations that are wrong. Evaluators must learn which claims deserve verification."
+        },
+        {
+          "type": "bullet_list",
+          "heading": "High-verification claims",
+          "items": [
+            "Exact dates",
+            "Statistics",
+            "Names and titles",
+            "Legal requirements",
+            "Medical or financial claims",
+            "Scientific findings",
+            "Quotations",
+            "Current events",
+            "Prices and product specs",
+            "Claims about what a company currently offers"
+          ]
+        },
+        {
+          "type": "comparison",
+          "heading": "Fact, opinion, prediction",
+          "left": {
+            "title": "Verifiable factual claim",
+            "items": [
+              "The film was released in 1999.",
+              "The policy took effect on January 1."
+            ]
+          },
+          "right": {
+            "title": "Subjective / predictive",
+            "items": [
+              "The film is boring.",
+              "This company will definitely dominate next year."
+            ]
+          }
+        },
+        {
+          "type": "prompt_example",
+          "heading": "Mixed-quality claim",
+          "prompt": "Evaluate this statement.",
+          "response": "Alexander Graham Bell invented the telephone in 1876 and was the only person developing telephone technology at the time.",
+          "analysis": "The second clause is an overbroad historical claim. A response can contain both reasonable and misleading components."
+        },
+        {
+          "type": "checklist",
+          "heading": "When research is allowed",
+          "items": [
+            "Identify the exact claim to verify",
+            "Prefer primary or authoritative sources",
+            "Check publication/update date for current claims",
+            "Distinguish source evidence from your interpretation",
+            "Do not use one weak source to support an extraordinary claim",
+            "If reliable verification is unavailable, reflect uncertainty rather than inventing certainty"
+          ]
+        },
+        {
+          "type": "warning",
+          "heading": "High-stakes domains need extra care",
+          "body": "Medical, legal, financial, and safety claims often require careful sourcing and appropriate uncertainty. The evaluator should follow the task's domain-specific rubric."
+        },
+        {
+          "type": "module_summary",
+          "items": [
+            "Identify which claims are verifiable.",
+            "Confidence is not evidence.",
+            "Check current claims against current sources when research is allowed.",
+            "Qualify uncertainty instead of inventing certainty."
+          ]
+        }
+      ],
+      "quickChecks": [
+        {
+          "q": "Which statement most clearly needs verification?",
+          "options": [
+            "Blue can feel calming.",
+            "U.S. unemployment was exactly 4.1% in June.",
+            "I prefer remote work."
+          ],
+          "answer": 1,
+          "why": "It is a precise externally verifiable statistic."
+        },
+        {
+          "q": "If a quote cannot be found in reliable sources, what is a reasonable concern?",
+          "options": [
+            "It may be fabricated or misattributed",
+            "It is definitely true",
+            "Quotes never need checking",
+            "Length is the only issue"
+          ],
+          "answer": 0,
+          "why": "AI systems can invent or misattribute quotes."
+        },
+        {
+          "q": "What is generally preferable for verifying a current government rule?",
+          "options": [
+            "An old forum post",
+            "The current official government source",
+            "A random social comment",
+            "A product advertisement"
+          ],
+          "answer": 1,
+          "why": "Primary authoritative sources are stronger for current rules."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "slug": "writing-style-justifications",
+      "title": "Writing, Style & Evaluation Justifications",
+      "minutes": 10,
+      "outcomes": [
+        "Write specific, neutral justifications",
+        "Evaluate audience and tone",
+        "Separate style preferences from rubric violations",
+        "Use evidence instead of vague criticism"
+      ],
+      "sections": [
+        {
+          "type": "intro",
+          "heading": "A good decision is easier to trust when the reasoning is clear",
+          "body": "Many evaluation tasks ask for a short explanation. The goal is not to write an essay; it is to identify the most important evidence supporting your judgment."
+        },
+        {
+          "type": "framework",
+          "heading": "Decision → Evidence → Impact",
+          "items": [
+            "Decision: state which response is stronger or what issue exists",
+            "Evidence: identify the exact detail",
+            "Impact: explain why that detail matters under the rubric"
+          ]
+        },
+        {
+          "type": "comparison",
+          "heading": "Weak vs. strong feedback",
+          "left": {
+            "title": "Weak",
+            "items": [
+              "A is better.",
+              "B feels weird.",
+              "This is bad."
+            ]
+          },
+          "right": {
+            "title": "Strong",
+            "items": [
+              "Response A is stronger because it answers both requested parts, while Response B addresses only the first.",
+              "The response uses technical jargon even though the user requested a beginner explanation."
+            ]
+          }
+        },
+        {
+          "type": "bullet_list",
+          "heading": "Good evaluation writing is",
+          "items": [
+            "Specific",
+            "Evidence-based",
+            "Concise",
+            "Neutral",
+            "Tied to the rubric"
+          ]
+        },
+        {
+          "type": "mini_scenario",
+          "heading": "Tone and audience",
+          "body": "If the user asks for a professional email, slang may be inappropriate even if the message is understandable. If the user asks for a friendly text to a close friend, a highly formal tone may be less suitable."
+        },
+        {
+          "type": "warning",
+          "heading": "Do not over-penalize harmless style differences",
+          "body": "If the rubric does not care whether a response uses bullets or short paragraphs, your personal preference should not become a quality defect."
+        },
+        {
+          "type": "module_summary",
+          "items": [
+            "Explain the most important reason, not every possible nitpick.",
+            "Use evidence from the response.",
+            "Keep tone neutral.",
+            "Differentiate rubric violations from personal style preferences."
+          ]
+        }
+      ],
+      "quickChecks": [
+        {
+          "q": "Which feedback is stronger?",
+          "options": [
+            "This is probably wrong.",
+            "The response does not answer the second part of the user's question."
+          ],
+          "answer": 1,
+          "why": "It identifies a specific observable issue."
+        },
+        {
+          "q": "Should personal preference override the rubric?",
+          "options": [
+            "Yes",
+            "No"
+          ],
+          "answer": 1,
+          "why": "Evaluation should follow the rubric."
+        },
+        {
+          "q": "What comes after evidence in the suggested framework?",
+          "options": [
+            "Impact",
+            "Emotion",
+            "Length",
+            "Personal preference"
+          ],
+          "answer": 0,
+          "why": "Decision → Evidence → Impact."
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "slug": "safety-uncertainty-judgment",
+      "title": "Safety, Uncertainty & Responsible Judgment",
+      "minutes": 10,
+      "outcomes": [
+        "Recognize when a response needs cautious handling",
+        "Understand calibration and uncertainty",
+        "Avoid overclaiming expertise",
+        "Know when a task-specific safety rubric should control the decision"
+      ],
+      "sections": [
+        {
+          "type": "intro",
+          "heading": "Some answers carry more risk than others",
+          "body": "A minor wording issue in a recipe is different from an unsupported claim about medication, legal obligations, finances, or physical safety. Evaluation should account for the task's safety requirements and potential impact."
+        },
+        {
+          "type": "term_definition",
+          "term": "Calibration",
+          "definition": "Matching the confidence of a statement to the strength of the available evidence."
+        },
+        {
+          "type": "comparison",
+          "heading": "Overconfident vs. calibrated",
+          "left": {
+            "title": "Overconfident",
+            "items": [
+              "This definitely means you have condition X.",
+              "This investment cannot lose money."
+            ]
+          },
+          "right": {
+            "title": "Calibrated",
+            "items": [
+              "That symptom can have multiple causes; a qualified clinician can assess it.",
+              "Investments involve risk, and returns are not guaranteed."
+            ]
+          }
+        },
+        {
+          "type": "checklist",
+          "heading": "Responsible evaluation questions",
+          "items": [
+            "Is this high-stakes?",
+            "Does the response claim certainty without evidence?",
+            "Does it encourage unsafe or deceptive behavior?",
+            "Does it misrepresent professional expertise?",
+            "Does the task include a specific safety policy?"
+          ]
+        },
+        {
+          "type": "key_point",
+          "heading": "Follow the task-specific policy",
+          "body": "General intuition is not a substitute for the explicit safety or domain rubric supplied by a project."
+        },
+        {
+          "type": "mini_scenario",
+          "heading": "Uncertainty",
+          "body": "If reliable sources disagree or information is incomplete, a response that clearly communicates uncertainty can be better than one that invents a definitive answer."
+        },
+        {
+          "type": "module_summary",
+          "items": [
+            "Risk level matters.",
+            "Confidence should match evidence.",
+            "High-stakes claims deserve extra scrutiny.",
+            "Use the project's safety/domain policy as the source of truth."
+          ]
+        }
+      ],
+      "quickChecks": [
+        {
+          "q": "Which statement is better calibrated?",
+          "options": [
+            "This investment cannot lose money.",
+            "This investment carries risk and returns are not guaranteed."
+          ],
+          "answer": 1,
+          "why": "It acknowledges uncertainty and risk."
+        },
+        {
+          "q": "In a high-stakes task, what should control the evaluation?",
+          "options": [
+            "Your intuition alone",
+            "The task's safety/domain rubric",
+            "The longest answer",
+            "The most confident tone"
+          ],
+          "answer": 1,
+          "why": "The explicit rubric is the source of truth."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "slug": "workflow-quality-getting-started",
+      "title": "Task Workflow, Quality & Getting Started",
+      "minutes": 11,
+      "outcomes": [
+        "Use a repeatable task workflow",
+        "Reduce avoidable quality mistakes",
+        "Represent skills accurately",
+        "Recognize common opportunity and account red flags"
+      ],
+      "sections": [
+        {
+          "type": "intro",
+          "heading": "Consistency is a skill",
+          "body": "Strong evaluators do not rely only on intuition. They use repeatable steps so that similar cases receive similar treatment."
+        },
+        {
+          "type": "numbered_steps",
+          "heading": "A simple evaluation workflow",
+          "items": [
+            "Read the task instructions",
+            "Extract constraints and rubric criteria",
+            "Review the full response before scoring",
+            "Check the highest-impact issues first",
+            "Verify claims when the task permits and requires it",
+            "Make the rating/choice",
+            "Write a concise justification if required",
+            "Review the submission for missed constraints"
+          ]
+        },
+        {
+          "type": "checklist",
+          "heading": "Before a timed assessment",
+          "items": [
+            "Read all instructions first",
+            "Understand time limits",
+            "Review provided examples",
+            "Use a stable connection",
+            "Reduce distractions",
+            "Do not rush easy-looking questions",
+            "Check answers before submitting"
+          ]
+        },
+        {
+          "type": "comparison",
+          "heading": "Describe skills accurately",
+          "left": {
+            "title": "Weak",
+            "items": [
+              "I know Python."
+            ]
+          },
+          "right": {
+            "title": "Better",
+            "items": [
+              "I have two years of experience using Python for backend APIs, automation scripts, and data-processing tasks."
+            ]
+          }
+        },
+        {
+          "type": "bullet_list",
+          "heading": "Track your applications",
+          "items": [
+            "Platform / company",
+            "Date applied",
+            "Assessment status",
+            "Current status",
+            "Last update",
+            "Relevant specialty"
+          ]
+        },
+        {
+          "type": "warning",
+          "heading": "Red flags",
+          "body": "Be cautious with guaranteed acceptance, guaranteed income, account selling, identity misrepresentation, someone offering to complete assessments for you, password requests, or promises of continuous tasks."
+        },
+        {
+          "type": "key_point",
+          "heading": "Keep expectations realistic",
+          "body": "Completing this course or a third-party onboarding process does not guarantee work. Use the course to improve your judgment and decision-making, not as a promise of income."
+        },
+        {
+          "type": "module_summary",
+          "items": [
+            "Use a repeatable process.",
+            "Accuracy and consistency matter more than speed alone.",
+            "Represent qualifications honestly.",
+            "Avoid shortcuts that violate platform or identity rules."
+          ]
+        }
+      ],
+      "quickChecks": [
+        {
+          "q": "What should happen before scoring a response?",
+          "options": [
+            "Read the task instructions and extract criteria",
+            "Guess from the first sentence",
+            "Choose the longer answer",
+            "Skip the rubric"
+          ],
+          "answer": 0,
+          "why": "The task criteria define the evaluation."
+        },
+        {
+          "q": "Which profile statement is more useful?",
+          "options": [
+            "I know Python.",
+            "I have two years using Python for backend APIs and automation."
+          ],
+          "answer": 1,
+          "why": "Specific, accurate experience communicates fit better."
+        },
+        {
+          "q": "Which is a red flag?",
+          "options": [
+            "A platform asks you to read task instructions",
+            "Someone guarantees account acceptance for payment",
+            "A course provides practice examples",
+            "A company lists eligibility requirements"
+          ],
+          "answer": 1,
+          "why": "Guaranteed acceptance for payment is a serious warning sign."
+        }
+      ]
+    }
+  ],
+  "landingOutcomes": [
+    "Break complex prompts into clear requirements",
+    "Evaluate instruction following, accuracy, relevance, clarity, and completeness",
+    "Compare two AI responses systematically",
+    "Identify factual claims that require verification",
+    "Recognize hallucinations and unsupported certainty",
+    "Write concise evidence-based evaluation justifications",
+    "Apply responsible judgment to higher-risk content",
+    "Use a repeatable workflow for assessments and project tasks"
+  ],
+  "journey": [
+    "Learn",
+    "Practice",
+    "Assessment",
+    "Results",
+    "Certificate"
+  ],
+  "disclaimer": "This educational program does not guarantee employment, third-party platform acceptance, project availability, or income."
+}

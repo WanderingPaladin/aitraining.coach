@@ -1,6 +1,6 @@
 import { COURSE_SLUG, MODULES } from './course';
 
-const KEY = `ait.learn.${COURSE_SLUG}.v1`;
+const KEY = `ait.learn.${COURSE_SLUG}.v2`;
 
 export type LocalLearnState = {
   currentModule: number;
@@ -50,7 +50,7 @@ export function writeLearnState(patch: Partial<LocalLearnState>): LocalLearnStat
 }
 
 function uniqueSorted(values: number[]) {
-  return [...new Set(values.filter((value) => value >= 1 && value <= 6))].sort((a, b) => a - b);
+  return [...new Set(values.filter((value) => value >= 1 && value <= 8))].sort((a, b) => a - b);
 }
 
 function asQuizResults(value: unknown): Record<string, boolean> {

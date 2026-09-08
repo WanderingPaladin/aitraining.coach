@@ -7,7 +7,7 @@ const courseJsonLd = {
   '@type': 'Course',
   name: 'AI Training Foundations',
   description:
-    'Learn the foundations of AI training, practice evaluating AI responses, complete a readiness assessment, and earn a certificate of completion.',
+    'Learn the foundations of AI evaluation through practical examples, interactive practice, a readiness assessment, and a Certificate of Completion.',
   provider: { '@type': 'Organization', name: 'AITrainers.coach', url: 'https://aitrainers.coach' },
   isAccessibleForFree: true,
   educationalCredentialAwarded: 'Certificate of Completion',
@@ -16,7 +16,7 @@ const courseJsonLd = {
 export const metadata: Metadata = {
   title: 'Free AI Training Foundations Course | AITrainers.coach',
   description:
-    'Learn the foundations of AI training, practice evaluating AI responses, complete a readiness assessment, and earn a certificate of completion.',
+    'Learn the foundations of AI evaluation through practical examples, interactive practice, a readiness assessment, and a Certificate of Completion.',
   icons: siteIcons,
   openGraph: {
     title: 'AI Training Foundations',

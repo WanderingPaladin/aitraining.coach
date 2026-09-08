@@ -2,43 +2,125 @@
 
 import CompareCard from './CompareCard';
 import QuizCard from './QuizCard';
-import type { LessonBlock } from '../../../lib/learn/content';
+
+export type V2Section = {
+  type: string;
+  heading?: string;
+  body?: string;
+  items?: string[];
+  left?: { title: string; items: string[] };
+  right?: { title: string; items: string[] };
+  prompt?: string;
+  response?: string;
+  analysis?: string;
+  a?: string;
+  b?: string;
+  correct?: string;
+  term?: string;
+  definition?: string;
+};
+
+export type V2QuickCheck = {
+  q: string;
+  options: string[];
+  answer: number;
+  why: string;
+};
+
+function letters(index: number) {
+  return String.fromCharCode(65 + index);
+}
 
 export default function LessonBlocks({
-  blocks,
+  sections,
+  quickChecks,
   quizResults,
   onQuiz,
 }: {
-  blocks: LessonBlock[];
+  sections: V2Section[];
+  quickChecks: V2QuickCheck[];
   quizResults: Record<string, boolean>;
   onQuiz: (id: string, ok: boolean) => void;
 }) {
   return (
     <div className="learn-blocks">
-      {blocks.map((block, index) => {
-        if (block.type === 'p') return <p key={index}>{block.text}</p>;
-        if (block.type === 'h') return <h2 key={index}>{block.text}</h2>;
-        if (block.type === 'callout') {
+      {sections.map((block, index) => {
+        if (block.type === 'intro' || block.type === 'key_point' || block.type === 'mini_scenario' || block.type === 'reflection') {
           return (
-            <aside key={index} className={`learn-callout is-${block.tone ?? 'note'}`}>
-              {block.title ? <strong>{block.title}</strong> : null}
-              <p>{block.text}</p>
+            <section key={index}>
+              {block.heading ? <h2>{block.heading}</h2> : null}
+              {block.body ? <p>{block.body}</p> : null}
+            </section>
+          );
+        }
+        if (block.type === 'callout' || block.type === 'warning') {
+          return (
+            <aside key={index} className={`learn-callout ${block.type === 'warning' ? 'is-warn' : 'is-note'}`}>
+              {block.heading ? <strong>{block.heading}</strong> : null}
+              <p>{block.body}</p>
             </aside>
           );
         }
-        if (block.type === 'list') {
+        if (block.type === 'bullet_list' || block.type === 'module_summary' || block.type === 'checklist' || block.type === 'rubric' || block.type === 'framework') {
           return (
-            <ul key={index} className="learn-list">
-              {block.items.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
+            <section key={index}>
+              {block.heading ? <h2>{block.heading}</h2> : null}
+              {block.type === 'module_summary' ? <p className="learn-kicker">Module summary</p> : null}
+              <ul className={block.type === 'checklist' || block.type === 'rubric' ? 'learn-checklist' : 'learn-list'}>
+                {(block.items ?? []).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </section>
           );
         }
-        if (block.type === 'example') {
+        if (block.type === 'numbered_steps') {
+          return (
+            <section key={index}>
+              {block.heading ? <h2>{block.heading}</h2> : null}
+              <ol className="learn-list">
+                {(block.items ?? []).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ol>
+            </section>
+          );
+        }
+        if (block.type === 'comparison' && block.left && block.right) {
+          return (
+            <section key={index} className="learn-split">
+              {block.heading ? <h2 className="learn-split-title">{block.heading}</h2> : null}
+              <article>
+                <h3>{block.left.title}</h3>
+                <ul className="learn-list">
+                  {block.left.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+              <article>
+                <h3>{block.right.title}</h3>
+                <ul className="learn-list">
+                  {block.right.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+            </section>
+          );
+        }
+        if (block.type === 'term_definition') {
+          return (
+            <aside key={index} className="learn-callout is-tip">
+              <strong>{block.term}</strong>
+              <p>{block.definition}</p>
+            </aside>
+          );
+        }
+        if (block.type === 'prompt_example') {
           return (
             <figure key={index} className="learn-example">
-              {block.title ? <figcaption>{block.title}</figcaption> : null}
+              {block.heading ? <figcaption>{block.heading}</figcaption> : null}
               {block.prompt ? (
                 <>
                   <p className="learn-prompt-label">Prompt</p>
@@ -48,81 +130,41 @@ export default function LessonBlocks({
               {block.response ? (
                 <>
                   <p className="learn-prompt-label">Response</p>
-                  <pre className="learn-response">{block.response}</pre>
+                  <pre className="learn-response">{String(block.response).replace(/\\n/g, '\n')}</pre>
                 </>
               ) : null}
-              {block.note ? <p className="learn-note">{block.note}</p> : null}
+              {block.analysis ? <p className="learn-note">{block.analysis}</p> : null}
             </figure>
           );
         }
-        if (block.type === 'checklist') {
-          return (
-            <ul key={index} className="learn-checklist">
-              {block.title ? <li className="learn-checklist-title">{block.title}</li> : null}
-              {block.items.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          );
-        }
-        if (block.type === 'compare') {
+        if (block.type === 'response_comparison') {
           return (
             <CompareCard
               key={index}
               prompt={block.prompt}
-              a={block.a}
-              b={block.b}
-              correct={block.correct}
-              why={block.why}
+              a={String(block.a ?? '').replace(/\\n/g, '\n')}
+              b={String(block.b ?? '').replace(/\\n/g, '\n')}
+              correct={(block.correct === 'B' ? 'B' : 'A') as 'A' | 'B'}
+              why={block.analysis ?? ''}
             />
           );
         }
-        if (block.type === 'quiz') {
-          return (
-            <QuizCard
-              key={block.id}
-              id={block.id}
-              question={block.question}
-              options={block.options}
-              correct={block.correct}
-              explanation={block.explanation}
-              selected={quizResults[block.id] ? block.correct : undefined}
-              onAnswer={onQuiz}
-            />
-          );
-        }
-        if (block.type === 'table') {
-          return (
-            <div key={index} className="learn-table-wrap">
-              <table className="learn-table">
-                <thead>
-                  <tr>
-                    {block.headers.map((header) => (
-                      <th key={header} scope="col">
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {block.rows.map((row) => (
-                    <tr key={row.join('-')}>
-                      {row.map((cell) => (
-                        <td key={cell}>{cell}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
-        }
+        return block.body ? <p key={index}>{block.body}</p> : null;
+      })}
+      {quickChecks.map((item, index) => {
+        const id = `qc-${index}-${item.q.slice(0, 24)}`;
+        const correct = letters(item.answer);
         return (
-          <p key={index} className="learn-inline-cta">
-            <a className="primary-button" href={block.href}>
-              {block.label}
-            </a>
-          </p>
+          <QuizCard
+            key={id}
+            id={id}
+            question={item.q}
+            options={item.options.map((label, optionIndex) => ({ id: letters(optionIndex), label }))}
+            correct={correct}
+            explanation={item.why}
+            selected={quizResults[id] ? correct : undefined}
+            onAnswer={onQuiz}
+          />
         );
       })}
     </div>

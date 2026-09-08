@@ -50,17 +50,27 @@ export default function CourseDashboard() {
             </li>
           );
         })}
-        <li className={`learn-module-card ${state.completedModules.length >= 6 ? 'is-in_progress' : 'is-locked'}`}>
+        <li className="learn-module-card">
           <div>
-            <span className="learn-module-num">07</span>
+            <span className="learn-module-num">Labs</span>
+            <h2>Practice labs</h2>
+            <p>Optional · recommended after module 3</p>
+          </div>
+          <a className="secondary-button on-light" href="/learn/ai-training-foundations/practice">
+            Open labs
+          </a>
+        </li>
+        <li className={`learn-module-card ${state.completedModules.length >= 8 ? 'is-in_progress' : 'is-locked'}`}>
+          <div>
+            <span className="learn-module-num">Test</span>
             <h2>Final Assessment</h2>
-            <p>15 min</p>
+            <p>~20–25 min · 24 questions + 2 practicals</p>
           </div>
           <div className="learn-module-meta">
             <span className="learn-status">
-              {state.resultId ? 'Submitted' : state.completedModules.length >= 6 ? 'Ready' : 'Locked'}
+              {state.resultId ? 'Submitted' : state.completedModules.length >= 8 ? 'Ready' : 'Locked'}
             </span>
-            {state.completedModules.length >= 6 || state.attemptId ? (
+            {state.completedModules.length >= 8 || state.attemptId ? (
               <a className="primary-button" href="/learn/ai-training-foundations/assessment">
                 {state.resultId ? 'Retake assessment' : 'Start assessment'}
               </a>
@@ -71,7 +81,7 @@ export default function CourseDashboard() {
         </li>
         <li className={`learn-module-card ${state.passed && state.resultId ? 'is-complete' : 'is-locked'}`}>
           <div>
-            <span className="learn-module-num">08</span>
+            <span className="learn-module-num">Cert</span>
             <h2>Certificate</h2>
             <p>Unlocked after passing the assessment</p>
           </div>

@@ -3375,8 +3375,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
 
 .learn-hero { position: relative; z-index: 2; padding: 12px 0 64px; }
 .learn-hero h1 {
-  margin: 0; max-width: 720px; font-size: clamp(40px, 6vw, 64px);
-  line-height: 1.02; letter-spacing: -0.04em;
+  margin: 0; max-width: 720px; font-size: clamp(40px, 4vw, 56px);
+  line-height: 1.08; letter-spacing: -0.04em;
 }
 .learn-hero-actions { margin-top: 28px; }
 .learn-chips, .learn-home-benefits {
@@ -3418,6 +3418,15 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
 .learn-disclaimer { margin-top: 18px; font-size: 13px; }
 .learn-home-section .hero-actions { margin-top: 18px; }
 .learn-home-note { margin-top: 12px; color: #2455df; font-weight: 650; }
+.learn-hero-note { margin: 16px 0 0; color: rgba(226,232,240,0.78); font-size: 14px; }
+.learn-landing-main { display: grid; gap: 56px; }
+.learn-lesson { max-width: 760px; }
+.learn-blocks p, .learn-list, .learn-checklist { color: #334155; font-size: 16px; line-height: 1.65; }
+.learn-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.learn-split-title { grid-column: 1 / -1; margin: 0; }
+.learn-faq { display: grid; gap: 16px; }
+.learn-faq dt { margin: 0; font-weight: 600; }
+.learn-faq dd { margin: 6px 0 0; color: #475569; }
 .learn-kicker {
   margin: 0 0 8px; color: #2455df; text-transform: uppercase; letter-spacing: 0.12em;
   font-size: 11px; font-weight: 700;

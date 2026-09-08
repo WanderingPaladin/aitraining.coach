@@ -117,6 +117,9 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
         >
           View recommended opportunities
         </a>
+        <a className="secondary-button on-light" href="/learn/ai-training-foundations/practice">
+          Practice my weakest skill
+        </a>
         <a
           className="secondary-button on-light"
           href="/#apply"
