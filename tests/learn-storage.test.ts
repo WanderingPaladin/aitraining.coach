@@ -70,6 +70,17 @@ describe('practice labs sidebar CTA', () => {
   });
 });
 
+describe('module next-step sequence', () => {
+  it('uses learner state when computing the last module CTA', () => {
+    assert.match(sequence, /const completedModules = input\.state\.completedModules\.includes\(currentN\)/);
+    assert.match(sequence, /return assessmentAction\(\{ \.\.\.input\.state, completedModules \}\)/);
+    assert.doesNotMatch(
+      sequence,
+      /const completedModules = state\.completedModules\.includes\(currentN\)/,
+    );
+  });
+});
+
 describe('practice lab completion and next step', () => {
   it('derives lab order from practical-scenarios.json', () => {
     const labs = practiceLabs();

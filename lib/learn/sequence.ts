@@ -146,10 +146,10 @@ export function getNextLearningStep(input: {
         label: `Continue to Module ${nextModule.n} →`,
       };
     }
-    const completedModules = state.completedModules.includes(currentN)
-      ? state.completedModules
-      : [...state.completedModules, currentN];
-    return assessmentAction({ ...state, completedModules });
+    const completedModules = input.state.completedModules.includes(currentN)
+      ? input.state.completedModules
+      : [...input.state.completedModules, currentN];
+    return assessmentAction({ ...input.state, completedModules });
   }
 
   if (input.currentType === 'practice') {
