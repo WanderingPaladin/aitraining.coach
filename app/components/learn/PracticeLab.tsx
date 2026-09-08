@@ -8,9 +8,9 @@ import { courseBackAction, getNextLearningStep, labSlug } from '../../../lib/lea
 import { isLabComplete, markLabCompleteLocal } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
 import { useLearnProgress } from '../../hooks/useLearnProgress';
-import CompareCard from './CompareCard';
 import CourseNav from './CourseNav';
 import LearnShell from './LearnShell';
+import PracticeExercise, { type PracticeScenario } from './PracticeExercise';
 
 export default function PracticeLab({ labId }: { labId: string }) {
   const items = useMemo(
@@ -20,7 +20,9 @@ export default function PracticeLab({ labId }: { labId: string }) {
   const { state, updateAndPersist, ready } = useLearnProgress();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [answered, setAnswered] = useState<Record<string, boolean>>({});
   const complete = items[0] ? isLabComplete(state, labSlug(items[0].lab)) : false;
+  const allAnswered = items.length > 0 && items.every((item) => answered[item.id]);
 
   useEffect(() => {
     if (items[0]) trackEvent({ eventType: 'practice_started', metadata: { lab: items[0].lab } });
@@ -49,8 +51,7 @@ export default function PracticeLab({ labId }: { labId: string }) {
   const next = getNextLearningStep({ currentType: 'practice', currentId: slug, state });
 
   async function markComplete() {
-    if (saving) return;
-    if (complete) return;
+    if (saving || complete || !allAnswered) return;
     setSaving(true);
     setError('');
     try {
@@ -75,31 +76,16 @@ export default function PracticeLab({ labId }: { labId: string }) {
             {labTitle}
           </p>
           <h1>{labTitle}</h1>
-          {items.map((item) => {
-            if (item.responseA && item.responseB && (item.preferred === 'A' || item.preferred === 'B')) {
-              return (
-                <CompareCard
-                  key={item.id}
-                  prompt={item.prompt}
-                  a={item.responseA.replace(/\\n/g, '\n')}
-                  b={item.responseB.replace(/\\n/g, '\n')}
-                  correct={item.preferred}
-                  why={item.explanation}
-                />
-              );
-            }
-            return (
-              <section key={item.id} className="learn-example">
-                <p className="learn-prompt">{item.prompt}</p>
-                <p className="learn-note">{item.explanation}</p>
-                <ul className="learn-checklist">
-                  {item.rubric.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              </section>
-            );
-          })}
+          {items.map((item) => (
+            <PracticeExercise
+              key={item.id}
+              item={item as PracticeScenario}
+              onAnswered={() => setAnswered((current) => ({ ...current, [item.id]: true }))}
+            />
+          ))}
+          {!complete && !allAnswered ? (
+            <p className="learn-hint">Answer the exercise to mark this lab complete.</p>
+          ) : null}
           {complete ? (
             <div className="learn-lab-complete" role="status">
               <p className="learn-feedback is-ok">
@@ -121,7 +107,7 @@ export default function PracticeLab({ labId }: { labId: string }) {
                 : {
                     label: saving ? 'Saving…' : error ? 'Try again' : 'Mark lab complete',
                     onClick: () => void markComplete(),
-                    disabled: saving || !ready,
+                    disabled: saving || !ready || !allAnswered,
                   }
             }
           />

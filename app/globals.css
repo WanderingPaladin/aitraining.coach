@@ -3811,6 +3811,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
   width: 100%; min-height: 44px; padding: 10px 12px; border-radius: 12px; border: 1px solid #d7deee; font: inherit;
 }
 .learn-question textarea { min-height: 120px; }
+.learn-question label { display: grid; gap: 8px; font-size: 14px; font-weight: 650; }
 .learn-lead-form { display: grid; gap: 12px; }
 .learn-lead-form label, .learn-lead-form fieldset { display: grid; gap: 6px; font-size: 14px; font-weight: 650; }
 .learn-lead-form label span { font-weight: 500; color: #66708b; }

@@ -11,6 +11,7 @@ export default function QuizCard({
   explanation,
   selected,
   onAnswer,
+  kicker = 'Quick check',
 }: {
   id: string;
   question: string;
@@ -19,6 +20,7 @@ export default function QuizCard({
   explanation: string;
   selected?: string | boolean | null;
   onAnswer: (id: string, ok: boolean) => void;
+  kicker?: string;
 }) {
   const choice = typeof selected === 'string' ? selected : null;
   const [picked, setPicked] = useState<string | null>(choice);
@@ -27,7 +29,7 @@ export default function QuizCard({
 
   return (
     <section className="learn-quiz" aria-labelledby={`${id}-q`}>
-      <p className="learn-kicker">Quick check</p>
+      {kicker ? <p className="learn-kicker">{kicker}</p> : null}
       <h3 id={`${id}-q`}>{question}</h3>
       <div className="learn-option-list" role="group" aria-label={question}>
         {options.map((option) => {

@@ -112,6 +112,19 @@ describe('practice lab completion and next step', () => {
     assert.match(practiceLab, /getNextLearningStep/);
     assert.match(practiceLab, /We couldn't save your completion/);
     assert.doesNotMatch(practiceLab, /setDone\(true\)/);
+    assert.match(practiceLab, /allAnswered/);
+    assert.match(practiceLab, /PracticeExercise/);
+  });
+
+  it('makes non-compare labs interactive instead of revealing the answer immediately', () => {
+    const exercise = readFileSync(join(root, 'app/components/learn/PracticeExercise.tsx'), 'utf8');
+    assert.match(exercise, /preferred === 'flag'/);
+    assert.match(exercise, /Flag for verification/);
+    assert.match(exercise, /Accept the claim as true/);
+    assert.match(exercise, /Check my justification/);
+    assert.match(exercise, /item\.example/);
+    assert.match(exercise, /preferred === 'A' \|\| item.preferred === 'B'/);
+    assert.doesNotMatch(exercise, /item\.rubric\.map/);
   });
 });
 

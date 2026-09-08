@@ -9,12 +9,14 @@ export default function CompareCard({
   b,
   correct,
   why,
+  onPicked,
 }: {
   prompt?: string;
-  a: string;
-  b: string;
+  a?: string;
+  b?: string;
   correct: 'A' | 'B';
   why: string;
+  onPicked?: () => void;
 }) {
   const [picked, setPicked] = useState<'A' | 'B' | null>(null);
   return (
@@ -33,10 +35,14 @@ export default function CompareCard({
               type="button"
               className={`learn-compare-card${selected && ok ? ' is-correct' : ''}${selected && !ok ? ' is-wrong' : ''}${show && ok ? ' is-answer' : ''}`}
               disabled={Boolean(picked)}
-              {...pressProps(() => setPicked(key))}
+              {...pressProps(() => {
+                if (picked) return;
+                setPicked(key);
+                onPicked?.();
+              })}
             >
               <strong>Response {key}</strong>
-              <span>{text}</span>
+              {text ? <span>{text}</span> : null}
             </button>
           );
         })}
