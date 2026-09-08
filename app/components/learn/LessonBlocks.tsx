@@ -3,11 +3,13 @@
 import CompareCard from './CompareCard';
 import QuizCard from './QuizCard';
 
+export type V2RubricItem = { name: string; desc: string };
+
 export type V2Section = {
   type: string;
   heading?: string;
   body?: string;
-  items?: string[];
+  items?: Array<string | V2RubricItem>;
   left?: { title: string; items: string[] };
   right?: { title: string; items: string[] };
   prompt?: string;
@@ -19,6 +21,22 @@ export type V2Section = {
   term?: string;
   definition?: string;
 };
+
+function listLabel(item: string | V2RubricItem, index: number) {
+  if (typeof item === 'string') return { key: item, node: item };
+  if (item && typeof item === 'object' && 'name' in item) {
+    return {
+      key: item.name || String(index),
+      node: (
+        <>
+          <strong>{item.name}</strong>
+          {item.desc ? <span> — {item.desc}</span> : null}
+        </>
+      ),
+    };
+  }
+  return { key: String(index), node: null };
+}
 
 export type V2QuickCheck = {
   q: string;
@@ -67,9 +85,10 @@ export default function LessonBlocks({
               {block.heading ? <h2>{block.heading}</h2> : null}
               {block.type === 'module_summary' ? <p className="learn-kicker">Module summary</p> : null}
               <ul className={block.type === 'checklist' || block.type === 'rubric' ? 'learn-checklist' : 'learn-list'}>
-                {(block.items ?? []).map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
+                {(block.items ?? []).map((item, itemIndex) => {
+                  const { key, node } = listLabel(item, itemIndex);
+                  return node ? <li key={key}>{node}</li> : null;
+                })}
               </ul>
             </section>
           );
@@ -79,9 +98,10 @@ export default function LessonBlocks({
             <section key={index}>
               {block.heading ? <h2>{block.heading}</h2> : null}
               <ol className="learn-list">
-                {(block.items ?? []).map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
+                {(block.items ?? []).map((item, itemIndex) => {
+                  const { key, node } = listLabel(item, itemIndex);
+                  return node ? <li key={key}>{node}</li> : null;
+                })}
               </ol>
             </section>
           );
@@ -151,7 +171,8 @@ export default function LessonBlocks({
         }
         return block.body ? <p key={index}>{block.body}</p> : null;
       })}
-      {quickChecks.map((item, index) => {
+      {(quickChecks ?? []).map((item, index) => {
+        if (!item?.q || !item.options?.length) return null;
         const id = `qc-${index}-${item.q.slice(0, 24)}`;
         const correct = letters(item.answer);
         return (
