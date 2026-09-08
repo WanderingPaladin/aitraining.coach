@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import course from '../../../lib/learn/data/course-v2.json';
 import { MODULES } from '../../../lib/learn/course';
-import { trackEvent } from '../../../lib/tracking';
 import { progressPercent } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
 import { useLearnProgress } from '../../hooks/useLearnProgress';
