@@ -1,75 +1,279 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BookOpenCheck, ClipboardCheck, Layers, Medal, Sparkles, Timer } from 'lucide-react';
+import {
+  ArrowRight,
+  Award,
+  BadgeCheck,
+  BookOpen,
+  CheckCircle2,
+  Circle,
+  CircleDot,
+  ClipboardCheck,
+  Clock3,
+  FlaskConical,
+  GitCompare,
+  MessageSquareText,
+  ScanSearch,
+} from 'lucide-react';
 import landing from '../../../lib/learn/data/landing-copy-v2.json';
 import course from '../../../lib/learn/data/course-v2.json';
-import { MODULES } from '../../../lib/learn/course';
+import { ASSESSMENT_WEIGHTS, LEARN_PATH, MODULES, PASS_SCORE } from '../../../lib/learn/course';
+import {
+  completedModuleCount,
+  courseJourneyStates,
+  courseMinutes,
+  coursePhase,
+  getCoursePrimaryAction,
+  nextIncompleteModule,
+  progressPercent,
+  type CoursePhase,
+} from '../../../lib/learn/overview';
+import { assessmentAction, practiceLabs } from '../../../lib/learn/sequence';
+import { isLabComplete } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
+import { useLearnProgress } from '../../hooks/useLearnProgress';
+import LearnCertificatePreview from './LearnCertificatePreview';
+import LearnCurriculum from './LearnCurriculum';
+import LearnEvalPreview from './LearnEvalPreview';
 import LearnShell from './LearnShell';
 
-const chips = [
-  { icon: Timer, label: landing.hero.badges[0] },
-  { icon: Sparkles, label: landing.hero.badges[1] },
-  { icon: Layers, label: landing.hero.badges[2] },
-  { icon: BookOpenCheck, label: landing.hero.badges[3] },
-  { icon: ClipboardCheck, label: landing.hero.badges[4] },
-  { icon: Medal, label: landing.hero.badges[5] },
+const SKILLS = [
+  { icon: ScanSearch, title: 'Evaluate quality', body: course.landingOutcomes[1] },
+  { icon: BadgeCheck, title: 'Verify factuality', body: course.landingOutcomes[3] },
+  { icon: GitCompare, title: 'Compare responses', body: course.landingOutcomes[2] },
+  { icon: MessageSquareText, title: 'Explain decisions', body: course.landingOutcomes[5] },
 ];
 
-const sample = {
-  prompt: 'Give me three inexpensive vegetarian dinner ideas.',
-  a: '1. Chicken tacos\n2. Vegetable pasta\n3. Lentil soup',
-  b: '1. Bean chili\n2. Vegetable pasta\n3. Lentil soup',
+const LAB_COPY: Record<string, string> = {
+  'constraint-detective': 'Spot instructions and hidden constraints.',
+  'response-ranking': 'Compare responses and justify your choice.',
+  'hallucination-spotter': 'Identify unsupported or inaccurate claims.',
 };
 
+const PRIMARY_FAQ = [
+  'Do I need coding experience?',
+  'How long does the course take?',
+  'Can I retake the assessment?',
+  'Does the certificate guarantee a job?',
+];
+
+function JourneyIcon({ status }: { status: 'complete' | 'current' | 'upcoming' }) {
+  if (status === 'complete') return <CheckCircle2 size={18} strokeWidth={2} aria-hidden="true" />;
+  if (status === 'current') return <CircleDot size={18} strokeWidth={2} aria-hidden="true" />;
+  return <Circle size={18} strokeWidth={2} aria-hidden="true" />;
+}
+
 export default function LearnLanding() {
-  const [choice, setChoice] = useState<'A' | 'B' | null>(null);
+  const { state, ready } = useLearnProgress();
+  const phase = coursePhase(state);
+  const action = getCoursePrimaryAction(state);
+  const assess = assessmentAction(state);
+  const percent = progressPercent(state);
+  const completed = completedModuleCount(state);
+  const nextModule = nextIncompleteModule(state);
+  const journey = courseJourneyStates(state);
+  const labs = practiceLabs().slice(0, 3);
+  const [faqOpen, setFaqOpen] = useState<string | null>(PRIMARY_FAQ[0] ?? null);
+  const [allFaq, setAllFaq] = useState(false);
+  const faqs = landing.faq.filter((item) => allFaq || PRIMARY_FAQ.includes(item.q));
+
   useEffect(() => {
     trackEvent({ eventType: 'course_viewed' });
   }, []);
+
+  function onPrimaryClick() {
+    if (phase === 'not_started') trackEvent({ eventType: 'course_started' });
+  }
 
   return (
     <LearnShell
       hero={
         <section className="learn-hero shell">
-          <p className="journal-eyebrow">{landing.hero.eyebrow}</p>
-          <h1>{landing.hero.title}</h1>
-          <p className="journal-lead">{landing.hero.body}</p>
-          <ul className="learn-chips">
-            {chips.map((chip) => (
-              <li key={chip.label}>
-                <chip.icon size={16} strokeWidth={2} aria-hidden="true" />
-                {chip.label}
-              </li>
-            ))}
-          </ul>
-          <div className="hero-actions learn-hero-actions">
-            <a className="primary-button" href="/learn/ai-training-foundations/module/1" onClick={() => trackEvent({ eventType: 'course_started' })}>
-              Start free course
-            </a>
-            <a className="secondary-button" href="#curriculum">
-              View curriculum
-            </a>
+          <div className="learn-hero-grid">
+            <div className="learn-hero-copy">
+              <p className="journal-eyebrow">AI Training Foundations</p>
+              <p className="learn-hero-badges">
+                <span>Free</span>
+                <span>Beginner</span>
+              </p>
+              <h1>Learn to evaluate AI responses with professional judgment.</h1>
+              <p className="journal-lead">
+                A practical course built around the skills used in AI evaluation work — instruction following, factuality,
+                reasoning, ranking, safety, and response quality.
+              </p>
+              <ul className="learn-hero-meta">
+                <li>
+                  <BookOpen size={16} strokeWidth={2} aria-hidden="true" />
+                  {MODULES.length} modules
+                </li>
+                <li>
+                  <Clock3 size={16} strokeWidth={2} aria-hidden="true" />
+                  ~{courseMinutes()} min
+                </li>
+                <li>
+                  <FlaskConical size={16} strokeWidth={2} aria-hidden="true" />
+                  Practice labs
+                </li>
+                <li>
+                  <ClipboardCheck size={16} strokeWidth={2} aria-hidden="true" />
+                  Final assessment
+                </li>
+                <li>
+                  <Award size={16} strokeWidth={2} aria-hidden="true" />
+                  Certificate
+                </li>
+              </ul>
+              {ready && phase !== 'not_started' ? (
+                <div className="learn-hero-progress">
+                  <div className="learn-overview-progress-row">
+                    <p>{phaseLabel(phase)}</p>
+                    <b>{percent}%</b>
+                  </div>
+                  <div
+                    className="learn-meter"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={percent}
+                    aria-label={`${percent} percent complete`}
+                  >
+                    <i style={{ width: `${percent}%` }} />
+                  </div>
+                  <p>
+                    {completed} of {MODULES.length} modules completed
+                    {phase === 'in_progress' && nextModule ? ` · Next up: Module ${nextModule.n}` : ''}
+                  </p>
+                </div>
+              ) : null}
+              <div className="learn-hero-actions">
+                {ready ? (
+                  <a className="primary-button" href={action.href} onClick={onPrimaryClick}>
+                    {action.label.replace(/\s*→$/, '')}
+                    <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+                  </a>
+                ) : (
+                  <span className="primary-button is-disabled">Loading…</span>
+                )}
+                <a className="secondary-button" href="#curriculum">
+                  View curriculum
+                </a>
+              </div>
+            </div>
+            <ol className="learn-journey" aria-label="Course path">
+              {journey.map((step) => (
+                <li key={step.label} className={`is-${step.status}`}>
+                  <JourneyIcon status={step.status} />
+                  <span>{step.label}</span>
+                  <span className="learn-sr">
+                    {step.status === 'complete' ? 'complete' : step.status === 'current' ? 'current' : 'upcoming'}
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
-          <p className="learn-hero-note">Optional practice labs are available after the core lessons.</p>
-          <ol className="learn-path" aria-label="Course path">
-            {course.journey.map((step, index) => (
-              <li key={step}>
-                <span>{index + 1}</span>
-                {step}
-              </li>
-            ))}
-          </ol>
         </section>
       }
     >
       <div className="journal-light">
-        <div className="shell journal-main learn-landing-main">
-          <section>
-            <div className="section-heading compact">
-              <h2>Is this course for you?</h2>
+        <div className="shell journal-main learn-product">
+          <LearnEvalPreview action={action} />
+          <LearnCurriculum state={state} ready={ready} />
+
+          <section className="learn-section" aria-labelledby="learn-skills-title">
+            <p className="learn-kicker">Skills you’ll build</p>
+            <h2 id="learn-skills-title">The judgment this course practices</h2>
+            <ul className="learn-skills">
+              {SKILLS.map((item) => (
+                <li key={item.title}>
+                  <item.icon size={20} strokeWidth={2} aria-hidden="true" />
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="learn-section" aria-labelledby="learn-labs-title">
+            <p className="learn-kicker">Practice labs</p>
+            <h2 id="learn-labs-title">Practice before the final assessment.</h2>
+            <p className="learn-lead">Optional labs. They do not affect your certificate score.</p>
+            <ul className="learn-lab-preview">
+              {labs.map((lab) => {
+                const done = ready && isLabComplete(state, lab.id);
+                return (
+                  <li key={lab.id}>
+                    <h3>{lab.title}</h3>
+                    <p>{LAB_COPY[lab.id] ?? 'Apply the same evaluation skills on a realistic example.'}</p>
+                    <a className="secondary-button on-light" href={LEARN_PATH.lab(lab.id)}>
+                      {done ? 'Review' : 'Start lab'}
+                      <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+            <p>
+              <a className="learn-text-btn" href={LEARN_PATH.practice}>
+                View all practice labs
+              </a>
+            </p>
+          </section>
+
+          <section className="learn-section" aria-labelledby="learn-assess-title">
+            <p className="learn-kicker">Final readiness assessment</p>
+            <h2 id="learn-assess-title">See what you’re ready for — and what to improve.</h2>
+            <p className="learn-lead">Complete the final assessment after finishing the course. Weighting below is how the score is composed, not a learner result.</p>
+            <p className="learn-weight-label">Assessment weighting</p>
+            <ul className="learn-weights">
+              {ASSESSMENT_WEIGHTS.map((item) => (
+                <li key={item.key}>
+                  <div>
+                    <span>{item.label}</span>
+                    <b>{Math.round(item.weight * 100)}%</b>
+                  </div>
+                  <span className="learn-meter" aria-hidden="true">
+                    <i style={{ width: `${item.weight * 100}%` }} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {ready && (phase === 'assessment_ready' || phase === 'assessment_in_progress' || phase === 'passed' || phase === 'failed') ? (
+              <a className="primary-button" href={assess.href}>
+                {assess.label.replace(/\s*→$/, '')}
+                <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+              </a>
+            ) : (
+              <p className="learn-hint">Complete the course to unlock assessment</p>
+            )}
+          </section>
+
+          <section className="learn-section learn-cert-section" aria-labelledby="learn-cert-title">
+            <div>
+              <p className="learn-kicker">Certificate of Completion</p>
+              <h2 id="learn-cert-title">A record of this educational program</h2>
+              <p className="learn-lead">
+                Complete the course and meet the assessment requirement ({PASS_SCORE}/100) to earn an AI Trainers Certificate of Completion.
+              </p>
+              <ul className="learn-cert-points">
+                <li>Completion record</li>
+                <li>Assessment-backed</li>
+                <li>Stored in your AI Trainers profile</li>
+              </ul>
+              {ready && phase === 'passed' && state.resultId ? (
+                <a className="primary-button" href={LEARN_PATH.results(state.resultId)}>
+                  View certificate
+                  <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+                </a>
+              ) : null}
+              <p className="learn-disclaimer">{course.disclaimer}</p>
             </div>
+            <LearnCertificatePreview />
+          </section>
+
+          <section className="learn-section" aria-labelledby="learn-audience-title">
+            <p className="learn-kicker">Built for wherever you’re starting</p>
+            <h2 id="learn-audience-title">Who this course is for</h2>
             <div className="learn-audience">
               {landing.audiences.map((item) => (
                 <article key={item.title} className="learn-audience-card">
@@ -79,108 +283,81 @@ export default function LearnLanding() {
               ))}
             </div>
           </section>
-          <section>
-            <div className="section-heading compact">
-              <h2>What you’ll be able to do</h2>
-            </div>
-            <ul className="learn-list">
-              {course.landingOutcomes.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </section>
-          <section id="curriculum">
-            <div className="section-heading compact">
-              <h2>Curriculum preview</h2>
-            </div>
-            <ol className="learn-module-list">
-              {MODULES.map((item) => (
-                <li key={item.n} className="learn-module-card">
-                  <div>
-                    <span className="learn-module-num">{String(item.n).padStart(2, '0')}</span>
-                    <h3>{item.title}</h3>
-                    <p>{item.minutes}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
-          <section>
-            <div className="section-heading compact">
-              <h2>Try a sample evaluation</h2>
-            </div>
-            <p className="learn-lead">Prompt: {sample.prompt}</p>
-            <div className="learn-compare-grid">
-              {(['A', 'B'] as const).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`learn-compare-card${choice === key ? (key === 'B' ? ' is-correct' : ' is-wrong') : ''}`}
-                  onClick={() => setChoice(key)}
-                >
-                  <strong>Response {key}</strong>
-                  <span style={{ whiteSpace: 'pre-wrap' }}>{key === 'A' ? sample.a : sample.b}</span>
-                </button>
-              ))}
-            </div>
-            {choice ? (
-              <p className={`learn-feedback ${choice === 'B' ? 'is-ok' : 'is-no'}`} role="status">
-                {choice === 'B' ? 'Correct. ' : 'The stronger choice is Response B. '}
-                Chicken violates the vegetarian requirement even when the rest looks polished.
-              </p>
-            ) : (
-              <p className="learn-hint">Choose the stronger response.</p>
-            )}
-          </section>
-          <section>
-            <div className="section-heading compact">
-              <h2>What the readiness assessment measures</h2>
-            </div>
-            <ul className="learn-list">
-              <li>Instruction following (25%)</li>
-              <li>Response evaluation (25%)</li>
-              <li>Factuality and research judgment (20%)</li>
-              <li>Written reasoning (20%)</li>
-              <li>Attention to detail (10%)</li>
-            </ul>
-          </section>
-          <section>
-            <div className="section-heading compact">
-              <h2>Certificate of Completion</h2>
-            </div>
+
+          <section className="learn-section learn-bridge" aria-labelledby="learn-bridge-title">
+            <p className="learn-kicker">Build skills → understand your readiness → explore opportunities</p>
+            <h2 id="learn-bridge-title">Put what you’ve learned into context.</h2>
             <p className="learn-lead">
-              Earn an AITrainers.coach Certificate of Completion with a score of 75 or higher. It confirms this educational program only — not third-party accreditation or employment.
+              After building the fundamentals, explore current AI-training opportunities and compare them with your profile.
             </p>
-          </section>
-          <section>
-            <div className="section-heading compact">
-              <h2>Opportunities and coaching</h2>
-            </div>
-            <p>
-              After the course you can explore current AI-training opportunities and, if you want help interpreting your results, book the same intro call used elsewhere on the site.
-            </p>
-          </section>
-          <section>
-            <div className="section-heading compact">
-              <h2>FAQ</h2>
-            </div>
-            <dl className="learn-faq">
-              {landing.faq.map((item) => (
-                <div key={item.q}>
-                  <dt>{item.q}</dt>
-                  <dd>{item.a}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-          <p className="learn-inline-cta">
-            <a className="primary-button" href="/learn/ai-training-foundations/module/1" onClick={() => trackEvent({ eventType: 'course_started' })}>
-              Start free course
+            <a className="primary-button" href="/opportunities">
+              Explore opportunities
+              <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
             </a>
-          </p>
-          <p className="learn-disclaimer">{course.disclaimer}</p>
+          </section>
+
+          <section className="learn-section" aria-labelledby="learn-faq-title">
+            <p className="learn-kicker">FAQ</p>
+            <h2 id="learn-faq-title">Common questions</h2>
+            <div className="learn-faq">
+              {faqs.map((item, index) => {
+                const expanded = faqOpen === item.q;
+                const panelId = `learn-faq-${index}`;
+                return (
+                  <div key={item.q}>
+                    <h3>
+                      <button
+                        type="button"
+                        aria-expanded={expanded}
+                        aria-controls={panelId}
+                        onClick={() => setFaqOpen(expanded ? null : item.q)}
+                      >
+                        {item.q}
+                      </button>
+                    </h3>
+                    <div id={panelId} hidden={!expanded}>
+                      <p>{item.a}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {landing.faq.length > PRIMARY_FAQ.length ? (
+              <p>
+                <button type="button" className="learn-text-btn" onClick={() => setAllFaq((value) => !value)}>
+                  {allFaq ? 'Show fewer FAQs' : 'View all FAQs'}
+                </button>
+              </p>
+            ) : null}
+          </section>
+
+          <section className="learn-section learn-final-cta" aria-labelledby="learn-end-title">
+            <h2 id="learn-end-title">Ready to build your AI evaluation skills?</h2>
+            <p className="learn-lead">Start with the foundations and progress at your own pace.</p>
+            <div className="learn-hero-actions">
+              {ready ? (
+                <a className="primary-button" href={action.href} onClick={onPrimaryClick}>
+                  {action.label.replace(/\s*→$/, '')}
+                  <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+                </a>
+              ) : (
+                <span className="primary-button is-disabled">Loading…</span>
+              )}
+              <a className="secondary-button on-light" href="#curriculum">
+                View curriculum
+              </a>
+            </div>
+          </section>
         </div>
       </div>
     </LearnShell>
   );
+}
+
+function phaseLabel(phase: CoursePhase) {
+  if (phase === 'passed') return 'Course complete';
+  if (phase === 'failed') return 'Assessment completed';
+  if (phase === 'assessment_in_progress') return 'Assessment in progress';
+  if (phase === 'assessment_ready') return 'Ready for assessment';
+  return 'Your progress';
 }

@@ -2,8 +2,8 @@ import course from './data/course-v2.json';
 
 export const COURSE_SLUG = 'ai-training-foundations';
 export const COURSE_TITLE = 'AI Training Foundations';
-export const PASS_SCORE = 75;
-export const MODULE_COUNT = 8;
+export const PASS_SCORE = course.certificateThreshold;
+export const MODULE_COUNT = course.modules.length;
 
 export const MODULES = course.modules.map((item) => ({
   n: item.id,
@@ -11,7 +11,20 @@ export const MODULES = course.modules.map((item) => ({
   minutes: `${item.minutes} min`,
   duration: item.minutes,
   slug: item.slug,
+  summary: item.outcomes[0] ?? '',
+  outcomes: item.outcomes,
 }));
+
+export const COURSE_JOURNEY = course.journey;
+
+/** Matches backend SCORE_WEIGHTS in aitraining.coach_backend/src/modules/learn/questions.ts */
+export const ASSESSMENT_WEIGHTS = [
+  { key: 'instruction_following', label: 'Instruction following', weight: 0.25 },
+  { key: 'response_evaluation', label: 'Response evaluation', weight: 0.25 },
+  { key: 'factuality', label: 'Factuality & research', weight: 0.2 },
+  { key: 'written_reasoning', label: 'Written reasoning', weight: 0.2 },
+  { key: 'attention_to_detail', label: 'Attention to detail', weight: 0.1 },
+] as const;
 
 export const LEARN_PATH = {
   landing: '/learn',

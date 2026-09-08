@@ -1,4 +1,4 @@
-import { COURSE_TITLE, LEARN_PATH, MODULES } from './course';
+import { COURSE_JOURNEY, COURSE_TITLE, LEARN_PATH, MODULES } from './course';
 import { progressPercent, type LocalLearnState } from './storage';
 
 export type CoursePhase =
@@ -34,6 +34,29 @@ export function coursePhase(state: LocalLearnState): CoursePhase {
   if (completedModuleCount(state) >= MODULES.length) return 'assessment_ready';
   if (state.startedModules.length > 0 || state.completedModules.length > 0) return 'in_progress';
   return 'not_started';
+}
+
+export type JourneyStepState = 'complete' | 'current' | 'upcoming';
+
+export function courseJourneyStates(state: LocalLearnState) {
+  const phase = coursePhase(state);
+  const learnComplete = completedModuleCount(state) >= MODULES.length;
+  const learnCurrent = !learnComplete && (state.startedModules.length > 0 || state.completedModules.length > 0);
+  const practiceComplete = (state.completedLabs?.length ?? 0) > 0;
+  const assessmentComplete = Boolean(state.resultId);
+  const assessmentCurrent = phase === 'assessment_ready' || phase === 'assessment_in_progress';
+  const certificateComplete = Boolean(state.passed && state.resultId);
+  const byId: Record<string, JourneyStepState> = {
+    Learn: learnComplete ? 'complete' : learnCurrent ? 'current' : 'upcoming',
+    Practice: practiceComplete ? 'complete' : learnComplete && !assessmentCurrent && !assessmentComplete ? 'current' : 'upcoming',
+    Assessment: assessmentComplete ? 'complete' : assessmentCurrent ? 'current' : 'upcoming',
+    Results: assessmentComplete ? 'complete' : 'upcoming',
+    Certificate: certificateComplete ? 'complete' : 'upcoming',
+  };
+  return COURSE_JOURNEY.map((label) => ({
+    label,
+    status: byId[label] ?? 'upcoming',
+  }));
 }
 
 export function getCoursePrimaryAction(state: LocalLearnState): CoursePrimaryAction {

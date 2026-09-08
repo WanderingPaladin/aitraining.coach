@@ -115,6 +115,25 @@ describe('practice lab completion and next step', () => {
   });
 });
 
+describe('learn landing product page', () => {
+  it('rebuilds /learn around real course data and progress helpers', () => {
+    const landing = readFileSync(join(root, 'app/components/learn/LearnLanding.tsx'), 'utf8');
+    const courseFile = readFileSync(join(root, 'lib/learn/course.ts'), 'utf8');
+    const overview = readFileSync(join(root, 'lib/learn/overview.ts'), 'utf8');
+    assert.match(landing, /getCoursePrimaryAction/);
+    assert.match(landing, /courseJourneyStates/);
+    assert.match(landing, /ASSESSMENT_WEIGHTS/);
+    assert.match(landing, /practiceLabs\(\)/);
+    assert.match(landing, /#curriculum/);
+    assert.doesNotMatch(landing, /learn-chips/);
+    assert.match(courseFile, /certificateThreshold/);
+    assert.match(overview, /courseJourneyStates/);
+    assert.match(css, /\.learn-product/);
+    assert.match(css, /\.learn-eval/);
+    assert.match(css, /\.learn-journey/);
+  });
+});
+
 describe('assessment persistence UX', () => {
   it('saves answers with current question index and exposes retry state', () => {
     assert.match(assessmentClient, /currentIndex/);
