@@ -3833,6 +3833,9 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
   font-size: 13px; font-weight: 650;
 }
 .learn-status, .learn-empty { color: #475569; }
+.learn-empty-state { display: grid; gap: 16px; justify-items: start; padding: 8px 0 24px; max-width: 36rem; }
+.learn-empty-state .learn-empty { margin: 0; }
+.learn-empty-state .learn-pager { margin: 0; }
 .learn-option:focus-visible, .learn-compare-card:focus-visible, .learn-pager a:focus-visible, .learn-pager button:focus-visible {
   outline: 2px solid #1687FF;
   outline-offset: 2px;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RotateCcw } from 'lucide-react';
 import { usStates } from '../../../lib/apply-fields';
@@ -56,6 +56,7 @@ export default function AssessmentClient() {
     state: '',
     shareScore: true,
   });
+  const startGen = useRef(0);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -67,25 +68,25 @@ export default function AssessmentClient() {
     attemptRef.current = attemptId;
   }, [attemptId]);
 
-  useEffect(() => {
-    let active = true;
+  const beginAttempt = useCallback(() => {
+    const gen = ++startGen.current;
     const local = readLearnState();
     const retake = new URLSearchParams(window.location.search).get('retake') === '1';
     if (local.resultId && !retake) {
       router.replace(`/learn/ai-training-foundations/results/${local.resultId}`);
-      return () => {
-        active = false;
-      };
+      return;
     }
     if (local.completedModules.length < 8 && !local.attemptId && !retake) {
       setError('Complete all eight modules before starting the final assessment.');
       setLoading(false);
       return;
     }
+    setError('');
+    setLoading(true);
     const existing = retake ? undefined : local.attemptId || undefined;
     startAssessment(existing, retake)
       .then((result) => {
-        if (!active) return;
+        if (gen !== startGen.current) return;
         if (result.attempt.submitted) {
           writeLearnState({
             resultId: result.attempt.id,
@@ -121,15 +122,19 @@ export default function AssessmentClient() {
         setSaveStatus(Object.keys(restored).length ? 'saved' : 'idle');
       })
       .catch((err) => {
-        if (active) setError(learnErrorMessage(err));
+        if (gen === startGen.current) setError(learnErrorMessage(err));
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (gen === startGen.current) setLoading(false);
       });
-    return () => {
-      active = false;
-    };
   }, [router]);
+
+  useEffect(() => {
+    beginAttempt();
+    return () => {
+      startGen.current += 1;
+    };
+  }, [beginAttempt]);
 
   useEffect(() => {
     if (loading || confirming) return;
@@ -268,10 +273,17 @@ export default function AssessmentClient() {
   if (loading) return <p className="learn-status">Preparing your assessment…</p>;
   if (error && !question) {
     return (
-      <p className="learn-empty" role="alert">
-        {error}{' '}
-        <a href={LEARN_PATH.course}>Back to course</a>
-      </p>
+      <div className="learn-empty-state" role="alert">
+        <p className="learn-empty">{error}</p>
+        <div className="learn-pager">
+          <button type="button" className="primary-button" onClick={() => beginAttempt()}>
+            Try again
+          </button>
+          <a className="secondary-button on-light" href={LEARN_PATH.course}>
+            Back to course
+          </a>
+        </div>
+      </div>
     );
   }
   if (!question) return <p className="learn-empty">No questions available.</p>;

@@ -81,7 +81,11 @@ export async function startAssessment(attemptId?: string, retake = false) {
     result?: AssessmentResult;
   }>('/v1/learn/assessment/attempts', {
     method: 'POST',
-    body: JSON.stringify({ ...identity(), attemptId, retake }),
+    body: JSON.stringify({
+      ...identity(),
+      ...(attemptId ? { attemptId } : {}),
+      ...(retake ? { retake: true } : {}),
+    }),
   });
 }
 

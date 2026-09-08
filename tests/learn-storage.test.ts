@@ -144,10 +144,21 @@ describe('assessment persistence UX', () => {
     assert.match(assessmentClient, /Continue assessment|attemptId/);
     assert.match(api, /currentIndex/);
     assert.match(api, /headers\.delete\('content-type'\)/);
+    assert.match(api, /retake \? \{ retake: true \}/);
   });
 
   it('does not start a new attempt when one is already in progress', () => {
     assert.match(assessmentClient, /startAssessment\(existing, retake\)/);
     assert.match(assessmentClient, /local\.attemptId !== result\.attempt\.id/);
+  });
+
+  it('shows a recoverable start error instead of concatenating the back link', () => {
+    const errors = readFileSync(join(root, 'lib/learn/errors.ts'), 'utf8');
+    assert.match(assessmentClient, /learn-empty-state/);
+    assert.match(assessmentClient, /Try again/);
+    assert.match(assessmentClient, /Back to course/);
+    assert.doesNotMatch(assessmentClient, /\{error\}\s*\{'\s*'\}\s*\n\s*<a href=\{LEARN_PATH\.course\}>Back to course/);
+    assert.match(errors, /status >= 500/);
+    assert.match(errors, /Unexpected server error/);
   });
 });

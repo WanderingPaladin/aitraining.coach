@@ -1,5 +1,7 @@
 import { ApiError } from '../api';
 
+const FALLBACK = "We couldn't complete that action. Your completed work has been preserved. Please try again.";
+
 export function learnErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 401) return 'Your session expired. Please sign in again.';
@@ -17,8 +19,12 @@ export function learnErrorMessage(error: unknown): string {
     if (error.code === 'NETWORK_ERROR') {
       return "We couldn't reach the course service. Check your connection and try again.";
     }
-    if (error.message && error.message !== 'Unexpected server error') return error.message;
+    if (error.status >= 500 || error.message === 'Unexpected server error') return FALLBACK;
+    if (error.message) return error.message;
+    return FALLBACK;
   }
-  if (error instanceof Error && error.message) return error.message;
-  return "We couldn't complete that action. Your completed work has been preserved. Please try again.";
+  if (error instanceof Error && error.message && error.message !== 'Unexpected server error') {
+    return error.message;
+  }
+  return FALLBACK;
 }
