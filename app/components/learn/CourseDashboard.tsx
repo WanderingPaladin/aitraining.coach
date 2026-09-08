@@ -19,7 +19,7 @@ export default function CourseDashboard() {
           <h1>AI Training Foundations</h1>
           <p className="learn-lead">Your progress is saved automatically.</p>
         </div>
-        <div className="learn-score-ring" style={{ ['--p' as string]: `${percent}%` }} aria-label={`${percent} percent complete`}>
+        <div className="learn-score-ring" style={{ ['--p' as string]: `${percent}%` }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label={`${percent} percent complete`}>
           <strong>{percent}%</strong>
           <span>Complete</span>
         </div>
@@ -70,13 +70,22 @@ export default function CourseDashboard() {
             <span className="learn-status">
               {state.resultId ? 'Submitted' : state.completedModules.length >= 8 ? 'Ready' : 'Locked'}
             </span>
-            {state.completedModules.length >= 8 || state.attemptId ? (
+            {state.resultId ? (
+              <a className="primary-button" href={`/learn/ai-training-foundations/results/${state.resultId}`}>
+                View results
+              </a>
+            ) : state.completedModules.length >= 8 || state.attemptId ? (
               <a className="primary-button" href="/learn/ai-training-foundations/assessment">
-                {state.resultId ? 'Retake assessment' : 'Start assessment'}
+                {state.attemptId ? 'Continue assessment' : 'Start assessment'}
               </a>
             ) : (
               <span className="secondary-button on-light is-disabled">Locked</span>
             )}
+            {state.resultId ? (
+              <a className="secondary-button on-light" href="/learn/ai-training-foundations/assessment?retake=1">
+                Retake assessment
+              </a>
+            ) : null}
           </div>
         </li>
         <li className={`learn-module-card ${state.passed && state.resultId ? 'is-complete' : 'is-locked'}`}>

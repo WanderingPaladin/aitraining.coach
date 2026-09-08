@@ -69,7 +69,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init,
       credentials: 'include',
       headers: {
-        'content-type': 'application/json',
+        ...(init?.body != null && init.body !== '' ? { 'content-type': 'application/json' } : {}),
         ...(init?.headers ?? {}),
       },
     });

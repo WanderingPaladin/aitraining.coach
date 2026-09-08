@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { downloadCertificatePdf, fetchAttempt, type AssessmentResult } from '../../../lib/learn/api';
+import { downloadCertificatePdf, fetchAttempt, retryCertificate, type AssessmentResult } from '../../../lib/learn/api';
+import { learnErrorMessage } from '../../../lib/learn/errors';
+import { writeLearnState } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
 
 const PATH_LINKS = [
@@ -23,14 +25,41 @@ function recsFor(key?: string) {
 export default function ResultsView({ attemptId }: { attemptId: string }) {
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [error, setError] = useState('');
+  const [certBusy, setCertBusy] = useState(false);
+
+  function load() {
+    setError('');
+    fetchAttempt(attemptId)
+      .then((next) => {
+        setResult(next);
+        if (next.submitted) {
+          writeLearnState({ resultId: next.attemptId, attemptId, passed: Boolean(next.passed) });
+        }
+      })
+      .catch((err) => setError(learnErrorMessage(err)));
+  }
 
   useEffect(() => {
-    fetchAttempt(attemptId)
-      .then(setResult)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Could not load results.'));
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once per attempt
   }, [attemptId]);
 
-  if (error) return <p className="learn-empty" role="alert">{error}</p>;
+  if (error) {
+    return (
+      <div className="learn-empty" role="alert">
+        <p>We couldn&apos;t load your assessment result.</p>
+        <p>{error}</p>
+        <div className="learn-pager">
+          <button type="button" className="primary-button" onClick={() => load()}>
+            Try again
+          </button>
+          <a className="secondary-button on-light" href="/learn/ai-training-foundations">
+            Return to course
+          </a>
+        </div>
+      </div>
+    );
+  }
   if (!result) return <p className="learn-status">Loading your results…</p>;
   if (!result.submitted) {
     return (
@@ -141,10 +170,37 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
             </a>
           </div>
         </section>
+      ) : result.passed ? (
+        <aside className="learn-callout is-note" role="status">
+          <p>You passed the assessment, but we couldn&apos;t prepare your certificate yet.</p>
+          <p>
+            <button
+              type="button"
+              className="primary-button"
+              disabled={certBusy}
+              onClick={() => {
+                setCertBusy(true);
+                retryCertificate(attemptId)
+                  .then((next) => {
+                    setResult(next);
+                    if (next.certificate) trackEvent({ eventType: 'certificate_generated' });
+                  })
+                  .catch((err) => setError(learnErrorMessage(err)))
+                  .finally(() => setCertBusy(false));
+              }}
+            >
+              {certBusy ? 'Preparing…' : 'Try again'}
+            </button>
+          </p>
+        </aside>
       ) : (
         <aside className="learn-callout is-note">
           <p>A certificate unlocks at {result.passScore}/100. Review weaker modules, then you can retake the assessment later.</p>
           <p>
+            <a className="secondary-button on-light" href="/learn/ai-training-foundations/assessment?retake=1">
+              Retake assessment
+            </a>
+            {' '}
             <a href="/learn/ai-training-foundations">Back to course</a>
           </p>
         </aside>

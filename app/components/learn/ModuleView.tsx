@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import course from '../../../lib/learn/data/course-v2.json';
 import { MODULES } from '../../../lib/learn/course';
 import { trackEvent } from '../../../lib/tracking';
+import { progressPercent } from '../../../lib/learn/storage';
+import { trackEvent } from '../../../lib/tracking';
 import { useLearnProgress } from '../../hooks/useLearnProgress';
 import LessonBlocks, { type V2QuickCheck, type V2Section } from './LessonBlocks';
 import SaveToast from './SaveToast';
@@ -14,7 +16,7 @@ export default function ModuleView({ n }: { n: number }) {
   const { state, update, saved, ready } = useLearnProgress();
   const prev = n > 1 ? n - 1 : null;
   const next = n < MODULES.length ? n + 1 : null;
-  const total = MODULES.length;
+  const percent = progressPercent(state);
 
   useEffect(() => {
     if (!lesson || !ready) return;
@@ -53,16 +55,21 @@ export default function ModuleView({ n }: { n: number }) {
             </li>
           ))}
         </ol>
-        <div className="learn-mini-progress" aria-label={`${state.completedModules.length} of ${total} modules complete`}>
-          <b>{Math.round((state.completedModules.length / total) * 100)}% complete</b>
-          <span className="learn-meter"><i style={{ width: `${(state.completedModules.length / total) * 100}%` }} /></span>
+        <div
+          className="learn-mini-progress"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={percent}
+          aria-label={`${percent} percent complete`}
+        >
+          <b>{percent}% complete</b>
+          <span className="learn-meter" aria-hidden="true"><i style={{ width: `${percent}%` }} /></span>
         </div>
         {state.completedModules.includes(3) ? (
-          <p>
-            <a className="secondary-button on-light" href="/learn/ai-training-foundations/practice">
-              Practice labs
-            </a>
-          </p>
+          <a className="secondary-button on-light learn-sidenav-cta" href="/learn/ai-training-foundations/practice">
+            Practice labs
+          </a>
         ) : null}
       </aside>
       <article className="learn-lesson">

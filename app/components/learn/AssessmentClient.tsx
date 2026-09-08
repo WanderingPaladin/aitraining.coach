@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usStates } from '../../../lib/apply-fields';
+import { ApiError } from '../../../lib/api';
 import {
   saveAssessmentAnswers,
   startAssessment,
   submitAssessment,
   type PublicQuestion,
 } from '../../../lib/learn/api';
+import { learnErrorMessage } from '../../../lib/learn/errors';
 import { readLearnState, writeLearnState } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
 import { pressProps } from '../../../lib/press';
@@ -31,6 +33,7 @@ export default function AssessmentClient() {
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const submitLock = useRef(false);
   const [lead, setLead] = useState({
     firstName: '',
     lastName: '',
@@ -44,30 +47,54 @@ export default function AssessmentClient() {
   useEffect(() => {
     let active = true;
     const local = readLearnState();
-    if (local.completedModules.length < 8 && !local.attemptId) {
-        setError('Complete all eight modules before starting the final assessment.');
+    const retake = new URLSearchParams(window.location.search).get('retake') === '1';
+    if (local.resultId && !retake) {
+      router.replace(`/learn/ai-training-foundations/results/${local.resultId}`);
+      return () => {
+        active = false;
+      };
+    }
+    if (local.completedModules.length < 8 && !local.attemptId && !retake) {
+      setError('Complete all eight modules before starting the final assessment.');
       setLoading(false);
       return;
     }
-    const existing = local.attemptId || undefined;
-    startAssessment(existing)
+    const existing = retake ? undefined : local.attemptId || undefined;
+    startAssessment(existing, retake)
       .then((result) => {
         if (!active) return;
-        const restored = (result.attempt.answers ?? {}) as Record<string, string>;
+        if (result.attempt.submitted) {
+          writeLearnState({
+            resultId: result.attempt.id,
+            attemptId: result.attempt.id,
+            passed: Boolean(result.result?.passed),
+          });
+          router.replace(`/learn/ai-training-foundations/results/${result.attempt.id}`);
+          return;
+        }
+        const restored = result.attempt.answers ?? {};
         setQuestions(result.questions);
         setAttemptId(result.attempt.id);
         setAnswers(restored);
         const firstOpen = result.questions.findIndex((item) => !String(restored[item.id] ?? '').trim());
         setIndex(firstOpen >= 0 ? firstOpen : 0);
-        writeLearnState({ attemptId: result.attempt.id });
+        writeLearnState(
+          retake
+            ? { attemptId: result.attempt.id, resultId: null, passed: false }
+            : { attemptId: result.attempt.id },
+        );
         trackEvent({ eventType: 'assessment_started', metadata: { attemptId: result.attempt.id } });
       })
-      .catch((err) => setError(err instanceof Error ? err.message : 'Could not start the assessment.'))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (active) setError(learnErrorMessage(err));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
     return () => {
       active = false;
     };
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (loading || confirming) return;
@@ -81,14 +108,21 @@ export default function AssessmentClient() {
   );
 
   function setAnswer(value: string) {
-    if (!question) return;
+    if (!question || submitting) return;
     const next = { ...answers, [question.id]: value };
     setAnswers(next);
-    if (attemptId) void saveAssessmentAnswers(attemptId, next).catch(() => {});
+    if (!attemptId) return;
+    void saveAssessmentAnswers(attemptId, next).catch((err) => {
+      if (err instanceof ApiError && (err.code === 'ALREADY_SUBMITTED' || err.status === 409)) {
+        writeLearnState({ resultId: attemptId, attemptId });
+        router.replace(`/learn/ai-training-foundations/results/${attemptId}`);
+      }
+    });
   }
 
   async function submit() {
-    if (!attemptId) return;
+    if (!attemptId || submitLock.current) return;
+    submitLock.current = true;
     setSubmitting(true);
     setError('');
     try {
@@ -114,7 +148,13 @@ export default function AssessmentClient() {
       if (result.certificate) trackEvent({ eventType: 'certificate_generated' });
       router.push(`/learn/ai-training-foundations/results/${result.attemptId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not submit the assessment.');
+      if (err instanceof ApiError && (err.code === 'ALREADY_SUBMITTED' || err.status === 409)) {
+        writeLearnState({ resultId: attemptId, attemptId });
+        router.replace(`/learn/ai-training-foundations/results/${attemptId}`);
+        return;
+      }
+      setError(learnErrorMessage(err));
+      submitLock.current = false;
       setSubmitting(false);
     }
   }
@@ -151,7 +191,7 @@ export default function AssessmentClient() {
           className="learn-lead-form"
           onSubmit={(event) => {
             event.preventDefault();
-            if (ready) void submit();
+            if (ready && !submitting) void submit();
           }}
         >
           <label className="learn-honeypot" aria-hidden="true">
@@ -207,11 +247,11 @@ export default function AssessmentClient() {
           </label>
           {error ? <p className="learn-feedback is-no" role="alert">{error}</p> : null}
           <div className="learn-pager">
-            <button type="button" className="secondary-button on-light" onClick={() => setConfirming(false)}>
+            <button type="button" className="secondary-button on-light" onClick={() => setConfirming(false)} disabled={submitting}>
               Back to questions
             </button>
             <button type="submit" className="primary-button" disabled={!ready || submitting}>
-              {submitting ? 'Submitting…' : 'Submit assessment'}
+              {submitting ? 'Submitting assessment…' : 'Submit assessment'}
             </button>
           </div>
         </form>
@@ -224,8 +264,8 @@ export default function AssessmentClient() {
       <header className="learn-assess-head">
         <p className="learn-kicker">Final assessment · about 20–25 minutes</p>
         <h1 tabIndex={-1} id="learn-question-heading">Question {index + 1} of {questions.length}</h1>
-        <div className="learn-meter" aria-valuemin={0} aria-valuemax={questions.length} aria-valuenow={index + 1} role="progressbar" aria-label="Assessment progress">
-          <i style={{ width: `${((index + 1) / questions.length) * 100}%` }} />
+        <div className="learn-meter" aria-valuemin={0} aria-valuemax={questions.length || 1} aria-valuenow={index + 1} role="progressbar" aria-label="Assessment progress">
+          <i style={{ width: `${questions.length ? ((index + 1) / questions.length) * 100 : 0}%` }} />
         </div>
       </header>
       <section className="learn-question">

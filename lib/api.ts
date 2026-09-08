@@ -85,15 +85,19 @@ type ErrorBody = {
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  const hasBody = init?.body != null && init.body !== '';
+  if (hasBody) {
+    if (!headers.has('content-type')) headers.set('content-type', 'application/json');
+  } else {
+    headers.delete('content-type');
+  }
   let response: Response;
   try {
     response = await fetch(`${apiBaseUrl()}${path}`, {
       ...init,
       credentials: 'include',
-      headers: {
-        'content-type': 'application/json',
-        ...(init?.headers ?? {}),
-      },
+      headers,
     });
   } catch {
     throw new ApiError(

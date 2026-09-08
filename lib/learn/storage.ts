@@ -83,7 +83,11 @@ export function mergeRemoteProgress(
 }
 
 export function progressPercent(state: { completedModules: number[] }) {
-  return Math.round((state.completedModules.length / MODULES.length) * 100);
+  const total = MODULES.length || 1;
+  const completed = uniqueSorted(state.completedModules ?? []);
+  const raw = Math.round((completed.length / total) * 100);
+  if (!Number.isFinite(raw)) return 0;
+  return Math.min(100, Math.max(0, raw));
 }
 
 export function moduleStatus(state: LocalLearnState, n: number): 'complete' | 'in_progress' | 'not_started' {
@@ -94,7 +98,7 @@ export function moduleStatus(state: LocalLearnState, n: number): 'complete' | 'i
 
 export function continueHref(state: LocalLearnState) {
   if (state.resultId) return `/learn/ai-training-foundations/results/${state.resultId}`;
-  if (state.completedModules.length >= 6) return '/learn/ai-training-foundations/assessment';
+  if (state.completedModules.length >= MODULES.length) return '/learn/ai-training-foundations/assessment';
   const next = MODULES.find((item) => !state.completedModules.includes(item.n));
   return `/learn/ai-training-foundations/module/${next?.n ?? 1}`;
 }

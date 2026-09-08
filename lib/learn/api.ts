@@ -3,12 +3,19 @@ import { ApiError } from '../api';
 import { COURSE_SLUG } from './course';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  const hasBody = init?.body != null && init.body !== '';
+  if (hasBody) {
+    if (!headers.has('content-type')) headers.set('content-type', 'application/json');
+  } else {
+    headers.delete('content-type');
+  }
   let response: Response;
   try {
     response = await fetch(path, {
       ...init,
       credentials: 'include',
-      headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
+      headers,
     });
   } catch {
     throw new ApiError(0, 'NETWORK_ERROR', 'Could not reach the AI Trainers service.');
@@ -64,13 +71,14 @@ export type PublicQuestion = {
   placeholder?: string;
 };
 
-export async function startAssessment(attemptId?: string) {
+export async function startAssessment(attemptId?: string, retake = false) {
   return request<{
     attempt: { id: string; submitted: boolean; answers: Record<string, string> };
     questions: PublicQuestion[];
+    result?: AssessmentResult;
   }>('/v1/learn/assessment/attempts', {
     method: 'POST',
-    body: JSON.stringify({ ...identity(), attemptId }),
+    body: JSON.stringify({ ...identity(), attemptId, retake }),
   });
 }
 
@@ -95,6 +103,7 @@ export type AssessmentResult = {
   recommendations?: string[];
   usBased?: boolean | null;
   certificate?: { credentialId: string; issuedAt: string; learnerDisplayName: string } | null;
+  certificatePending?: boolean;
   answers?: Record<string, string>;
   questions?: PublicQuestion[];
 };
@@ -125,6 +134,13 @@ export async function fetchAttempt(id: string) {
   if (visitorId) params.set('visitorId', visitorId);
   const suffix = params.size ? `?${params}` : '';
   return request<AssessmentResult>(`/v1/learn/assessment/attempts/${id}${suffix}`);
+}
+
+export async function retryCertificate(id: string) {
+  return request<AssessmentResult>(`/v1/learn/assessment/attempts/${id}/certificate`, {
+    method: 'POST',
+    body: JSON.stringify(identity()),
+  });
 }
 
 export async function fetchPublicCertificate(credentialId: string) {
