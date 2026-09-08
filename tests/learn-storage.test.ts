@@ -174,4 +174,15 @@ describe('assessment persistence UX', () => {
     assert.match(errors, /status >= 500/);
     assert.match(errors, /Unexpected server error/);
   });
+
+  it('keeps assessment answers locally so an empty saved score can be recorrected', () => {
+    const resultsView = readFileSync(join(root, 'app/components/learn/ResultsView.tsx'), 'utf8');
+    const score = readFileSync(join(root, 'lib/learn/score-attempt.ts'), 'utf8');
+    assert.match(assessmentClient, /questionIds: result\.questions\.map/);
+    assert.match(assessmentClient, /answers: restored/);
+    assert.match(resultsView, /We couldn&apos;t calculate your score/);
+    assert.match(resultsView, /scoreLocalAttempt/);
+    assert.match(score, /scoreLocalAttempt/);
+    assert.match(storage, /questionIds/);
+  });
 });

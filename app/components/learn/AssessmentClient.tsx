@@ -96,7 +96,10 @@ export default function AssessmentClient() {
           router.replace(`/learn/ai-training-foundations/results/${result.attempt.id}`);
           return;
         }
-        const restored = result.attempt.answers ?? {};
+        const restored = {
+          ...(!retake && local.attemptId === result.attempt.id ? local.answers : {}),
+          ...(result.attempt.answers ?? {}),
+        };
         const restoredIndex = result.attempt.currentIndex;
         const firstOpen = result.questions.findIndex((item) => !String(restored[item.id] ?? '').trim());
         const nextIndex =
@@ -111,11 +114,12 @@ export default function AssessmentClient() {
         answersRef.current = restored;
         setIndex(nextIndex);
         indexRef.current = nextIndex;
-        writeLearnState(
-          retake
-            ? { attemptId: result.attempt.id, resultId: null, passed: false }
-            : { attemptId: result.attempt.id },
-        );
+        writeLearnState({
+          attemptId: result.attempt.id,
+          answers: restored,
+          questionIds: result.questions.map((item) => item.id),
+          ...(retake ? { resultId: null, passed: false } : {}),
+        });
         if (local.attemptId !== result.attempt.id) {
           trackEvent({ eventType: 'assessment_started', metadata: { attemptId: result.attempt.id } });
         }
@@ -150,6 +154,11 @@ export default function AssessmentClient() {
   function persist(nextIndex = indexRef.current) {
     const id = attemptRef.current;
     if (!id) return Promise.resolve();
+    writeLearnState({
+      attemptId: id,
+      answers: { ...answersRef.current },
+      questionIds: questions.map((item) => item.id),
+    });
     setSaveStatus('saving');
     const job = saveChain.current.then(
       () => saveAssessmentAnswers(attemptRef.current || id, { ...answersRef.current }, nextIndex),
@@ -237,6 +246,11 @@ export default function AssessmentClient() {
         debounceRef.current = null;
       }
       await persist(indexRef.current);
+      writeLearnState({
+        attemptId,
+        answers: { ...answersRef.current },
+        questionIds: questions.map((item) => item.id),
+      });
       const honeypot = (document.querySelector('input[name="companyWebsite"]') as HTMLInputElement | null)?.value;
       const result = await submitAssessment(attemptId, {
         answers: answersRef.current,

@@ -13,6 +13,7 @@ export type LocalLearnState = {
   lastLesson: string | null;
   attemptId: string | null;
   answers: Record<string, string>;
+  questionIds: string[];
   resultId: string | null;
   passed: boolean;
 };
@@ -27,6 +28,7 @@ export function emptyLearnState(): LocalLearnState {
     lastLesson: null,
     attemptId: null,
     answers: {},
+    questionIds: [],
     resultId: null,
     passed: false,
   };
@@ -66,6 +68,8 @@ function normalizeState(raw: Partial<LocalLearnState>): LocalLearnState {
     completedLabs,
     completedModules: uniqueSorted(base.completedModules ?? []),
     startedModules: uniqueSorted(base.startedModules ?? []),
+    answers: asAnswers(base.answers),
+    questionIds: uniqueQuestionIds(base.questionIds),
   };
 }
 
@@ -94,6 +98,20 @@ export function writeLearnState(patch: Partial<LocalLearnState>): LocalLearnStat
     // private mode
   }
   return next;
+}
+
+function uniqueQuestionIds(values: unknown) {
+  if (!Array.isArray(values)) return [];
+  return [...new Set(values.map((item) => String(item).trim()).filter(Boolean))];
+}
+
+function asAnswers(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const out: Record<string, string> = {};
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof item === 'string' && item.trim()) out[key] = item;
+  }
+  return out;
 }
 
 function uniqueSorted(values: number[]) {

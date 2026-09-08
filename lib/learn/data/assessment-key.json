@@ -1,0 +1,349 @@
+[
+  {
+    "id": "q1",
+    "category": "instruction_following",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q2",
+    "category": "instruction_following",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q3",
+    "category": "instruction_following",
+    "type": "compare",
+    "correct": "B"
+  },
+  {
+    "id": "q4",
+    "category": "instruction_following",
+    "type": "yesno",
+    "correct": "yes"
+  },
+  {
+    "id": "q5",
+    "category": "instruction_following",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q6",
+    "category": "instruction_following",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q7",
+    "category": "instruction_following",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q8",
+    "category": "instruction_following",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q9",
+    "category": "instruction_following",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q10",
+    "category": "instruction_following",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q11",
+    "category": "response_evaluation",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q12",
+    "category": "response_evaluation",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q13",
+    "category": "response_evaluation",
+    "type": "mcq",
+    "correct": "C"
+  },
+  {
+    "id": "q14",
+    "category": "response_evaluation",
+    "type": "yesno",
+    "correct": "no"
+  },
+  {
+    "id": "q15",
+    "category": "response_evaluation",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q16",
+    "category": "response_evaluation",
+    "type": "mcq",
+    "correct": "C"
+  },
+  {
+    "id": "q17",
+    "category": "response_evaluation",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q18",
+    "category": "response_evaluation",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q19",
+    "category": "response_evaluation",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q20",
+    "category": "response_evaluation",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q21",
+    "category": "factuality",
+    "type": "mcq",
+    "correct": "C"
+  },
+  {
+    "id": "q22",
+    "category": "factuality",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q23",
+    "category": "factuality",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q24",
+    "category": "factuality",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q25",
+    "category": "factuality",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q26",
+    "category": "factuality",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q27",
+    "category": "factuality",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q28",
+    "category": "factuality",
+    "type": "yesno",
+    "correct": "yes"
+  },
+  {
+    "id": "q29",
+    "category": "factuality",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q30",
+    "category": "factuality",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q31",
+    "category": "written_reasoning",
+    "type": "compare",
+    "correct": "B"
+  },
+  {
+    "id": "q32",
+    "category": "written_reasoning",
+    "type": "compare",
+    "correct": "B"
+  },
+  {
+    "id": "q33",
+    "category": "written_reasoning",
+    "type": "compare",
+    "correct": "B"
+  },
+  {
+    "id": "q34",
+    "category": "written_reasoning",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q35",
+    "category": "written_reasoning",
+    "type": "compare",
+    "correct": "B"
+  },
+  {
+    "id": "q36",
+    "category": "written_reasoning",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q37",
+    "category": "written_reasoning",
+    "type": "compare",
+    "correct": "B"
+  },
+  {
+    "id": "q38",
+    "category": "written_reasoning",
+    "type": "compare",
+    "correct": "A"
+  },
+  {
+    "id": "q39",
+    "category": "written_reasoning",
+    "type": "compare",
+    "correct": "B"
+  },
+  {
+    "id": "q40",
+    "category": "written_reasoning",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q41",
+    "category": "attention_to_detail",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q42",
+    "category": "attention_to_detail",
+    "type": "yesno",
+    "correct": "yes"
+  },
+  {
+    "id": "q43",
+    "category": "attention_to_detail",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q44",
+    "category": "attention_to_detail",
+    "type": "yesno",
+    "correct": "yes"
+  },
+  {
+    "id": "q45",
+    "category": "attention_to_detail",
+    "type": "mcq",
+    "correct": "B"
+  },
+  {
+    "id": "q46",
+    "category": "attention_to_detail",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "q47",
+    "category": "attention_to_detail",
+    "type": "yesno",
+    "correct": "no"
+  },
+  {
+    "id": "q48",
+    "category": "attention_to_detail",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "constraint-detective-01",
+    "category": "instruction_following",
+    "type": "compare",
+    "correct": "A"
+  },
+  {
+    "id": "ranking-01",
+    "category": "response_evaluation",
+    "type": "compare",
+    "correct": "A"
+  },
+  {
+    "id": "hallucination-01",
+    "category": "factuality",
+    "type": "mcq",
+    "correct": "A"
+  },
+  {
+    "id": "tone-01",
+    "category": "response_evaluation",
+    "type": "compare",
+    "correct": "B"
+  },
+  {
+    "id": "evidence-01",
+    "category": "factuality",
+    "type": "compare",
+    "correct": "B"
+  },
+  {
+    "id": "justification-01",
+    "category": "written_reasoning",
+    "type": "written",
+    "keywords": [
+      "both",
+      "categories",
+      "conclusion",
+      "disadvantages",
+      "following",
+      "instruction",
+      "omits",
+      "requested",
+      "satisfies",
+      "stronger"
+    ]
+  },
+  {
+    "id": "multi-constraint-01",
+    "category": "attention_to_detail",
+    "type": "compare",
+    "correct": "A"
+  },
+  {
+    "id": "mixed-01",
+    "category": "response_evaluation",
+    "type": "mcq",
+    "correct": "A"
+  }
+]

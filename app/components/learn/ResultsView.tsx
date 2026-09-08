@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { downloadCertificatePdf, fetchAttempt, retryCertificate, type AssessmentResult } from '../../../lib/learn/api';
 import { learnErrorMessage } from '../../../lib/learn/errors';
-import { writeLearnState } from '../../../lib/learn/storage';
+import { isEmptyScore, scoreLocalAttempt } from '../../../lib/learn/score-attempt';
+import { readLearnState, writeLearnState } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
 
 const PATH_LINKS = [
@@ -12,6 +13,22 @@ const PATH_LINKS = [
   { href: '/opportunities?category=Coding', label: 'Technical / coding' },
   { href: '/opportunities?category=Science', label: 'Research / factuality' },
 ];
+
+function recoverScore(api: AssessmentResult, attemptId: string): AssessmentResult {
+  if (!isEmptyScore(api)) return api;
+  const local = readLearnState();
+  const sameAttempt = !local.attemptId || local.attemptId === attemptId || local.resultId === attemptId;
+  if (!sameAttempt) return api;
+  const answers = local.answers ?? {};
+  if (Object.keys(answers).length < 3) return api;
+  const scored = scoreLocalAttempt(answers, local.questionIds);
+  return {
+    ...api,
+    ...scored,
+    attemptId: api.attemptId || attemptId,
+    submitted: true,
+  };
+}
 
 function recsFor(key?: string) {
   if (key === 'written_reasoning') return PATH_LINKS.filter((item) => item.label.startsWith('Writing') || item.label.startsWith('General'));
@@ -31,9 +48,14 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
     setError('');
     fetchAttempt(attemptId)
       .then((next) => {
-        setResult(next);
+        const recovered = recoverScore(next, attemptId);
+        setResult(recovered);
         if (next.submitted) {
-          writeLearnState({ resultId: next.attemptId, attemptId, passed: Boolean(next.passed) });
+          writeLearnState({
+            resultId: next.attemptId,
+            attemptId,
+            passed: Boolean(recovered.passed),
+          });
         }
       })
       .catch((err) => setError(learnErrorMessage(err)));
@@ -66,6 +88,25 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
       <p className="learn-empty">
         This assessment is still in progress. <a href="/learn/ai-training-foundations/assessment">Continue</a>
       </p>
+    );
+  }
+  if (isEmptyScore(result)) {
+    return (
+      <div className="learn-empty-state" role="alert">
+        <p className="learn-kicker">Your AI Training Readiness Score</p>
+        <h1>We couldn&apos;t calculate your score</h1>
+        <p className="learn-lead">
+          Your assessment was submitted, but the saved result came back empty. This is not a 0 score. Retake to score from your answers.
+        </p>
+        <div className="learn-pager">
+          <a className="primary-button" href="/learn/ai-training-foundations/assessment?retake=1">
+            Retake assessment
+          </a>
+          <a className="secondary-button on-light" href="/learn/ai-training-foundations">
+            Back to course
+          </a>
+        </div>
+      </div>
     );
   }
 
