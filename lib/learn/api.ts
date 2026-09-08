@@ -40,6 +40,7 @@ export type LearnProgress = {
   currentModule: number;
   completedModules: number[];
   startedModules: number[];
+  completedLabs?: string[];
   quizResults: Record<string, boolean | number | string> | null;
   lastLesson: string | null;
   percent: number;
@@ -54,7 +55,9 @@ export async function fetchLearnProgress(): Promise<LearnProgress> {
   return result.progress;
 }
 
-export async function saveLearnProgress(patch: Partial<LearnProgress> & { completedAt?: boolean }) {
+export async function saveLearnProgress(
+  patch: Partial<LearnProgress> & { completedAt?: boolean; completedLabs?: string[] },
+) {
   return request<{ progress: LearnProgress }>('/v1/learn/progress', {
     method: 'PUT',
     body: JSON.stringify({ ...identity(), ...patch }),
@@ -73,7 +76,7 @@ export type PublicQuestion = {
 
 export async function startAssessment(attemptId?: string, retake = false) {
   return request<{
-    attempt: { id: string; submitted: boolean; answers: Record<string, string> };
+    attempt: { id: string; submitted: boolean; answers: Record<string, string>; currentIndex?: number | null };
     questions: PublicQuestion[];
     result?: AssessmentResult;
   }>('/v1/learn/assessment/attempts', {
@@ -82,10 +85,14 @@ export async function startAssessment(attemptId?: string, retake = false) {
   });
 }
 
-export async function saveAssessmentAnswers(id: string, answers: Record<string, string>) {
+export async function saveAssessmentAnswers(id: string, answers: Record<string, string>, currentIndex?: number) {
   return request(`/v1/learn/assessment/attempts/${id}`, {
     method: 'PUT',
-    body: JSON.stringify({ ...identity(), answers }),
+    body: JSON.stringify({
+      ...identity(),
+      answers,
+      ...(typeof currentIndex === 'number' ? { currentIndex } : {}),
+    }),
   });
 }
 
@@ -106,6 +113,7 @@ export type AssessmentResult = {
   certificatePending?: boolean;
   answers?: Record<string, string>;
   questions?: PublicQuestion[];
+  currentIndex?: number | null;
 };
 
 export async function submitAssessment(

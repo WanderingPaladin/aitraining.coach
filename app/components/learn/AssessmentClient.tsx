@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { RotateCcw } from 'lucide-react';
 import { usStates } from '../../../lib/apply-fields';
 import { ApiError } from '../../../lib/api';
 import {
@@ -10,10 +11,13 @@ import {
   submitAssessment,
   type PublicQuestion,
 } from '../../../lib/learn/api';
+import { LEARN_PATH } from '../../../lib/learn/course';
 import { learnErrorMessage } from '../../../lib/learn/errors';
+import { courseBackAction } from '../../../lib/learn/sequence';
 import { readLearnState, writeLearnState } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
 import { pressProps } from '../../../lib/press';
+import CourseNav from './CourseNav';
 
 const SITUATIONS = [
   { id: 'completely_new', label: 'I’m completely new' },
@@ -22,6 +26,8 @@ const SITUATIONS = [
   { id: 'already_working', label: 'I’m already completing AI-training work' },
   { id: 'researching', label: 'I’m just researching' },
 ];
+
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function AssessmentClient() {
   const router = useRouter();
@@ -33,7 +39,14 @@ export default function AssessmentClient() {
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [navigating, setNavigating] = useState(false);
   const submitLock = useRef(false);
+  const answersRef = useRef<Record<string, string>>({});
+  const indexRef = useRef(0);
+  const attemptRef = useRef('');
+  const debounceRef = useRef<number | null>(null);
+  const saveChain = useRef(Promise.resolve());
   const [lead, setLead] = useState({
     firstName: '',
     lastName: '',
@@ -43,6 +56,16 @@ export default function AssessmentClient() {
     state: '',
     shareScore: true,
   });
+
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
+  useEffect(() => {
+    attemptRef.current = attemptId;
+  }, [attemptId]);
 
   useEffect(() => {
     let active = true;
@@ -73,17 +96,29 @@ export default function AssessmentClient() {
           return;
         }
         const restored = result.attempt.answers ?? {};
+        const restoredIndex = result.attempt.currentIndex;
+        const firstOpen = result.questions.findIndex((item) => !String(restored[item.id] ?? '').trim());
+        const nextIndex =
+          typeof restoredIndex === 'number' && Number.isFinite(restoredIndex)
+            ? Math.min(Math.max(0, restoredIndex), Math.max(0, result.questions.length - 1))
+            : firstOpen >= 0
+              ? firstOpen
+              : 0;
         setQuestions(result.questions);
         setAttemptId(result.attempt.id);
         setAnswers(restored);
-        const firstOpen = result.questions.findIndex((item) => !String(restored[item.id] ?? '').trim());
-        setIndex(firstOpen >= 0 ? firstOpen : 0);
+        answersRef.current = restored;
+        setIndex(nextIndex);
+        indexRef.current = nextIndex;
         writeLearnState(
           retake
             ? { attemptId: result.attempt.id, resultId: null, passed: false }
             : { attemptId: result.attempt.id },
         );
-        trackEvent({ eventType: 'assessment_started', metadata: { attemptId: result.attempt.id } });
+        if (local.attemptId !== result.attempt.id) {
+          trackEvent({ eventType: 'assessment_started', metadata: { attemptId: result.attempt.id } });
+        }
+        setSaveStatus(Object.keys(restored).length ? 'saved' : 'idle');
       })
       .catch((err) => {
         if (active) setError(learnErrorMessage(err));
@@ -107,17 +142,83 @@ export default function AssessmentClient() {
     [answers, questions],
   );
 
+  function persist(nextIndex = indexRef.current) {
+    const id = attemptRef.current;
+    if (!id) return Promise.resolve();
+    setSaveStatus('saving');
+    const job = saveChain.current.then(
+      () => saveAssessmentAnswers(attemptRef.current || id, { ...answersRef.current }, nextIndex),
+      () => saveAssessmentAnswers(attemptRef.current || id, { ...answersRef.current }, nextIndex),
+    );
+    saveChain.current = job.then(
+      () => undefined,
+      () => undefined,
+    );
+    return job
+      .then(() => {
+        setSaveStatus('saved');
+      })
+      .catch((err) => {
+        if (err instanceof ApiError && (err.code === 'ALREADY_SUBMITTED' || err.status === 409)) {
+          writeLearnState({ resultId: id, attemptId: id });
+          router.replace(`/learn/ai-training-foundations/results/${id}`);
+          return;
+        }
+        setSaveStatus('error');
+        throw err;
+      });
+  }
+
   function setAnswer(value: string) {
-    if (!question || submitting) return;
-    const next = { ...answers, [question.id]: value };
+    if (!question || submitting || navigating) return;
+    const next = { ...answersRef.current, [question.id]: value };
+    answersRef.current = next;
     setAnswers(next);
     if (!attemptId) return;
-    void saveAssessmentAnswers(attemptId, next).catch((err) => {
-      if (err instanceof ApiError && (err.code === 'ALREADY_SUBMITTED' || err.status === 409)) {
-        writeLearnState({ resultId: attemptId, attemptId });
-        router.replace(`/learn/ai-training-foundations/results/${attemptId}`);
-      }
-    });
+    if (question.type === 'written') {
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+      debounceRef.current = window.setTimeout(() => {
+        void persist(indexRef.current).catch(() => {});
+      }, 500);
+      return;
+    }
+    void persist(indexRef.current).catch(() => {});
+  }
+
+  async function goTo(nextIndex: number) {
+    if (navigating || submitting) return;
+    if (nextIndex < 0 || nextIndex >= questions.length) return;
+    if (debounceRef.current) {
+      window.clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    setNavigating(true);
+    setError('');
+    try {
+      await persist(nextIndex);
+      setIndex(nextIndex);
+    } catch {
+      setError('Not saved — Retry');
+    } finally {
+      setNavigating(false);
+    }
+  }
+
+  async function openReview() {
+    if (navigating || submitting) return;
+    if (debounceRef.current) {
+      window.clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    setNavigating(true);
+    try {
+      await persist(indexRef.current);
+      setConfirming(true);
+    } catch {
+      setError('Not saved — Retry');
+    } finally {
+      setNavigating(false);
+    }
   }
 
   async function submit() {
@@ -126,9 +227,14 @@ export default function AssessmentClient() {
     setSubmitting(true);
     setError('');
     try {
+      if (debounceRef.current) {
+        window.clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      await persist(indexRef.current);
       const honeypot = (document.querySelector('input[name="companyWebsite"]') as HTMLInputElement | null)?.value;
       const result = await submitAssessment(attemptId, {
-        answers,
+        answers: answersRef.current,
         firstName: lead.firstName,
         lastName: lead.lastName,
         email: lead.email,
@@ -164,11 +270,13 @@ export default function AssessmentClient() {
     return (
       <p className="learn-empty" role="alert">
         {error}{' '}
-        <a href="/learn/ai-training-foundations">Back to course</a>
+        <a href={LEARN_PATH.course}>Back to course</a>
       </p>
     );
   }
   if (!question) return <p className="learn-empty">No questions available.</p>;
+
+  const navLocked = navigating || submitting || saveStatus === 'error';
 
   if (confirming) {
     const ready =
@@ -255,6 +363,7 @@ export default function AssessmentClient() {
             </button>
           </div>
         </form>
+        <CourseNav back={courseBackAction()} />
       </div>
     );
   }
@@ -262,11 +371,35 @@ export default function AssessmentClient() {
   return (
     <div className="learn-assessment">
       <header className="learn-assess-head">
-        <p className="learn-kicker">Final assessment · about 20–25 minutes</p>
-        <h1 tabIndex={-1} id="learn-question-heading">Question {index + 1} of {questions.length}</h1>
-        <div className="learn-meter" aria-valuemin={0} aria-valuemax={questions.length || 1} aria-valuenow={index + 1} role="progressbar" aria-label="Assessment progress">
+        <p className="learn-kicker">
+          <a href={LEARN_PATH.course}>AI Training Foundations</a>
+          {' / '}
+          Final assessment · about 20–25 minutes
+        </p>
+        <div className="learn-assess-title-row">
+          <h1 tabIndex={-1} id="learn-question-heading">Question {index + 1} of {questions.length}</h1>
+          <p className="learn-save-status" aria-live="polite">
+            {saveStatus === 'saving' || navigating ? 'Saving…' : null}
+            {saveStatus === 'saved' ? 'Saved ✓' : null}
+            {saveStatus === 'error' ? (
+              <button type="button" className="learn-text-retry" onClick={() => void persist(index).catch(() => {})}>
+                <RotateCcw size={14} strokeWidth={2} aria-hidden="true" />
+                Not saved — Retry
+              </button>
+            ) : null}
+          </p>
+        </div>
+        <div
+          className="learn-meter"
+          aria-valuemin={1}
+          aria-valuemax={questions.length || 1}
+          aria-valuenow={index + 1}
+          role="progressbar"
+          aria-label={`Question ${index + 1} of ${questions.length}`}
+        >
           <i style={{ width: `${questions.length ? ((index + 1) / questions.length) * 100 : 0}%` }} />
         </div>
+        <p className="learn-hint">{answeredCount} of {questions.length} answered</p>
       </header>
       <section className="learn-question">
         {question.stimulus ? <pre className="learn-response">{question.stimulus}</pre> : null}
@@ -287,6 +420,7 @@ export default function AssessmentClient() {
                 type="button"
                 className={`learn-option${answers[question.id] === option.id ? ' is-selected' : ''}`}
                 aria-pressed={answers[question.id] === option.id}
+                disabled={navigating || submitting}
                 {...pressProps(() => setAnswer(option.id))}
               >
                 <span>{option.id}</span>
@@ -296,21 +430,22 @@ export default function AssessmentClient() {
           </div>
         )}
       </section>
-      <nav className="learn-pager">
-        <button type="button" className="secondary-button on-light" disabled={index === 0} onClick={() => setIndex((value) => value - 1)}>
+      {error && saveStatus === 'error' ? <p className="learn-feedback is-no" role="alert">{error}</p> : null}
+      <nav className="learn-pager learn-course-nav" aria-label="Assessment questions">
+        <button type="button" className="secondary-button on-light" disabled={index === 0 || navLocked} onClick={() => void goTo(index - 1)}>
           Back
         </button>
         {index < questions.length - 1 ? (
-          <button type="button" className="primary-button" onClick={() => setIndex((value) => value + 1)}>
-            Next
+          <button type="button" className="primary-button" disabled={navLocked} onClick={() => void goTo(index + 1)}>
+            {navigating ? 'Saving…' : 'Next'}
           </button>
         ) : (
-          <button type="button" className="primary-button" onClick={() => setConfirming(true)}>
-            Review and submit
+          <button type="button" className="primary-button" disabled={navLocked} onClick={() => void openReview()}>
+            {navigating ? 'Saving…' : 'Review and submit'}
           </button>
         )}
       </nav>
-      <p className="learn-hint">{answeredCount} answered · answers save automatically · score is hidden until you submit</p>
+      <CourseNav back={courseBackAction()} />
     </div>
   );
 }

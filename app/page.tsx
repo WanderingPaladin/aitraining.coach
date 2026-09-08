@@ -31,6 +31,7 @@ import HeroCarousel from './components/HeroCarousel';
 import PayrollPreview from './components/PayrollPreview';
 import SiteFooter from './components/SiteFooter';
 import SiteHeader from './components/SiteHeader';
+import CourseOverviewCard from './components/learn/CourseOverviewCard';
 
 const processSteps: Array<{
   number: string;
@@ -128,30 +129,7 @@ export default function Home() {
       </section>
 
       <section className="section learn-home-section shell" id="learn">
-        <div className="section-heading">
-          <h2>Could you evaluate AI responses professionally?</h2>
-          <p>Find out in about 90 minutes. Learn the foundations, practice on realistic examples, take the readiness assessment, and earn a Certificate of Completion.</p>
-        </div>
-        <ul className="learn-home-benefits">
-          <li>8 focused modules</li>
-          <li>Interactive practice</li>
-          <li>Readiness score</li>
-          <li>Personalized feedback</li>
-          <li>Certificate of Completion</li>
-        </ul>
-        <ol className="learn-home-path">
-          <li>Learn</li>
-          <li>Practice</li>
-          <li>Get your score</li>
-          <li>Earn a certificate</li>
-          <li>Explore opportunities</li>
-        </ol>
-        <div className="hero-actions">
-          <a className="primary-button" href="/learn">Start free course</a>
-          <a className="secondary-button on-light" href="/learn/ai-training-foundations">See what you’ll learn</a>
-        </div>
-        <p className="learn-home-note">No previous AI-training experience required.</p>
-        <p className="learn-disclaimer">Course completion does not guarantee employment, third-party platform acceptance, projects, or income.</p>
+        <CourseOverviewCard />
       </section>
 
       <section className="section audience-section shell">

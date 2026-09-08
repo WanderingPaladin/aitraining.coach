@@ -1,36 +1,19 @@
 'use client';
 
 import { MODULES } from '../../../lib/learn/course';
-import { continueHref, moduleStatus, progressPercent } from '../../../lib/learn/storage';
+import { moduleStatus } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
 import { useLearnProgress } from '../../hooks/useLearnProgress';
+import { CourseOverviewView } from './CourseOverviewCard';
 
 export default function CourseDashboard() {
   const { state, ready } = useLearnProgress();
-  const percent = progressPercent(state);
-  const href = continueHref(state);
   if (!ready) return <p className="learn-status">Loading your progress…</p>;
 
   return (
     <div className="learn-dashboard">
-      <header className="learn-dash-head">
-        <div>
-          <p className="learn-kicker">Free beginner course</p>
-          <h1>AI Training Foundations</h1>
-          <p className="learn-lead">Your progress is saved automatically.</p>
-        </div>
-        <div className="learn-score-ring" style={{ ['--p' as string]: `${percent}%` }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label={`${percent} percent complete`}>
-          <strong>{percent}%</strong>
-          <span>Complete</span>
-        </div>
-        <div className="learn-meter" aria-hidden="true"><i style={{ width: `${percent}%` }} /></div>
-      </header>
-      <p>
-        <a className="primary-button" href={href}>
-          Continue learning
-        </a>
-      </p>
-      <ol className="learn-module-list">
+      <CourseOverviewView state={state} ready={ready} headingLevel="h1" curriculumHref="#curriculum" />
+      <ol className="learn-module-list" id="curriculum">
         {MODULES.map((item) => {
           const status = moduleStatus(state, item.n);
           const label = status === 'complete' ? 'Complete' : status === 'in_progress' ? 'In progress' : 'Not started';
@@ -68,11 +51,11 @@ export default function CourseDashboard() {
           </div>
           <div className="learn-module-meta">
             <span className="learn-status">
-              {state.resultId ? 'Submitted' : state.completedModules.length >= 8 ? 'Ready' : 'Locked'}
+              {state.resultId ? 'Completed' : state.attemptId ? 'In progress' : state.completedModules.length >= 8 ? 'Ready' : 'Locked'}
             </span>
             {state.resultId ? (
               <a className="primary-button" href={`/learn/ai-training-foundations/results/${state.resultId}`}>
-                View results
+                {state.passed ? 'View certificate' : 'View results'}
               </a>
             ) : state.completedModules.length >= 8 || state.attemptId ? (
               <a className="primary-button" href="/learn/ai-training-foundations/assessment">

@@ -2,10 +2,12 @@
 
 import { useEffect } from 'react';
 import course from '../../../lib/learn/data/course-v2.json';
-import { MODULES } from '../../../lib/learn/course';
+import { LEARN_PATH, MODULES } from '../../../lib/learn/course';
+import { courseBackAction, getNextLearningStep } from '../../../lib/learn/sequence';
 import { progressPercent } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
 import { useLearnProgress } from '../../hooks/useLearnProgress';
+import CourseNav from './CourseNav';
 import LessonBlocks, { type V2QuickCheck, type V2Section } from './LessonBlocks';
 import SaveToast from './SaveToast';
 
@@ -14,7 +16,7 @@ export default function ModuleView({ n }: { n: number }) {
   const meta = MODULES.find((item) => item.n === n);
   const { state, update, saved, ready } = useLearnProgress();
   const prev = n > 1 ? n - 1 : null;
-  const next = n < MODULES.length ? n + 1 : null;
+  const nextAction = getNextLearningStep({ currentType: 'module', currentId: String(n), state });
   const percent = progressPercent(state);
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function ModuleView({ n }: { n: number }) {
 
   function complete() {
     const completed = state.completedModules.includes(n) ? state.completedModules : [...state.completedModules, n];
-    update({ completedModules: completed, currentModule: next ?? n });
+    update({ completedModules: completed, currentModule: n < MODULES.length ? n + 1 : n });
     trackEvent({ eventType: 'module_completed', metadata: { module: n } });
   }
 
@@ -43,7 +45,7 @@ export default function ModuleView({ n }: { n: number }) {
           {MODULES.map((item) => (
             <li key={item.n}>
               <a
-                href={`/learn/ai-training-foundations/module/${item.n}`}
+                href={LEARN_PATH.module(item.n)}
                 aria-current={item.n === n ? 'page' : undefined}
                 aria-label={`Module ${item.n}: ${item.title}${state.completedModules.includes(item.n) ? ', complete' : ''}`}
                 className={state.completedModules.includes(item.n) ? 'is-done' : undefined}
@@ -66,7 +68,7 @@ export default function ModuleView({ n }: { n: number }) {
           <span className="learn-meter" aria-hidden="true"><i style={{ width: `${percent}%` }} /></span>
         </div>
         {state.completedModules.includes(3) ? (
-          <a className="secondary-button on-light learn-sidenav-cta" href="/learn/ai-training-foundations/practice">
+          <a className="secondary-button on-light learn-sidenav-cta" href={LEARN_PATH.practice}>
             Practice labs
           </a>
         ) : null}
@@ -74,9 +76,9 @@ export default function ModuleView({ n }: { n: number }) {
       <article className="learn-lesson">
         <header className="learn-lesson-head">
           <p className="learn-kicker">
-            <a href="/learn">Learn</a>
+            <a href={LEARN_PATH.landing}>Learn</a>
             {' / '}
-            <a href="/learn/ai-training-foundations">AI Training Foundations</a>
+            <a href={LEARN_PATH.course}>AI Training Foundations</a>
             {' / '}
             Module {n} · {meta.minutes}
           </p>
@@ -88,26 +90,18 @@ export default function ModuleView({ n }: { n: number }) {
           quizResults={state.quizResults}
           onQuiz={(id, ok) => update({ quizResults: { ...state.quizResults, [id]: ok } })}
         />
-        <nav className="learn-pager" aria-label="Module pagination">
-          {prev ? (
-            <a className="secondary-button on-light" href={`/learn/ai-training-foundations/module/${prev}`}>
-              Previous
-            </a>
-          ) : (
-            <a className="secondary-button on-light" href="/learn/ai-training-foundations">
-              Course home
-            </a>
-          )}
-          {next ? (
-            <a className="primary-button" href={`/learn/ai-training-foundations/module/${next}`} onClick={complete}>
-              Mark complete & continue
-            </a>
-          ) : (
-            <a className="primary-button" href="/learn/ai-training-foundations/assessment" onClick={complete}>
-              Take final assessment
-            </a>
-          )}
-        </nav>
+        <CourseNav
+          back={
+            prev
+              ? { href: LEARN_PATH.module(prev), label: 'Previous' }
+              : courseBackAction()
+          }
+          primary={{
+            href: nextAction.href,
+            label: nextAction.label,
+            onClick: complete,
+          }}
+        />
       </article>
       <SaveToast show={saved} />
     </div>

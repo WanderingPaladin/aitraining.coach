@@ -1,17 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
-import scenarios from '../../../lib/learn/data/practical-scenarios.json';
+import { LEARN_PATH } from '../../../lib/learn/course';
+import { practiceLabs } from '../../../lib/learn/sequence';
+import { isLabComplete } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
+import { useLearnProgress } from '../../hooks/useLearnProgress';
 import LearnShell from './LearnShell';
 
-function labSlug(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-}
-
-const labs = [...new Map(scenarios.scenarios.map((item) => [item.lab, item])).values()];
+const labs = practiceLabs();
 
 export default function PracticeHub() {
+  const { state, ready } = useLearnProgress();
+
   useEffect(() => {
     trackEvent({ eventType: 'practice_started', metadata: { lab: 'hub' } });
   }, []);
@@ -21,24 +22,29 @@ export default function PracticeHub() {
       <div className="journal-light">
         <div className="shell journal-main">
           <p className="learn-kicker">
-            <a href="/learn/ai-training-foundations">AI Training Foundations</a>
+            <a href={LEARN_PATH.course}>AI Training Foundations</a>
+            {' / '}
+            Practice Labs
           </p>
           <h1>Practice labs</h1>
           <p className="learn-lead">
             Optional labs. They do not affect your certificate score. Instant explanations appear after you answer.
           </p>
           <ol className="learn-module-list">
-            {labs.map((item) => (
-              <li key={item.id} className="learn-module-card">
-                <div>
-                  <h2>{item.lab}</h2>
-                  <p>{item.category.replace(/_/g, ' ')}</p>
-                </div>
-                <a className="secondary-button on-light" href={`/learn/ai-training-foundations/practice/${labSlug(item.lab)}`}>
-                  Start
-                </a>
-              </li>
-            ))}
+            {labs.map((item) => {
+              const done = ready && isLabComplete(state, item.id);
+              return (
+                <li key={item.id} className={`learn-module-card${done ? ' is-complete' : ''}`}>
+                  <div>
+                    <h2>{item.title}</h2>
+                    <p>{done ? 'Complete' : 'Optional practice'}</p>
+                  </div>
+                  <a className="secondary-button on-light" href={LEARN_PATH.lab(item.id)}>
+                    {done ? 'Review' : 'Start'}
+                  </a>
+                </li>
+              );
+            })}
           </ol>
         </div>
       </div>
