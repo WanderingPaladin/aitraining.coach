@@ -26,6 +26,9 @@ export const ASSESSMENT_WEIGHTS = [
   { key: 'attention_to_detail', label: 'Attention to detail', weight: 0.1 },
 ] as const;
 
+/** Matches backend ATTEMPT_QUESTION_COUNT + ATTEMPT_PRACTICAL_COUNT. Display only. */
+export const ASSESSMENT_ITEM_COUNT = 26;
+
 export const LEARN_PATH = {
   landing: '/learn',
   course: '/learn/ai-training-foundations',

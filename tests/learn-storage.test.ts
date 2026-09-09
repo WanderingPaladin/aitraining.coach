@@ -157,10 +157,15 @@ describe('learn landing product page', () => {
     assert.match(css, /\.learn-assess-section/);
     const assessment = readFileSync(join(root, 'app/components/learn/LearnAssessmentSection.tsx'), 'utf8');
     assert.match(assessment, /ASSESSMENT_WEIGHTS/);
-    assert.match(assessment, /These percentages are assessment weights/);
+    assert.match(assessment, /ASSESSMENT_ITEM_COUNT/);
+    assert.match(assessment, /These percentages show the assessment weighting/);
+    assert.match(assessment, /The five skill areas/);
+    assert.match(assessment, /practiceHrefForCategory/);
     assert.match(assessment, /fetchAttempt/);
     assert.doesNotMatch(assessment, /learn-meter/);
     assert.doesNotMatch(assessment, /finalScore = 39/);
+    assert.doesNotMatch(assessment, /~30 min/);
+    assert.match(courseFile, /ASSESSMENT_ITEM_COUNT = 26/);
     assert.match(css, /\.learn-cert-watermark/);
     assert.match(css, /\.learn-cert-sheet/);
     const preview = readFileSync(join(root, 'app/components/learn/LearnCertificatePreview.tsx'), 'utf8');
