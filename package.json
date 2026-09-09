@@ -10,7 +10,7 @@
     "build": "vinext build",
     "start": "vinext start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "test:learn": "node --test --experimental-strip-types tests/learn-storage.test.ts"
+    "test:learn": "node --test --experimental-strip-types tests/learn-*.test.ts"
   },
   "dependencies": {
     "lucide-react": "^1.37.0",

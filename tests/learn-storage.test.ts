@@ -54,7 +54,6 @@ describe('course overview card', () => {
     assert.match(page, /CourseOverviewCard/);
     assert.match(css, /\.learn-overview-card/);
     assert.doesNotMatch(css, /\.learn-home-benefits/);
-    assert.doesNotMatch(css, /\.learn-score-ring/);
     assert.match(overview, /not_started/);
     assert.match(overview, /assessment_ready/);
     assert.match(overview, /Take final assessment/);
@@ -215,5 +214,12 @@ describe('assessment persistence UX', () => {
     assert.match(css, /\.learn-assess-page/);
     assert.match(css, /\.learn-answer/);
     assert.match(storage, /flaggedQuestionIds/);
+    const options = readFileSync(join(root, 'lib/learn/assessment-options.ts'), 'utf8');
+    const card = readFileSync(join(root, 'app/components/learn/AssessmentQuestionCard.tsx'), 'utf8');
+    assert.match(options, /internalValue/);
+    assert.match(options, /optionCode/);
+    assert.match(options, /displayText/);
+    assert.doesNotMatch(card, /Response \$\{option\.id\}/);
+    assert.match(card, /displayOption/);
   });
 });

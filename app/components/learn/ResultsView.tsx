@@ -1,11 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { downloadCertificatePdf, fetchAttempt, retryCertificate, type AssessmentResult } from '../../../lib/learn/api';
+import { COURSE_TITLE, LEARN_PATH, PASS_SCORE } from '../../../lib/learn/course';
 import { learnErrorMessage } from '../../../lib/learn/errors';
+import {
+  personalizedSteps,
+  practiceHrefForCategory,
+  skillHighlight,
+  skillStatusLabel,
+  stageBody,
+} from '../../../lib/learn/results-display';
 import { isEmptyScore, scoreLocalAttempt } from '../../../lib/learn/score-attempt';
 import { readLearnState, writeLearnState } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
+import ResultsSkeleton from './ResultsSkeleton';
 
 const PATH_LINKS = [
   { href: '/opportunities?experience=beginner', label: 'General evaluator' },
@@ -13,6 +23,9 @@ const PATH_LINKS = [
   { href: '/opportunities?category=Coding', label: 'Technical / coding' },
   { href: '/opportunities?category=Science', label: 'Research / factuality' },
 ];
+
+const DISCLAIMER =
+  'This assessment is educational and does not predict third-party platform acceptance, project availability, or employment.';
 
 function recoverScore(api: AssessmentResult, attemptId: string): AssessmentResult {
   if (!isEmptyScore(api)) return api;
@@ -66,52 +79,68 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load once per attempt
   }, [attemptId]);
 
-  if (error) {
+  if (error && !result) {
     return (
-      <div className="learn-empty" role="alert">
-        <p>We couldn&apos;t load your assessment result.</p>
-        <p>{error}</p>
-        <div className="learn-pager">
-          <button type="button" className="primary-button" onClick={() => load()}>
-            Try again
-          </button>
-          <a className="secondary-button on-light" href="/learn/ai-training-foundations">
-            Return to course
-          </a>
+      <div className="learn-results-page">
+        <div className="learn-empty-state learn-assess-error" role="alert">
+          <p className="learn-kicker">Your results</p>
+          <h1>We couldn&apos;t load your results.</h1>
+          <p className="learn-empty">Your assessment submission has not been changed.</p>
+          <div className="learn-pager">
+            <button type="button" className="primary-button" onClick={() => load()}>
+              Try again
+            </button>
+            <a className="secondary-button on-light" href={LEARN_PATH.course}>
+              Back to Course
+            </a>
+          </div>
         </div>
       </div>
     );
   }
-  if (!result) return <p className="learn-status">Loading your results…</p>;
+  if (!result) return <ResultsSkeleton />;
   if (!result.submitted) {
     return (
-      <p className="learn-empty">
-        This assessment is still in progress. <a href="/learn/ai-training-foundations/assessment">Continue</a>
-      </p>
+      <div className="learn-results-page">
+        <p className="learn-empty">
+          This assessment is still in progress.{' '}
+          <a href={LEARN_PATH.assessment}>Continue</a>
+        </p>
+      </div>
     );
   }
   if (isEmptyScore(result)) {
     return (
-      <div className="learn-empty-state" role="alert">
-        <p className="learn-kicker">Your AI Training Readiness Score</p>
-        <h1>We couldn&apos;t calculate your score</h1>
-        <p className="learn-lead">
-          Your assessment was submitted, but the saved result came back empty. This is not a 0 score. Retake to score from your answers.
-        </p>
-        <div className="learn-pager">
-          <a className="primary-button" href="/learn/ai-training-foundations/assessment?retake=1">
-            Retake assessment
-          </a>
-          <a className="secondary-button on-light" href="/learn/ai-training-foundations">
-            Back to course
-          </a>
+      <div className="learn-results-page">
+        <div className="learn-empty-state" role="alert">
+          <p className="learn-kicker">Your AI Training Readiness Score</p>
+          <h1>We couldn&apos;t calculate your score</h1>
+          <p className="learn-lead">
+            Your assessment was submitted, but the saved result came back empty. This is not a 0 score. Retake to score from your answers.
+          </p>
+          <div className="learn-pager">
+            <a className="primary-button" href={`${LEARN_PATH.assessment}?retake=1`}>
+              Retake assessment
+            </a>
+            <a className="secondary-button on-light" href={LEARN_PATH.course}>
+              Back to course
+            </a>
+          </div>
         </div>
       </div>
     );
   }
 
+  const score = result.finalScore ?? 0;
+  const passScore = result.passScore ?? PASS_SCORE;
   const certificateId = result.certificate?.credentialId;
-  const paths = recsFor(result.opportunity ? result.categories?.find((item) => item.label === result.opportunity?.label)?.key : undefined);
+  const weakestKey = result.categories?.find((item) => item.label === result.opportunity?.label)?.key;
+  const paths = recsFor(weakestKey);
+  const practiceHref = practiceHrefForCategory(weakestKey);
+  const steps = personalizedSteps(result);
+  const remaining = Math.max(0, passScore - score);
+  const certPercent = Math.min(100, Math.round((score / Math.max(1, passScore)) * 100));
+  const body = stageBody(result);
 
   async function download() {
     if (!certificateId) return;
@@ -126,49 +155,190 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
   }
 
   return (
-    <div className="learn-results">
-      <p className="learn-kicker">Your AI Training Readiness Score</p>
-      <p className="learn-big-score">{result.finalScore} <small>/ 100</small></p>
-      <h1>{result.levelCopy?.title}</h1>
-      <p className="learn-lead">{result.levelCopy?.body}</p>
+    <div className="learn-results-page">
+      <a className="learn-results-back" href={LEARN_PATH.course}>
+        <ArrowLeft size={16} strokeWidth={2} aria-hidden="true" />
+        Back to {COURSE_TITLE}
+      </a>
+      <header className="learn-results-head">
+        <p className="learn-kicker">Your results</p>
+        <h1>Your {COURSE_TITLE} Results</h1>
+        <p className="learn-lead">See what you&apos;re doing well and where to focus next.</p>
+      </header>
+
+      <div className="learn-results-hero">
+        <section className="learn-results-card learn-results-score" aria-labelledby="learn-results-score-title">
+          <div
+            className="learn-score-ring"
+            style={{ ['--p' as string]: score }}
+            role="img"
+            aria-label={`${score} out of 100`}
+          >
+            <div className="learn-score-ring-inner">
+              <p className="learn-big-score">
+                {score} <small>/ 100</small>
+              </p>
+            </div>
+          </div>
+          <h2 id="learn-results-score-title">{result.levelCopy?.title}</h2>
+          <p className="learn-lead">{body}</p>
+          {result.passed ? (
+            <p className="learn-results-cert-note">
+              {result.certificate ? 'Certificate unlocked' : 'Certificate requirement met'}
+            </p>
+          ) : (
+            <div className="learn-results-cert-progress">
+              <p>
+                Certificate progress <b>{score} / {passScore} required</b>
+              </p>
+              <span
+                className="learn-meter"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={passScore}
+                aria-valuenow={Math.min(score, passScore)}
+                aria-label={`Certificate progress ${score} of ${passScore}`}
+              >
+                <i style={{ width: `${certPercent}%` }} />
+              </span>
+              <p className="learn-hint">
+                {remaining} {remaining === 1 ? 'point' : 'points'} to reach the certificate threshold
+              </p>
+            </div>
+          )}
+        </section>
+
+        <aside className="learn-results-card learn-results-next">
+          <p className="learn-kicker">Your next best step</p>
+          <h2>Your next best step</h2>
+          {result.strongest ? (
+            <p className="learn-results-next-row">
+              <span>Strongest area</span>
+              <b>{result.strongest.label}</b>
+              <small>{result.strongest.score} / 100</small>
+            </p>
+          ) : null}
+          {result.opportunity ? (
+            <p className="learn-results-next-row">
+              <span>Biggest opportunity</span>
+              <b>{result.opportunity.label}</b>
+              <small>{result.opportunity.score} / 100</small>
+            </p>
+          ) : null}
+          <a
+            className="primary-button"
+            href="/#apply"
+            onClick={() => trackEvent({ eventType: 'coaching_clicked_from_results' })}
+          >
+            Review my results with a coach
+          </a>
+          <p className="learn-hint">
+            Talk through your results and get a clearer practical next-step plan.
+          </p>
+          <p className="learn-results-note">Free intro conversation</p>
+        </aside>
+      </div>
+
       {result.usBased === false ? (
-        <aside className="learn-callout is-note">
-          <p>Current coaching and opportunity recommendations may be focused on U.S.-eligible users. You can still use this educational certificate.</p>
+        <aside className="learn-callout is-tip">
+          <p>
+            Current coaching and opportunity recommendations may be focused on U.S.-eligible users. You can still use
+            this educational certificate.
+          </p>
         </aside>
       ) : null}
-      <ul className="learn-cats">
-        {result.categories?.map((item) => (
-          <li key={item.key}>
-            <div>
-              <strong>{item.label}</strong>
-              <span>{item.band}</span>
-            </div>
-            <b>{item.score} / 100</b>
-            <span className="learn-meter"><i style={{ width: `${item.score}%` }} /></span>
-            {item.insight ? <p className="learn-hint">{item.insight}</p> : null}
-          </li>
-        ))}
-      </ul>
-      <div className="learn-split">
-        <article>
-          <p className="learn-kicker">Your strongest area</p>
-          <h2>{result.strongest?.label}</h2>
-          <p>{result.strongest?.score} / 100</p>
-        </article>
-        <article>
-          <p className="learn-kicker">Your biggest opportunity</p>
-          <h2>{result.opportunity?.label}</h2>
-          <p>{result.opportunity?.score} / 100</p>
-        </article>
-      </div>
-      <section>
-        <h2>Recommended next steps</h2>
-        <ul className="learn-list">
-          {result.recommendations?.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
+
+      <section className="learn-results-section">
+        <h2>Your Skill Breakdown</h2>
+        <p className="learn-lead">See how you performed across the five core evaluation skills.</p>
+        <ul className="learn-skill-grid">
+          {result.categories?.map((item) => {
+            const highlight = skillHighlight(item, result.strongest, result.opportunity);
+            const status = skillStatusLabel(highlight, item.band);
+            return (
+              <li key={item.key} className={`learn-skill-card${highlight ? ` is-${highlight}` : ''}`}>
+                <div className="learn-skill-card-top">
+                  <h3>{item.label}</h3>
+                  {status ? <span className="learn-overview-badge">{status}</span> : null}
+                </div>
+                <p className="learn-skill-score">
+                  {item.score} <small>/ 100</small>
+                </p>
+                <span
+                  className="learn-meter"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={item.score}
+                  aria-label={`${item.label} ${item.score} out of 100`}
+                >
+                  <i style={{ width: `${item.score}%` }} />
+                </span>
+                {item.insight ? <p className="learn-hint">{item.insight}</p> : null}
+              </li>
+            );
+          })}
         </ul>
-        <p className="learn-hint">Explore opportunities that may match your current focus. This score does not predict third-party platform acceptance.</p>
+      </section>
+
+      <section className="learn-results-section">
+        <h2>Your Personalized Next Steps</h2>
+        <ol className="learn-results-steps">
+          {steps.map((step) => (
+            <li key={step.n}>
+              <span className="learn-results-step-n" aria-hidden="true">
+                {step.n}
+              </span>
+              <div>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+                {step.href && step.cta ? (
+                  <a
+                    className={step.href === '/#apply' ? 'primary-button' : 'secondary-button on-light'}
+                    href={step.href}
+                    onClick={
+                      step.href === '/#apply'
+                        ? () => trackEvent({ eventType: 'coaching_clicked_from_results' })
+                        : undefined
+                    }
+                  >
+                    {step.cta}
+                    <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+                  </a>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ol>
+        <div className="learn-results-actions">
+          <a className="secondary-button on-light" href={practiceHref}>
+            Practice my weakest skill
+          </a>
+        </div>
+      </section>
+
+      <section className="learn-results-card learn-results-coach">
+        <p className="learn-kicker">Coaching</p>
+        <h2>Want help turning these results into a plan?</h2>
+        <p className="learn-lead">
+          A coach can walk through your assessment with you, discuss your background, and help you understand which
+          skills to work on next.
+        </p>
+        <a
+          className="primary-button"
+          href="/#apply"
+          onClick={() => trackEvent({ eventType: 'coaching_clicked_from_results' })}
+        >
+          Review my results with a coach
+        </a>
+        <p className="learn-results-note">Free introductory conversation</p>
+      </section>
+
+      <section className="learn-results-section">
+        <h2>Explore opportunities</h2>
+        <p className="learn-lead">
+          Browse opportunities that may match your professional or academic background.
+        </p>
         <ul className="learn-path-links">
           {paths.map((item) => (
             <li key={item.href}>
@@ -178,73 +348,79 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
             </li>
           ))}
         </ul>
-      </section>
-      <div className="learn-pager">
         <a
-          className="primary-button"
+          className="secondary-button on-light"
           href="/opportunities?experience=beginner"
           onClick={() => trackEvent({ eventType: 'opportunities_clicked_from_course' })}
         >
-          View recommended opportunities
+          Explore recommended opportunities
         </a>
-        <a className="secondary-button on-light" href="/learn/ai-training-foundations/practice">
-          Practice my weakest skill
-        </a>
-        <a
-          className="secondary-button on-light"
-          href="/#apply"
-          onClick={() => trackEvent({ eventType: 'coaching_clicked_from_results' })}
-        >
-          Review my results with a coach
-        </a>
-      </div>
+        <p className="learn-disclaimer">{DISCLAIMER}</p>
+      </section>
+
       {result.passed && result.certificate ? (
-        <section className="learn-cert-cta">
-          <h2>Certificate of Completion</h2>
+        <section className="learn-results-card learn-cert-cta">
+          <p className="learn-kicker">Certificate unlocked</p>
+          <h2>Congratulations — you&apos;ve met the course assessment requirement.</h2>
           <p>Credential ID {result.certificate.credentialId}</p>
           <div className="learn-pager">
             <button type="button" className="primary-button" onClick={() => void download()}>
               Download certificate
             </button>
-            <a className="secondary-button on-light" href={`/certificate/${certificateId}`}>
-              View credential
+            <a className="secondary-button on-light" href={LEARN_PATH.certificate(certificateId ?? '')}>
+              View certificate
             </a>
           </div>
         </section>
       ) : result.passed ? (
-        <aside className="learn-callout is-note" role="status">
-          <p>You passed the assessment, but we couldn&apos;t prepare your certificate yet.</p>
-          <p>
-            <button
-              type="button"
-              className="primary-button"
-              disabled={certBusy}
-              onClick={() => {
-                setCertBusy(true);
-                retryCertificate(attemptId)
-                  .then((next) => {
-                    setResult(next);
-                    if (next.certificate) trackEvent({ eventType: 'certificate_generated' });
-                  })
-                  .catch((err) => setError(learnErrorMessage(err)))
-                  .finally(() => setCertBusy(false));
-              }}
-            >
-              {certBusy ? 'Preparing…' : 'Try again'}
-            </button>
-          </p>
+        <aside className="learn-results-card" role="status">
+          <p className="learn-kicker">Certificate</p>
+          <h2>You passed the assessment, but we couldn&apos;t prepare your certificate yet.</h2>
+          <button
+            type="button"
+            className="primary-button"
+            disabled={certBusy}
+            onClick={() => {
+              setCertBusy(true);
+              retryCertificate(attemptId)
+                .then((next) => {
+                  setResult(next);
+                  if (next.certificate) trackEvent({ eventType: 'certificate_generated' });
+                })
+                .catch(() => {})
+                .finally(() => setCertBusy(false));
+            }}
+          >
+            {certBusy ? 'Preparing…' : 'Try again'}
+          </button>
         </aside>
       ) : (
-        <aside className="learn-callout is-note">
-          <p>A certificate unlocks at {result.passScore}/100. Review weaker modules, then you can retake the assessment later.</p>
-          <p>
-            <a className="secondary-button on-light" href="/learn/ai-training-foundations/assessment?retake=1">
-              Retake assessment
-            </a>
-            {' '}
-            <a href="/learn/ai-training-foundations">Back to course</a>
+        <section className="learn-results-card">
+          <p className="learn-kicker">Certificate progress</p>
+          <p className="learn-results-cert-score">
+            {score} / {passScore}
           </p>
-        </aside>
+          <p className="learn-lead">
+            Keep building your skills. Reach {passScore}/100 on the assessment to unlock your AI Training Foundations
+            Certificate of Completion.
+          </p>
+          <div className="learn-pager">
+            <a className="secondary-button on-light" href={practiceHref}>
+              Practice recommended skills
+            </a>
+          </div>
+          <a className="learn-results-quiet" href={`${LEARN_PATH.assessment}?retake=1`}>
+            Retake assessment later
+          </a>
+        </section>
+      )}
+
+      {!result.passed ? null : (
+        <p className="learn-results-foot">
+          <a className="learn-results-quiet" href={`${LEARN_PATH.assessment}?retake=1`}>
+            Retake assessment
+          </a>
+        </p>
       )}
     </div>
   );

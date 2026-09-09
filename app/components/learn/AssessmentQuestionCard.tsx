@@ -1,7 +1,9 @@
 'use client';
 
 import type { PublicQuestion } from '../../../lib/learn/api';
+import { displayOption, optionLayout } from '../../../lib/learn/assessment-options';
 import { questionCategoryLabel } from '../../../lib/learn/question-category';
+import AssessmentAnswerOption from './AssessmentAnswerOption';
 
 export default function AssessmentQuestionCard({
   question,
@@ -20,6 +22,8 @@ export default function AssessmentQuestionCard({
 }) {
   const category = questionCategoryLabel(question.id);
   const groupName = `assessment-${question.id}`;
+  const options = (question.options ?? []).map(displayOption);
+  const layout = optionLayout(question, options);
 
   return (
     <section className="learn-question learn-assess-card" aria-labelledby="learn-question-heading">
@@ -44,29 +48,18 @@ export default function AssessmentQuestionCard({
           />
         </label>
       ) : (
-        <div className="learn-option-list" role="radiogroup" aria-label={question.prompt}>
-          {(question.options ?? []).map((option) => {
-            const selected = value === option.id;
-            const title = question.type === 'compare' ? `Response ${option.id}` : option.id;
-            return (
-              <label key={option.id} className={selected ? 'learn-answer is-selected' : 'learn-answer'}>
-                <input
-                  className="sr-only"
-                  type="radio"
-                  name={groupName}
-                  value={option.id}
-                  checked={selected}
-                  disabled={disabled}
-                  onChange={() => onAnswer(option.id)}
-                />
-                <span className="learn-answer-radio" aria-hidden="true" />
-                <span className="learn-answer-copy">
-                  <strong>{title}</strong>
-                  {option.label && option.label !== option.id ? <span>{option.label}</span> : null}
-                </span>
-              </label>
-            );
-          })}
+        <div className={`learn-option-list is-${layout}`} role="radiogroup" aria-label={question.prompt}>
+          {options.map((option) => (
+            <AssessmentAnswerOption
+              key={option.internalValue}
+              option={option}
+              layout={layout}
+              name={groupName}
+              selected={value === option.internalValue}
+              disabled={disabled}
+              onSelect={onAnswer}
+            />
+          ))}
         </div>
       )}
       <p className="sr-only">
