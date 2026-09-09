@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import {
   ArrowRight,
   Award,
@@ -67,8 +67,6 @@ export default function LearnLanding() {
   const nextModule = nextIncompleteModule(state);
   const journey = courseJourneyStates(state);
   const labs = practiceLabs().slice(0, 3);
-  const [faqOpen, setFaqOpen] = useState<string | null>(landing.faq[0]?.q ?? null);
-  const faqs = landing.faq;
 
   useEffect(() => {
     trackEvent({ eventType: 'course_viewed' });
@@ -298,34 +296,6 @@ export default function LearnLanding() {
               Explore opportunities
               <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
             </a>
-          </section>
-
-          <section className="learn-section" aria-labelledby="learn-faq-title">
-            <p className="learn-kicker">FAQ</p>
-            <h2 id="learn-faq-title">Common questions</h2>
-            <div className="learn-faq">
-              {faqs.map((item, index) => {
-                const expanded = faqOpen === item.q;
-                const panelId = `learn-faq-${index}`;
-                return (
-                  <div key={item.q}>
-                    <h3>
-                      <button
-                        type="button"
-                        aria-expanded={expanded}
-                        aria-controls={panelId}
-                        onClick={() => setFaqOpen(expanded ? null : item.q)}
-                      >
-                        {item.q}
-                      </button>
-                    </h3>
-                    <div id={panelId} hidden={!expanded}>
-                      <p>{item.a}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           </section>
 
           <section className="learn-section learn-final-cta" aria-labelledby="learn-end-title">
