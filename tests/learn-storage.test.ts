@@ -154,6 +154,17 @@ describe('learn landing product page', () => {
     assert.match(css, /\.learn-product/);
     assert.match(css, /\.learn-eval/);
     assert.match(css, /\.learn-journey/);
+    assert.match(css, /\.learn-cert-watermark/);
+    assert.match(css, /\.learn-cert-sheet/);
+    const preview = readFileSync(join(root, 'app/components/learn/LearnCertificatePreview.tsx'), 'utf8');
+    assert.match(landing, /course\.disclaimer/);
+    assert.match(landing, /PASS_SCORE/);
+    assert.match(landing, /Passing the final assessment with \{PASS_SCORE\}/);
+    assert.match(preview, /Preview only — not an issued credential/);
+    assert.match(preview, /PASS_SCORE/);
+    assert.doesNotMatch(preview, /PASS_SCORE = 75/);
+    assert.match(preview, /learn-cert-watermark/);
+    assert.match(preview, /brand-mark/);
   });
 });
 

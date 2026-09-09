@@ -249,23 +249,35 @@ export default function LearnLanding() {
           </section>
 
           <section className="learn-section learn-cert-section" aria-labelledby="learn-cert-title">
-            <div>
+            <div className="learn-cert-copy">
               <p className="learn-kicker">Certificate of Completion</p>
               <h2 id="learn-cert-title">A record of this educational program</h2>
               <p className="learn-lead">
-                Complete the course and meet the assessment requirement ({PASS_SCORE}/100) to earn an AI Trainers Certificate of Completion.
+                Complete the course and meet the assessment requirement ({PASS_SCORE}/100) to earn an AI Trainers
+                Certificate of Completion. Once earned, it is stored on your profile.
               </p>
+              <p className="learn-weight-label">Earn this certificate by</p>
+              <ul className="learn-cert-reqs">
+                <li>Completing the course</li>
+                <li>Passing the final assessment with {PASS_SCORE}/100 or higher</li>
+              </ul>
               <ul className="learn-cert-points">
                 <li>Completion record</li>
                 <li>Assessment-backed</li>
                 <li>Stored in your AI Trainers profile</li>
               </ul>
               {ready && phase === 'passed' && state.resultId ? (
-                <a className="primary-button" href={LEARN_PATH.results(state.resultId)}>
+                <a className="secondary-button on-light" href={LEARN_PATH.results(state.resultId)}>
                   View certificate
                   <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
                 </a>
-              ) : null}
+              ) : (
+                <p className="learn-hint">
+                  {phase === 'assessment_ready' || phase === 'assessment_in_progress' || phase === 'failed'
+                    ? 'Pass the assessment requirement to earn it.'
+                    : 'Complete the course to unlock the assessment, then earn the certificate.'}
+                </p>
+              )}
               <p className="learn-disclaimer">{course.disclaimer}</p>
             </div>
             <LearnCertificatePreview />
