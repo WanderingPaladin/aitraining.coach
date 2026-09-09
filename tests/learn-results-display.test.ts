@@ -67,6 +67,8 @@ describe('results page presentation', () => {
     assert.match(skeleton, /Loading your results…/);
     assert.match(css, /\.learn-results-page/);
     assert.match(css, /\.learn-score-ring/);
+    assert.match(view, /Your Assessment Results/);
+    assert.match(view, /Other actions/);
     assert.doesNotMatch(view, /finalScore = 39/);
   });
 });

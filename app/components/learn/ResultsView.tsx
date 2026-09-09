@@ -1,7 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  Compass,
+  FileText,
+  Focus,
+  GitCompare,
+  GraduationCap,
+  ListChecks,
+  PenLine,
+  RotateCcw,
+  SearchCheck,
+  Sparkles,
+  Target,
+  TrendingUp,
+} from 'lucide-react';
 import { downloadCertificatePdf, fetchAttempt, retryCertificate, type AssessmentResult } from '../../../lib/learn/api';
 import { COURSE_TITLE, LEARN_PATH, PASS_SCORE } from '../../../lib/learn/course';
 import { learnErrorMessage } from '../../../lib/learn/errors';
@@ -24,8 +40,16 @@ const PATH_LINKS = [
   { href: '/opportunities?category=Science', label: 'Research / factuality' },
 ];
 
-const DISCLAIMER =
-  'This assessment is educational and does not predict third-party platform acceptance, project availability, or employment.';
+const OPPORTUNITIES_DISCLAIMER =
+  'Assessment results are educational and do not predict third-party platform acceptance, employment, project availability, or income.';
+
+const SKILL_ICONS = {
+  instruction_following: ListChecks,
+  response_evaluation: GitCompare,
+  factuality: SearchCheck,
+  written_reasoning: PenLine,
+  attention_to_detail: Focus,
+} as const;
 
 function recoverScore(api: AssessmentResult, attemptId: string): AssessmentResult {
   if (!isEmptyScore(api)) return api;
@@ -91,7 +115,7 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
               Try again
             </button>
             <a className="secondary-button on-light" href={LEARN_PATH.course}>
-              Back to Course
+              Back to course
             </a>
           </div>
         </div>
@@ -135,12 +159,16 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
   const passScore = result.passScore ?? PASS_SCORE;
   const certificateId = result.certificate?.credentialId;
   const weakestKey = result.categories?.find((item) => item.label === result.opportunity?.label)?.key;
-  const paths = recsFor(weakestKey);
   const practiceHref = practiceHrefForCategory(weakestKey);
   const steps = personalizedSteps(result);
   const remaining = Math.max(0, passScore - score);
   const certPercent = Math.min(100, Math.round((score / Math.max(1, passScore)) * 100));
   const body = stageBody(result);
+  const sentenceEnd = body.indexOf('. ');
+  const headline = sentenceEnd > 0 ? body.slice(0, sentenceEnd + 1) : result.levelCopy?.title || 'Your result';
+  const rest = sentenceEnd > 0 ? body.slice(sentenceEnd + 1).trim() : '';
+  const certificateHref = certificateId ? LEARN_PATH.certificate(certificateId) : LEARN_PATH.landing;
+  const paths = recsFor(weakestKey);
 
   async function download() {
     if (!certificateId) return;
@@ -160,82 +188,149 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
         <ArrowLeft size={16} strokeWidth={2} aria-hidden="true" />
         Back to {COURSE_TITLE}
       </a>
+
       <header className="learn-results-head">
-        <p className="learn-kicker">Your results</p>
-        <h1>Your {COURSE_TITLE} Results</h1>
-        <p className="learn-lead">See what you&apos;re doing well and where to focus next.</p>
+        <div>
+          <h1>Your Assessment Results</h1>
+          <p className="learn-lead">
+            Here’s how you did and where to focus next. This assessment measures specific evaluation skills and is part of
+            your learning journey.
+          </p>
+        </div>
+        <aside className="learn-results-notice">
+          <GraduationCap size={20} strokeWidth={2} aria-hidden="true" />
+          <div>
+            <strong>This is an educational assessment.</strong>
+            <p>Your score does not guarantee employment, platform acceptance, project availability, or income.</p>
+          </div>
+        </aside>
       </header>
 
       <div className="learn-results-hero">
         <section className="learn-results-card learn-results-score" aria-labelledby="learn-results-score-title">
-          <div
-            className="learn-score-ring"
-            style={{ ['--p' as string]: score }}
-            role="img"
-            aria-label={`${score} out of 100`}
-          >
-            <div className="learn-score-ring-inner">
-              <p className="learn-big-score">
-                {score} <small>/ 100</small>
-              </p>
+          <div className="learn-results-score-top">
+            <ScoreRing score={score} />
+            <div>
+              {result.levelCopy?.title ? <p className="learn-results-stage">{result.levelCopy.title}</p> : null}
+              <h2 id="learn-results-score-title">{headline}</h2>
+              {rest || (sentenceEnd <= 0 && body) ? <p className="learn-lead">{rest || body}</p> : null}
             </div>
           </div>
-          <h2 id="learn-results-score-title">{result.levelCopy?.title}</h2>
-          <p className="learn-lead">{body}</p>
-          {result.passed ? (
-            <p className="learn-results-cert-note">
-              {result.certificate ? 'Certificate unlocked' : 'Certificate requirement met'}
+          <div className="learn-results-cert-progress">
+            <p>
+              <FileText size={16} strokeWidth={2} aria-hidden="true" />
+              Certificate progress <b>{score} / {passScore} required</b>
             </p>
-          ) : (
-            <div className="learn-results-cert-progress">
-              <p>
-                Certificate progress <b>{score} / {passScore} required</b>
-              </p>
-              <span
-                className="learn-meter"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={passScore}
-                aria-valuenow={Math.min(score, passScore)}
-                aria-label={`Certificate progress ${score} of ${passScore}`}
-              >
-                <i style={{ width: `${certPercent}%` }} />
-              </span>
-              <p className="learn-hint">
-                {remaining} {remaining === 1 ? 'point' : 'points'} to reach the certificate threshold
-              </p>
+            <span
+              className="learn-meter"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={passScore}
+              aria-valuenow={Math.min(score, passScore)}
+              aria-label={`Certificate progress ${score} of ${passScore}`}
+            >
+              <i style={{ width: `${certPercent}%` }} />
+            </span>
+            <div className="learn-results-cert-foot">
+              {result.passed ? (
+                <p className="learn-results-cert-note">
+                  {result.certificate ? 'Certificate unlocked' : 'Certificate requirement met'}
+                </p>
+              ) : (
+                <p className="learn-hint">
+                  {remaining} {remaining === 1 ? 'point' : 'points'} to reach your certificate
+                </p>
+              )}
+              {result.passed && !result.certificate ? (
+                <button
+                  type="button"
+                  className="learn-text-btn"
+                  disabled={certBusy}
+                  onClick={() => {
+                    setCertBusy(true);
+                    retryCertificate(attemptId)
+                      .then((next) => {
+                        setResult(next);
+                        if (next.certificate) trackEvent({ eventType: 'certificate_generated' });
+                      })
+                      .catch(() => {})
+                      .finally(() => setCertBusy(false));
+                  }}
+                >
+                  {certBusy ? 'Preparing…' : 'Try again'}
+                </button>
+              ) : (
+                <a className="learn-text-btn" href={certificateHref}>
+                  About the certificate
+                  <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+                </a>
+              )}
             </div>
-          )}
+          </div>
         </section>
 
         <aside className="learn-results-card learn-results-next">
-          <p className="learn-kicker">Your next best step</p>
+          <p className="learn-kicker">
+            <Sparkles size={14} strokeWidth={2} aria-hidden="true" />
+            Your next best step
+          </p>
           <h2>Your next best step</h2>
-          {result.strongest ? (
-            <p className="learn-results-next-row">
-              <span>Strongest area</span>
-              <b>{result.strongest.label}</b>
-              <small>{result.strongest.score} / 100</small>
-            </p>
-          ) : null}
-          {result.opportunity ? (
-            <p className="learn-results-next-row">
-              <span>Biggest opportunity</span>
-              <b>{result.opportunity.label}</b>
-              <small>{result.opportunity.score} / 100</small>
-            </p>
-          ) : null}
+          <p>
+            Get personalized guidance from a coach who can review your results, answer your questions, and help you
+            create a practical next-step plan.
+          </p>
           <a
             className="primary-button"
             href="/#apply"
             onClick={() => trackEvent({ eventType: 'coaching_clicked_from_results' })}
           >
             Review my results with a coach
+            <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
           </a>
-          <p className="learn-hint">
-            Talk through your results and get a clearer practical next-step plan.
+          <p className="learn-results-note">
+            <Calendar size={14} strokeWidth={2} aria-hidden="true" />
+            Free introductory conversation
           </p>
-          <p className="learn-results-note">Free intro conversation</p>
+          {result.strongest ? (
+            <div className="learn-results-next-row is-strongest">
+              <span>
+                <TrendingUp size={14} strokeWidth={2} aria-hidden="true" />
+                Your strongest area
+              </span>
+              <b>{result.strongest.label}</b>
+              <small>{result.strongest.score} / 100</small>
+              <span
+                className="learn-meter"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={result.strongest.score}
+                aria-label={`${result.strongest.label} ${result.strongest.score} out of 100`}
+              >
+                <i style={{ width: `${result.strongest.score}%` }} />
+              </span>
+            </div>
+          ) : null}
+          {result.opportunity ? (
+            <div className="learn-results-next-row is-focus">
+              <span>
+                <Target size={14} strokeWidth={2} aria-hidden="true" />
+                Your biggest opportunity
+              </span>
+              <b>{result.opportunity.label}</b>
+              <small>{result.opportunity.score} / 100</small>
+              <span
+                className="learn-meter"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={result.opportunity.score}
+                aria-label={`${result.opportunity.label} ${result.opportunity.score} out of 100`}
+              >
+                <i style={{ width: `${result.opportunity.score}%` }} />
+              </span>
+            </div>
+          ) : null}
         </aside>
       </div>
 
@@ -249,18 +344,30 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
       ) : null}
 
       <section className="learn-results-section">
-        <h2>Your Skill Breakdown</h2>
-        <p className="learn-lead">See how you performed across the five core evaluation skills.</p>
+        <div className="learn-results-section-head">
+          <div>
+            <h2>Your Skill Breakdown</h2>
+            <p className="learn-lead">See how you performed across the five core evaluation skills.</p>
+          </div>
+          <a className="learn-text-btn" href={LEARN_PATH.landing}>
+            About these skills
+            <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+          </a>
+        </div>
         <ul className="learn-skill-grid">
           {result.categories?.map((item) => {
             const highlight = skillHighlight(item, result.strongest, result.opportunity);
             const status = skillStatusLabel(highlight, item.band);
+            const Icon = SKILL_ICONS[item.key as keyof typeof SKILL_ICONS] ?? ListChecks;
             return (
               <li key={item.key} className={`learn-skill-card${highlight ? ` is-${highlight}` : ''}`}>
                 <div className="learn-skill-card-top">
-                  <h3>{item.label}</h3>
-                  {status ? <span className="learn-overview-badge">{status}</span> : null}
+                  <span className="learn-results-skill-icon" aria-hidden="true">
+                    <Icon size={18} strokeWidth={2} />
+                  </span>
+                  {status ? <span className="learn-results-skill-badge">{status}</span> : null}
                 </div>
+                <h3>{item.label}</h3>
                 <p className="learn-skill-score">
                   {item.score} <small>/ 100</small>
                 </p>
@@ -275,153 +382,126 @@ export default function ResultsView({ attemptId }: { attemptId: string }) {
                   <i style={{ width: `${item.score}%` }} />
                 </span>
                 {item.insight ? <p className="learn-hint">{item.insight}</p> : null}
+                <a className="learn-text-btn" href={practiceHrefForCategory(item.key)}>
+                  Learn how to improve
+                  <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+                </a>
               </li>
             );
           })}
         </ul>
       </section>
 
-      <section className="learn-results-section">
-        <h2>Your Personalized Next Steps</h2>
-        <ol className="learn-results-steps">
-          {steps.map((step) => (
-            <li key={step.n}>
-              <span className="learn-results-step-n" aria-hidden="true">
-                {step.n}
-              </span>
-              <div>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-                {step.href && step.cta ? (
-                  <a
-                    className={step.href === '/#apply' ? 'primary-button' : 'secondary-button on-light'}
-                    href={step.href}
-                    onClick={
-                      step.href === '/#apply'
-                        ? () => trackEvent({ eventType: 'coaching_clicked_from_results' })
-                        : undefined
-                    }
-                  >
-                    {step.cta}
-                    <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
-                  </a>
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ol>
-        <div className="learn-results-actions">
-          <a className="secondary-button on-light" href={practiceHref}>
-            Practice my weakest skill
-          </a>
-        </div>
-      </section>
+      <div className="learn-results-lower">
+        <section className="learn-results-section">
+          <h2>Your Personalized Next Steps</h2>
+          <p className="learn-lead">Based on your results, here are some practical ways to improve.</p>
+          <ol className="learn-results-steps">
+            {steps.map((step) => (
+              <li key={step.n}>
+                <span className="learn-results-step-n" aria-hidden="true">
+                  {step.n}
+                </span>
+                <div>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                  {step.href && step.cta ? (
+                    <a
+                      className="learn-text-btn"
+                      href={step.href}
+                      onClick={
+                        step.href === '/#apply'
+                          ? () => trackEvent({ eventType: 'coaching_clicked_from_results' })
+                          : undefined
+                      }
+                    >
+                      {step.cta}
+                      <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+                    </a>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-      <section className="learn-results-card learn-results-coach">
-        <p className="learn-kicker">Coaching</p>
-        <h2>Want help turning these results into a plan?</h2>
-        <p className="learn-lead">
-          A coach can walk through your assessment with you, discuss your background, and help you understand which
-          skills to work on next.
-        </p>
-        <a
-          className="primary-button"
-          href="/#apply"
-          onClick={() => trackEvent({ eventType: 'coaching_clicked_from_results' })}
-        >
-          Review my results with a coach
-        </a>
-        <p className="learn-results-note">Free introductory conversation</p>
-      </section>
-
-      <section className="learn-results-section">
-        <h2>Explore opportunities</h2>
-        <p className="learn-lead">
-          Browse opportunities that may match your professional or academic background.
-        </p>
-        <ul className="learn-path-links">
-          {paths.map((item) => (
-            <li key={item.href}>
-              <a href={item.href} onClick={() => trackEvent({ eventType: 'opportunities_clicked_from_course' })}>
-                {item.label}
+        <aside className="learn-results-card learn-results-other">
+          <h2>Other actions</h2>
+          <ul>
+            <li>
+              <a href={practiceHref}>
+                <Target size={16} strokeWidth={2} aria-hidden="true" />
+                Practice my weakest skill
               </a>
             </li>
-          ))}
-        </ul>
-        <a
-          className="secondary-button on-light"
-          href="/opportunities?experience=beginner"
-          onClick={() => trackEvent({ eventType: 'opportunities_clicked_from_course' })}
-        >
-          Explore recommended opportunities
-        </a>
-        <p className="learn-disclaimer">{DISCLAIMER}</p>
-      </section>
-
-      {result.passed && result.certificate ? (
-        <section className="learn-results-card learn-cert-cta">
-          <p className="learn-kicker">Certificate unlocked</p>
-          <h2>Congratulations — you&apos;ve met the course assessment requirement.</h2>
-          <p>Credential ID {result.certificate.credentialId}</p>
-          <div className="learn-pager">
-            <button type="button" className="primary-button" onClick={() => void download()}>
-              Download certificate
-            </button>
-            <a className="secondary-button on-light" href={LEARN_PATH.certificate(certificateId ?? '')}>
-              View certificate
-            </a>
-          </div>
-        </section>
-      ) : result.passed ? (
-        <aside className="learn-results-card" role="status">
-          <p className="learn-kicker">Certificate</p>
-          <h2>You passed the assessment, but we couldn&apos;t prepare your certificate yet.</h2>
-          <button
-            type="button"
-            className="primary-button"
-            disabled={certBusy}
-            onClick={() => {
-              setCertBusy(true);
-              retryCertificate(attemptId)
-                .then((next) => {
-                  setResult(next);
-                  if (next.certificate) trackEvent({ eventType: 'certificate_generated' });
-                })
-                .catch(() => {})
-                .finally(() => setCertBusy(false));
-            }}
-          >
-            {certBusy ? 'Preparing…' : 'Try again'}
-          </button>
+            <li>
+              <a
+                href="/opportunities?experience=beginner"
+                onClick={() => trackEvent({ eventType: 'opportunities_clicked_from_course' })}
+              >
+                <Compass size={16} strokeWidth={2} aria-hidden="true" />
+                Explore recommended opportunities
+              </a>
+            </li>
+            <li>
+              <a href={`${LEARN_PATH.assessment}?retake=1`}>
+                <RotateCcw size={16} strokeWidth={2} aria-hidden="true" />
+                Retake assessment later
+              </a>
+            </li>
+            <li>
+              <a href={LEARN_PATH.course}>
+                <ArrowLeft size={16} strokeWidth={2} aria-hidden="true" />
+                Back to course
+              </a>
+            </li>
+            {certificateId ? (
+              <li>
+                <button type="button" onClick={() => void download()}>
+                  <GraduationCap size={16} strokeWidth={2} aria-hidden="true" />
+                  Download certificate
+                </button>
+              </li>
+            ) : null}
+          </ul>
+          {paths.length ? <p className="learn-disclaimer">{OPPORTUNITIES_DISCLAIMER}</p> : null}
         </aside>
-      ) : (
-        <section className="learn-results-card">
-          <p className="learn-kicker">Certificate progress</p>
-          <p className="learn-results-cert-score">
-            {score} / {passScore}
-          </p>
-          <p className="learn-lead">
-            Keep building your skills. Reach {passScore}/100 on the assessment to unlock your AI Training Foundations
-            Certificate of Completion.
-          </p>
-          <div className="learn-pager">
-            <a className="secondary-button on-light" href={practiceHref}>
-              Practice recommended skills
-            </a>
-          </div>
-          <a className="learn-results-quiet" href={`${LEARN_PATH.assessment}?retake=1`}>
-            Retake assessment later
-          </a>
-        </section>
-      )}
+      </div>
+    </div>
+  );
+}
 
-      {!result.passed ? null : (
-        <p className="learn-results-foot">
-          <a className="learn-results-quiet" href={`${LEARN_PATH.assessment}?retake=1`}>
-            Retake assessment
-          </a>
-        </p>
-      )}
+function ScoreRing({ score }: { score: number }) {
+  const radius = 54;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.min(100, Math.max(0, score));
+  const offset = circumference * (1 - clamped / 100);
+  return (
+    <div className="learn-score-ring" role="img" aria-label={`${score} out of 100`}>
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <defs>
+          <linearGradient id="learn-score-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#1687FF" />
+            <stop offset="100%" stopColor="#8B2CF5" />
+          </linearGradient>
+        </defs>
+        <circle cx="60" cy="60" r={radius} fill="none" stroke="#e8eef8" strokeWidth="10" />
+        <circle
+          cx="60"
+          cy="60"
+          r={radius}
+          fill="none"
+          stroke="url(#learn-score-grad)"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          transform="rotate(-90 60 60)"
+        />
+      </svg>
+      <p className="learn-big-score">
+        {score} <small>/ 100</small>
+      </p>
     </div>
   );
 }
