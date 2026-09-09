@@ -51,13 +51,6 @@ const LAB_COPY: Record<string, string> = {
   'hallucination-spotter': 'Identify unsupported or inaccurate claims.',
 };
 
-const PRIMARY_FAQ = [
-  'Do I need coding experience?',
-  'How long does the course take?',
-  'Can I retake the assessment?',
-  'Does the certificate guarantee a job?',
-];
-
 function JourneyIcon({ status }: { status: 'complete' | 'current' | 'upcoming' }) {
   if (status === 'complete') return <CheckCircle2 size={18} strokeWidth={2} aria-hidden="true" />;
   if (status === 'current') return <CircleDot size={18} strokeWidth={2} aria-hidden="true" />;
@@ -74,9 +67,8 @@ export default function LearnLanding() {
   const nextModule = nextIncompleteModule(state);
   const journey = courseJourneyStates(state);
   const labs = practiceLabs().slice(0, 3);
-  const [faqOpen, setFaqOpen] = useState<string | null>(PRIMARY_FAQ[0] ?? null);
-  const [allFaq, setAllFaq] = useState(false);
-  const faqs = landing.faq.filter((item) => allFaq || PRIMARY_FAQ.includes(item.q));
+  const [faqOpen, setFaqOpen] = useState<string | null>(landing.faq[0]?.q ?? null);
+  const faqs = landing.faq;
 
   useEffect(() => {
     trackEvent({ eventType: 'course_viewed' });
@@ -334,13 +326,6 @@ export default function LearnLanding() {
                 );
               })}
             </div>
-            {landing.faq.length > PRIMARY_FAQ.length ? (
-              <p>
-                <button type="button" className="learn-text-btn" onClick={() => setAllFaq((value) => !value)}>
-                  {allFaq ? 'Show fewer FAQs' : 'View all FAQs'}
-                </button>
-              </p>
-            ) : null}
           </section>
 
           <section className="learn-section learn-final-cta" aria-labelledby="learn-end-title">
