@@ -14,6 +14,7 @@ export type LocalLearnState = {
   attemptId: string | null;
   answers: Record<string, string>;
   questionIds: string[];
+  flaggedQuestionIds: string[];
   resultId: string | null;
   passed: boolean;
 };
@@ -29,6 +30,7 @@ export function emptyLearnState(): LocalLearnState {
     attemptId: null,
     answers: {},
     questionIds: [],
+    flaggedQuestionIds: [],
     resultId: null,
     passed: false,
   };
@@ -70,6 +72,7 @@ function normalizeState(raw: Partial<LocalLearnState>): LocalLearnState {
     startedModules: uniqueSorted(base.startedModules ?? []),
     answers: asAnswers(base.answers),
     questionIds: uniqueQuestionIds(base.questionIds),
+    flaggedQuestionIds: uniqueQuestionIds(base.flaggedQuestionIds),
   };
 }
 

@@ -2,6 +2,19 @@ import { ApiError } from '../api';
 
 const FALLBACK = "We couldn't complete that action. Your completed work has been preserved. Please try again.";
 
+export function learnErrorTitle(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 401) return 'Your session expired';
+    if (error.status === 403 || error.status === 404) return "We couldn't load your assessment.";
+    if (error.code === 'NETWORK_ERROR' || error.status === 0) return "We couldn't reach the course service.";
+    if (error.code === 'ALREADY_SUBMITTED' || error.status === 409) return 'This assessment was already submitted';
+    if (error.status >= 500 || error.code === 'ASSESSMENT_STORAGE_UNAVAILABLE') {
+      return "We couldn't load your assessment.";
+    }
+  }
+  return "We couldn't load your assessment.";
+}
+
 export function learnErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 401) return 'Your session expired. Please sign in again.';

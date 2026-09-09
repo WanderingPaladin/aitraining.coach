@@ -160,10 +160,11 @@ describe('learn landing product page', () => {
 
 describe('assessment persistence UX', () => {
   it('saves answers with current question index and exposes retry state', () => {
+    const shell = readFileSync(join(root, 'app/components/learn/AssessmentShell.tsx'), 'utf8');
     assert.match(assessmentClient, /currentIndex/);
     assert.match(assessmentClient, /Not saved/);
-    assert.match(assessmentClient, /Saving…/);
-    assert.match(assessmentClient, /Saved ✓/);
+    assert.match(shell, /Saving…/);
+    assert.match(shell, /Saved/);
     assert.match(assessmentClient, /submitLock/);
     assert.match(assessmentClient, /Continue assessment|attemptId/);
     assert.match(api, /currentIndex/);
@@ -178,9 +179,10 @@ describe('assessment persistence UX', () => {
 
   it('shows a recoverable start error instead of concatenating the back link', () => {
     const errors = readFileSync(join(root, 'lib/learn/errors.ts'), 'utf8');
-    assert.match(assessmentClient, /learn-empty-state/);
-    assert.match(assessmentClient, /Try again/);
-    assert.match(assessmentClient, /Back to course/);
+    const errorState = readFileSync(join(root, 'app/components/learn/AssessmentErrorState.tsx'), 'utf8');
+    assert.match(errorState, /learn-empty-state/);
+    assert.match(errorState, /Try again/);
+    assert.match(errorState, /Return to Course/);
     assert.doesNotMatch(assessmentClient, /\{error\}\s*\{'\s*'\}\s*\n\s*<a href=\{LEARN_PATH\.course\}>Back to course/);
     assert.match(errors, /status >= 500/);
     assert.match(errors, /Unexpected server error/);
@@ -195,5 +197,23 @@ describe('assessment persistence UX', () => {
     assert.match(resultsView, /scoreLocalAttempt/);
     assert.match(score, /scoreLocalAttempt/);
     assert.match(storage, /questionIds/);
+  });
+
+  it('uses a focused assessment workspace instead of the marketing shell', () => {
+    const page = readFileSync(join(root, 'app/learn/ai-training-foundations/assessment/page.tsx'), 'utf8');
+    const shell = readFileSync(join(root, 'app/components/learn/AssessmentShell.tsx'), 'utf8');
+    const skeleton = readFileSync(join(root, 'app/components/learn/AssessmentSkeleton.tsx'), 'utf8');
+    const review = readFileSync(join(root, 'app/components/learn/AssessmentReview.tsx'), 'utf8');
+    assert.doesNotMatch(page, /LearnShell/);
+    assert.match(shell, /Save &amp; Exit/);
+    assert.match(skeleton, /Preparing your assessment…/);
+    assert.match(assessmentClient, /awaitingRetake/);
+    assert.match(assessmentClient, /Start Retake|AssessmentRetakeGate/);
+    assert.match(assessmentClient, /Review Answers|openReview/);
+    assert.match(review, /Ready to submit/);
+    assert.match(review, /Submit Assessment/);
+    assert.match(css, /\.learn-assess-page/);
+    assert.match(css, /\.learn-answer/);
+    assert.match(storage, /flaggedQuestionIds/);
   });
 });

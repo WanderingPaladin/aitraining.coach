@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import AssessmentClient from '../../../components/learn/AssessmentClient';
-import LearnShell from '../../../components/learn/LearnShell';
 import { siteIcons } from '../../../../lib/siteIcons';
 
 export const metadata: Metadata = {
@@ -12,12 +11,8 @@ export const metadata: Metadata = {
 
 export default function AssessmentPage() {
   return (
-    <LearnShell>
-      <div className="journal-light">
-        <div className="shell journal-main">
-          <AssessmentClient />
-        </div>
-      </div>
-    </LearnShell>
+    <div className="journal-page">
+      <AssessmentClient />
+    </div>
   );
 }
