@@ -6,19 +6,24 @@ import {
   Award,
   BadgeCheck,
   BookOpen,
+  Briefcase,
   CheckCircle2,
   Circle,
   CircleDot,
   ClipboardCheck,
   Clock3,
+  Compass,
+  Flag,
   FlaskConical,
   GitCompare,
+  Map,
   MessageSquareText,
+  PauseCircle,
   ScanSearch,
 } from 'lucide-react';
 import landing from '../../../lib/learn/data/landing-copy-v2.json';
 import course from '../../../lib/learn/data/course-v2.json';
-import { ASSESSMENT_WEIGHTS, LEARN_PATH, MODULES, PASS_SCORE } from '../../../lib/learn/course';
+import { LEARN_PATH, MODULES, PASS_SCORE } from '../../../lib/learn/course';
 import {
   completedModuleCount,
   courseJourneyStates,
@@ -33,6 +38,7 @@ import { assessmentAction, practiceLabs } from '../../../lib/learn/sequence';
 import { isLabComplete } from '../../../lib/learn/storage';
 import { trackEvent } from '../../../lib/tracking';
 import { useLearnProgress } from '../../hooks/useLearnProgress';
+import LearnAssessmentSection from './LearnAssessmentSection';
 import LearnCertificatePreview from './LearnCertificatePreview';
 import LearnCurriculum from './LearnCurriculum';
 import LearnEvalPreview from './LearnEvalPreview';
@@ -45,16 +51,35 @@ const SKILLS = [
   { icon: MessageSquareText, title: 'Explain decisions', body: course.landingOutcomes[5] },
 ];
 
-const LAB_COPY: Record<string, string> = {
-  'constraint-detective': 'Spot instructions and hidden constraints.',
-  'response-ranking': 'Compare responses and justify your choice.',
-  'hallucination-spotter': 'Identify unsupported or inaccurate claims.',
-};
+const LAB_PREVIEW = [
+  { id: 'constraint-detective', icon: ScanSearch, body: 'Spot hidden requirements before judging an AI response.', kind: 'Practice' },
+  { id: 'response-ranking', icon: GitCompare, body: 'Compare responses and justify your choice.', kind: 'Practice' },
+  { id: 'hallucination-spotter', icon: Flag, body: 'Identify unsupported or inaccurate claims.', kind: 'Practice' },
+];
+
+const AUDIENCE_ICONS = [Compass, PauseCircle, Briefcase, Map];
 
 function JourneyIcon({ status }: { status: 'complete' | 'current' | 'upcoming' }) {
   if (status === 'complete') return <CheckCircle2 size={18} strokeWidth={2} aria-hidden="true" />;
   if (status === 'current') return <CircleDot size={18} strokeWidth={2} aria-hidden="true" />;
   return <Circle size={18} strokeWidth={2} aria-hidden="true" />;
+}
+
+function ActionButton({
+  href,
+  label,
+  onClick,
+}: {
+  href: string;
+  label: string;
+  onClick?: () => void;
+}) {
+  return (
+    <a className="primary-button" href={href} onClick={onClick}>
+      {label.replace(/\s*→$/, '')}
+      <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+    </a>
+  );
 }
 
 export default function LearnLanding() {
@@ -66,7 +91,7 @@ export default function LearnLanding() {
   const completed = completedModuleCount(state);
   const nextModule = nextIncompleteModule(state);
   const journey = courseJourneyStates(state);
-  const labs = practiceLabs().slice(0, 3);
+  const labs = practiceLabs();
 
   useEffect(() => {
     trackEvent({ eventType: 'course_viewed' });
@@ -138,12 +163,9 @@ export default function LearnLanding() {
               ) : null}
               <div className="learn-hero-actions">
                 {ready ? (
-                  <a className="primary-button" href={action.href} onClick={onPrimaryClick}>
-                    {action.label.replace(/\s*→$/, '')}
-                    <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
-                  </a>
+                  <ActionButton href={action.href} label={action.label} onClick={onPrimaryClick} />
                 ) : (
-                  <span className="primary-button is-disabled">Loading…</span>
+                  <span className="learn-skel learn-skel-btn" aria-hidden="true" />
                 )}
                 <a className="secondary-button" href="#curriculum">
                   View curriculum
@@ -184,19 +206,23 @@ export default function LearnLanding() {
             </ul>
           </section>
 
-          <section className="learn-section" aria-labelledby="learn-labs-title">
+          <section className="learn-section learn-labs-section" aria-labelledby="learn-labs-title">
             <p className="learn-kicker">Practice labs</p>
             <h2 id="learn-labs-title">Practice before the final assessment.</h2>
             <p className="learn-lead">Optional labs. They do not affect your certificate score.</p>
             <ul className="learn-lab-preview">
-              {labs.map((lab) => {
+              {LAB_PREVIEW.map((item) => {
+                const lab = labs.find((entry) => item.id === entry.id);
+                if (!lab) return null;
                 const done = ready && isLabComplete(state, lab.id);
                 return (
                   <li key={lab.id}>
+                    <item.icon size={20} strokeWidth={2} aria-hidden="true" />
                     <h3>{lab.title}</h3>
-                    <p>{LAB_COPY[lab.id] ?? 'Apply the same evaluation skills on a realistic example.'}</p>
+                    <p>{item.body}</p>
+                    <p className="learn-lab-meta">{item.kind}{done ? ' · Completed' : ''}</p>
                     <a className="secondary-button on-light" href={LEARN_PATH.lab(lab.id)}>
-                      {done ? 'Review' : 'Start lab'}
+                      {done ? 'Practice again' : 'Start lab'}
                       <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
                     </a>
                   </li>
@@ -210,33 +236,13 @@ export default function LearnLanding() {
             </p>
           </section>
 
-          <section className="learn-section" aria-labelledby="learn-assess-title">
-            <p className="learn-kicker">Final readiness assessment</p>
-            <h2 id="learn-assess-title">See what you’re ready for — and what to improve.</h2>
-            <p className="learn-lead">Complete the final assessment after finishing the course. Weighting below is how the score is composed, not a learner result.</p>
-            <p className="learn-weight-label">Assessment weighting</p>
-            <ul className="learn-weights">
-              {ASSESSMENT_WEIGHTS.map((item) => (
-                <li key={item.key}>
-                  <div>
-                    <span>{item.label}</span>
-                    <b>{Math.round(item.weight * 100)}%</b>
-                  </div>
-                  <span className="learn-meter" aria-hidden="true">
-                    <i style={{ width: `${item.weight * 100}%` }} />
-                  </span>
-                </li>
-              ))}
-            </ul>
-            {ready && (phase === 'assessment_ready' || phase === 'assessment_in_progress' || phase === 'passed' || phase === 'failed') ? (
-              <a className="primary-button" href={assess.href}>
-                {assess.label.replace(/\s*→$/, '')}
-                <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
-              </a>
-            ) : (
-              <p className="learn-hint">Complete the course to unlock assessment</p>
-            )}
-          </section>
+          <LearnAssessmentSection
+            phase={phase}
+            ready={ready}
+            completed={completed}
+            courseAction={action}
+            assess={assess}
+          />
 
           <section className="learn-section learn-cert-section" aria-labelledby="learn-cert-title">
             <div className="learn-cert-copy">
@@ -277,42 +283,70 @@ export default function LearnLanding() {
             <p className="learn-kicker">Built for wherever you’re starting</p>
             <h2 id="learn-audience-title">Who this course is for</h2>
             <div className="learn-audience">
-              {landing.audiences.map((item) => (
-                <article key={item.title} className="learn-audience-card">
-                  <h3>{item.title}</h3>
-                  <p>{item.body}</p>
-                </article>
-              ))}
+              {landing.audiences.map((item, index) => {
+                const Icon = AUDIENCE_ICONS[index] ?? Compass;
+                return (
+                  <article key={item.title} className="learn-audience-card">
+                    <Icon size={20} strokeWidth={2} aria-hidden="true" />
+                    <h3>{item.title}</h3>
+                    <p>{item.body}</p>
+                  </article>
+                );
+              })}
             </div>
           </section>
 
           <section className="learn-section learn-bridge" aria-labelledby="learn-bridge-title">
-            <p className="learn-kicker">Build skills → understand your readiness → explore opportunities</p>
-            <h2 id="learn-bridge-title">Put what you’ve learned into context.</h2>
+            <p className="learn-kicker">You’ve built the foundation</p>
+            <h2 id="learn-bridge-title">Learning is only the first step.</h2>
             <p className="learn-lead">
-              After building the fundamentals, explore current AI-training opportunities and compare them with your profile.
+              Use your skills and assessment results to understand which AI-training opportunities may fit your background.
+              Assessment scores do not predict third-party acceptance.
             </p>
-            <a className="primary-button" href="/opportunities">
-              Explore opportunities
-              <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
-            </a>
+            <div className="learn-hero-actions">
+              <a className="primary-button" href="/opportunities">
+                Explore opportunities
+                <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+              </a>
+              <a className="learn-text-btn" href="/#apply">
+                Talk with a coach
+              </a>
+            </div>
           </section>
 
           <section className="learn-section learn-final-cta" aria-labelledby="learn-end-title">
-            <h2 id="learn-end-title">Ready to build your AI evaluation skills?</h2>
-            <p className="learn-lead">Start with the foundations and progress at your own pace.</p>
+            <h2 id="learn-end-title">
+              {phase === 'passed'
+                ? 'You’ve completed the foundations.'
+                : phase === 'not_started'
+                  ? 'Ready to start?'
+                  : 'Continue where you left off.'}
+            </h2>
+            <p className="learn-lead">
+              {phase === 'passed'
+                ? 'Review your result, or explore opportunities that may match your background.'
+                : phase === 'not_started'
+                  ? `Build the fundamentals in about ${courseMinutes()} minutes and practice at your own pace.`
+                  : 'Pick up the next module, lab, or assessment from where you stopped.'}
+            </p>
             <div className="learn-hero-actions">
               {ready ? (
-                <a className="primary-button" href={action.href} onClick={onPrimaryClick}>
-                  {action.label.replace(/\s*→$/, '')}
-                  <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
-                </a>
+                phase === 'passed' && state.resultId ? (
+                  <>
+                    <a className="primary-button" href={LEARN_PATH.results(state.resultId)}>
+                      View results
+                      <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+                    </a>
+                    <a className="secondary-button on-light" href="/opportunities">
+                      Explore opportunities
+                    </a>
+                  </>
+                ) : (
+                  <ActionButton href={action.href} label={action.label} onClick={onPrimaryClick} />
+                )
               ) : (
-                <span className="primary-button is-disabled">Loading…</span>
+                <span className="learn-skel learn-skel-btn" aria-hidden="true" />
               )}
-              <a className="secondary-button on-light" href="#curriculum">
-                View curriculum
-              </a>
             </div>
           </section>
         </div>

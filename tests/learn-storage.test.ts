@@ -145,7 +145,6 @@ describe('learn landing product page', () => {
     const overview = readFileSync(join(root, 'lib/learn/overview.ts'), 'utf8');
     assert.match(landing, /getCoursePrimaryAction/);
     assert.match(landing, /courseJourneyStates/);
-    assert.match(landing, /ASSESSMENT_WEIGHTS/);
     assert.match(landing, /practiceLabs\(\)/);
     assert.match(landing, /#curriculum/);
     assert.doesNotMatch(landing, /learn-chips/);
@@ -154,6 +153,14 @@ describe('learn landing product page', () => {
     assert.match(css, /\.learn-product/);
     assert.match(css, /\.learn-eval/);
     assert.match(css, /\.learn-journey/);
+    assert.match(css, /\.learn-weight-bar/);
+    assert.match(css, /\.learn-assess-section/);
+    const assessment = readFileSync(join(root, 'app/components/learn/LearnAssessmentSection.tsx'), 'utf8');
+    assert.match(assessment, /ASSESSMENT_WEIGHTS/);
+    assert.match(assessment, /These percentages are assessment weights/);
+    assert.match(assessment, /fetchAttempt/);
+    assert.doesNotMatch(assessment, /learn-meter/);
+    assert.doesNotMatch(assessment, /finalScore = 39/);
     assert.match(css, /\.learn-cert-watermark/);
     assert.match(css, /\.learn-cert-sheet/);
     const preview = readFileSync(join(root, 'app/components/learn/LearnCertificatePreview.tsx'), 'utf8');
